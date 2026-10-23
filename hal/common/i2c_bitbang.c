@@ -1,5 +1,6 @@
 #include <m5os/hal_i2c.h>
 #include <m5os/hal_gpio.h>
+#include <m5os/mutex.h>
 
 #include <m5os/board_config.h>
 #if defined(M5OS_BOARD_CARDPUTER)
@@ -17,7 +18,24 @@
 
 static int s_scl = PIN_I2C_SCL, s_sda = PIN_I2C_SDA;      /* the bus in use; hal_i2c_set_pins() switches it */
 
-void hal_i2c_set_pins(int scl, int sda) { s_scl = scl; s_sda = sda; }
+/* One lock covers both physical buses, including read-modify-write operations.
+ * Board bring-up precedes the scheduler: no lock is needed until a task exists.
+ * Task context only; callers must not invoke I2C from an ISR. */
+static mutex_t s_lock = MUTEX_INIT;
+static bool bus_lock(void)
+{
+    if (!task_current()) return false;
+    mutex_lock(&s_lock);
+    return true;
+}
+static void bus_unlock(bool locked) { if (locked) mutex_unlock(&s_lock); }
+
+void hal_i2c_set_pins(int scl, int sda)
+{
+    bool locked = bus_lock();
+    s_scl = scl; s_sda = sda;
+    bus_unlock(locked);
+}
 
 static void scl_hi_pin(int scl)
 {
@@ -33,9 +51,11 @@ static void tick(void)          { hal_delay_us(I2C_HALF_PERIOD_US); }
 
 void hal_i2c_init(void)
 {
+    bool locked = bus_lock();
     hal_gpio_config_open_drain(s_scl);
     hal_gpio_config_open_drain(s_sda);
     sda_hi_pin(s_sda); scl_hi_pin(s_scl); tick();
+    bus_unlock(locked);
 }
 
 static void start_pin(int scl, int sda)           /* SDA falls while SCL is high */
@@ -80,83 +100,96 @@ static uint8_t read_byte_pin(int scl, int sda, bool ack)
     return v;
 }
 
-bool hal_i2c_write_reg(uint8_t addr7, uint8_t reg, uint8_t val)
+/* Caller holds s_lock. reg_bytes describes the register ADDRESS, not its data width.
+ * INA226 uses an 8-bit register address with 16-bit data; GT911/ST712x use 16-bit addresses. */
+static bool transfer(int scl, int sda, uint8_t addr, uint16_t reg, unsigned reg_bytes,
+                     const uint8_t *tx, uint8_t *rx, size_t len)
 {
-    int scl = s_scl, sda = s_sda;
     start_pin(scl, sda);
-    bool ok = write_byte_pin(scl, sda, (uint8_t)(addr7 << 1)) && write_byte_pin(scl, sda, reg) && write_byte_pin(scl, sda, val);
-    stop_pin(scl, sda);
-    return ok;
-}
-
-bool hal_i2c_read_reg(uint8_t addr7, uint8_t reg, uint8_t *val)
-{
-    int scl = s_scl, sda = s_sda;
-    start_pin(scl, sda);
-    bool ok = write_byte_pin(scl, sda, (uint8_t)(addr7 << 1)) && write_byte_pin(scl, sda, reg);
-    if (ok) {
-        start_pin(scl, sda);                           /* repeated start */
-        ok = write_byte_pin(scl, sda, (uint8_t)((addr7 << 1) | 1));
-        if (ok) *val = read_byte_pin(scl, sda, false); /* NACK the last byte */
-    }
-    stop_pin(scl, sda);
-    return ok;
-}
-
-bool hal_i2c_bit_on(uint8_t a, uint8_t reg, uint8_t mask)
-{
-    uint8_t v;
-    return hal_i2c_read_reg(a, reg, &v) && hal_i2c_write_reg(a, reg, v | mask);
-}
-
-bool hal_i2c_bit_off(uint8_t a, uint8_t reg, uint8_t mask)
-{
-    uint8_t v;
-    return hal_i2c_read_reg(a, reg, &v) && hal_i2c_write_reg(a, reg, (uint8_t)(v & ~mask));
-}
-
-bool hal_i2c_read_regs(uint8_t addr7, uint8_t reg, uint8_t *buf, size_t len)
-{
-    int scl = s_scl, sda = s_sda;
-    start_pin(scl, sda);
-    bool ok = write_byte_pin(scl, sda, (uint8_t)(addr7 << 1)) && write_byte_pin(scl, sda, reg);
-    if (ok) {
+    bool ok = write_byte_pin(scl, sda, (uint8_t)(addr << 1));
+    if (ok && reg_bytes == 2) ok = write_byte_pin(scl, sda, (uint8_t)(reg >> 8));
+    if (ok) ok = write_byte_pin(scl, sda, (uint8_t)reg);
+    if (ok && rx) {
         start_pin(scl, sda);
-        ok = write_byte_pin(scl, sda, (uint8_t)((addr7 << 1) | 1));
-        for (size_t i = 0; ok && i < len; i++) {
-            buf[i] = read_byte_pin(scl, sda, i + 1 < len); /* ACK all but the last byte */
-        }
+        ok = write_byte_pin(scl, sda, (uint8_t)((addr << 1) | 1));
+        for (size_t i = 0; ok && i < len; i++) rx[i] = read_byte_pin(scl, sda, i + 1 < len);
+    } else {
+        for (size_t i = 0; ok && i < len; i++) ok = write_byte_pin(scl, sda, tx[i]);
     }
     stop_pin(scl, sda);
     return ok;
 }
 
-/* 16-bit register devices (ST7123 touch, SC202CS camera) always sit on the system I2C bus
- * (PIN_I2C_SCL / PIN_I2C_SDA), even after keyboard_start() switches s_scl/s_sda to Ext.Port1. */
-bool hal_i2c_read_reg16(uint8_t addr7, uint16_t reg, uint8_t *buf, size_t len)
+bool hal_i2c_write_reg(uint8_t addr, uint8_t reg, uint8_t val)
 {
-    const int scl = PIN_I2C_SCL, sda = PIN_I2C_SDA;
-    start_pin(scl, sda);
-    bool ok = write_byte_pin(scl, sda, (uint8_t)(addr7 << 1)) &&
-              write_byte_pin(scl, sda, (uint8_t)(reg >> 8)) &&
-              write_byte_pin(scl, sda, (uint8_t)reg);
+    bool locked = bus_lock();
+    bool ok = transfer(s_scl, s_sda, addr, reg, 1, &val, NULL, 1);
+    bus_unlock(locked);
+    return ok;
+}
+
+bool hal_i2c_read_regs(uint8_t addr, uint8_t reg, uint8_t *buf, size_t len)
+{
+    bool locked = bus_lock();
+    bool ok = transfer(s_scl, s_sda, addr, reg, 1, NULL, buf, len);
+    bus_unlock(locked);
+    return ok;
+}
+bool hal_i2c_read_reg(uint8_t addr, uint8_t reg, uint8_t *val)
+{
+    return hal_i2c_read_regs(addr, reg, val, 1);
+}
+
+static bool modify(uint8_t addr, uint8_t reg, uint8_t mask, bool set)
+{
+    bool locked = bus_lock();
+    uint8_t v;
+    bool ok = transfer(s_scl, s_sda, addr, reg, 1, NULL, &v, 1);
     if (ok) {
-        start_pin(scl, sda);
-        ok = write_byte_pin(scl, sda, (uint8_t)((addr7 << 1) | 1));
-        for (size_t i = 0; ok && i < len; i++) buf[i] = read_byte_pin(scl, sda, i + 1 < len);
+        v = set ? (uint8_t)(v | mask) : (uint8_t)(v & ~mask);
+        ok = transfer(s_scl, s_sda, addr, reg, 1, &v, NULL, 1);
     }
-    stop_pin(scl, sda);
+    bus_unlock(locked);
+    return ok;
+}
+bool hal_i2c_bit_on(uint8_t a, uint8_t reg, uint8_t mask) { return modify(a, reg, mask, true); }
+bool hal_i2c_bit_off(uint8_t a, uint8_t reg, uint8_t mask) { return modify(a, reg, mask, false); }
+
+/* System-bus helpers never change s_scl/s_sda: touch, camera and power monitoring
+ * can coexist with the keyboard accessory on Ext.Port1. */
+bool hal_i2c_read_reg16(uint8_t addr, uint16_t reg, uint8_t *buf, size_t len)
+{
+    bool locked = bus_lock();
+    bool ok = transfer(PIN_I2C_SCL, PIN_I2C_SDA, addr, reg, 2, NULL, buf, len);
+    bus_unlock(locked);
+    return ok;
+}
+bool hal_i2c_write_reg16(uint8_t addr, uint16_t reg, uint8_t val)
+{
+    bool locked = bus_lock();
+    bool ok = transfer(PIN_I2C_SCL, PIN_I2C_SDA, addr, reg, 2, &val, NULL, 1);
+    bus_unlock(locked);
+    return ok;
+}
+bool hal_i2c_sys_read_regs(uint8_t addr, uint8_t reg, uint8_t *buf, size_t len)
+{
+    bool locked = bus_lock();
+    bool ok = transfer(PIN_I2C_SCL, PIN_I2C_SDA, addr, reg, 1, NULL, buf, len);
+    bus_unlock(locked);
     return ok;
 }
 
-bool hal_i2c_write_reg16(uint8_t addr7, uint16_t reg, uint8_t val)
+bool hal_i2c_sys_write_reg(uint8_t addr, uint8_t reg, uint8_t val)
 {
-    const int scl = PIN_I2C_SCL, sda = PIN_I2C_SDA;
-    start_pin(scl, sda);
-    bool ok = write_byte_pin(scl, sda, (uint8_t)(addr7 << 1)) &&
-              write_byte_pin(scl, sda, (uint8_t)(reg >> 8)) &&
-              write_byte_pin(scl, sda, (uint8_t)reg) &&
-              write_byte_pin(scl, sda, val);
-    stop_pin(scl, sda);
-    return ok;
+    bool locked = bus_lock();
+    bool ok = transfer(PIN_I2C_SCL, PIN_I2C_SDA, addr, reg, 1, &val, NULL, 1);
+    bus_unlock(locked); return ok;
+}
+bool hal_i2c_sys_update_reg(uint8_t addr, uint8_t reg, uint8_t mask, uint8_t value)
+{
+    bool locked = bus_lock(); uint8_t v;
+    bool ok = transfer(PIN_I2C_SCL, PIN_I2C_SDA, addr, reg, 1, NULL, &v, 1);
+    if (ok) { v = (v & ~mask) | (value & mask);
+        ok = transfer(PIN_I2C_SCL, PIN_I2C_SDA, addr, reg, 1, &v, NULL, 1); }
+    bus_unlock(locked); return ok;
 }

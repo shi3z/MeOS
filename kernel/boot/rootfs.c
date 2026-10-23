@@ -6,6 +6,7 @@
  * whatever the user keeps on it.
  */
 #include <m5os/vfs.h>
+#include <m5os/rootfs.h>
 #include <m5os/m5ex.h>
 #include <m5os/wasm.h>
 #include <m5os/fs.h>
@@ -17,6 +18,9 @@
 #define RAMDISK_BLOCKS_PSRAM_LARGE 16384u     /* 8 MiB on boards with >= 16 MiB PSRAM (Tab5) */
 #define RAMDISK_BLOCKS_PSRAM       4096u      /* 2 MiB on 8 MiB PSRAM boards */
 #define RAMDISK_BLOCKS_SRAM        128u       /* 64 KiB: boards without PSRAM keep it in internal RAM */
+
+static bool s_persistent;
+bool rootfs_is_persistent(void) { return s_persistent; }
 
 static void seed(const char *path, const char *text)
 {
@@ -52,6 +56,7 @@ bool rootfs_mount(blockdev_t *sd)
     }
     int rc = vfs_mount("/", &vfs_m5fs, NULL);
     if (rc != ERR_OK) return false;
+    s_persistent = persistent;
     kprintf("rootfs: M5FS on %s mounted at /\n", persistent ? "SD card (persistent)" : "RAM disk (volatile)");
 
     if (!persistent) {
