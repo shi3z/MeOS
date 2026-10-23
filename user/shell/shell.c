@@ -24,6 +24,9 @@
 
 #define FILER_PAUSE_SETTLE_MS 100u
 #include "shell.h"
+#include "hardware.h"
+#include <m5os/audio.h>
+#include <m5os/microphone.h>
 #include <m5os/vfs.h>
 #include <m5os/task.h>
 #include <m5os/kprintf.h>
@@ -61,6 +64,8 @@
 
 static int  s_out = -1, s_in = -1;
 static char s_cwd[VFS_PATH_MAX] = "/";
+
+static bool sh_streq(const char *a, const char *b);
 
 /* ---------------------------------------------------------------- output */
 
@@ -844,6 +849,21 @@ static int cmd_mount(int argc, char **argv)
     return 0;
 }
 
+#if M5OS_BOARD_TAB5
+static int cmd_devices(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_devices(); return 0;
+}
+static int cmd_power(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_power(); return 0;
+}
+static int cmd_storage(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_storage(); return 0;
+}
+#endif
+
 /* ----------------------------------------------------------- line editing */
 
 #define HIST_MAX     32
@@ -894,6 +914,15 @@ static int cmd_history(int argc, char **argv)
 
 static const command_t s_commands[] = {
     { "help",    cmd_help,    "list commands" },
+#if M5OS_BOARD_TAB5
+#if M5OS_BOARD_TAB5
+    { "mic", microphone_command, "mic test [SECONDS] bounded microphone input test" },
+    { "audio", audio_command, "audio test      low-volume speaker test" },
+#endif
+    { "devices", cmd_devices, "board devices: detected, untested, or unsupported (read-only)" },
+    { "power",   cmd_power,   "battery voltage/current, estimated level and charger state (read-only)" },
+    { "storage", cmd_storage, "root backing, persistence and microSD support (read-only)" },
+#endif
     { "history", cmd_history, "show command history (or use Up/Down arrows)" },
     { "ps",      cmd_ps,      "list tasks" },
     { "kill",    cmd_kill,    "kill PID        terminate one task (an app: its owner task)" },
