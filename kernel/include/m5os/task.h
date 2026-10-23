@@ -20,6 +20,8 @@ typedef enum {
 #define TASK_NAME_MAX      16
 #define TASK_MAX           16
 #define TASK_STACK_SIZE    4096u
+#define TASK_STACK_GUARD_BYTES 32u
+#define TASK_STACK_MIN     512u
 #define TASK_PRIO_IDLE     0
 #define TASK_PRIO_DEFAULT  1
 #define TASK_PRIO_MAX      7
@@ -45,7 +47,8 @@ typedef struct task {
     bool          wait_timed;    /* BLOCKED with a deadline in wakeup_us */
     bool          wait_timed_out;
     void         *stack_base;
-    size_t        stack_size;
+    size_t        stack_size;  /* usable bytes, excludes the low-end guard */
+    bool          stack_guard_failed; /* latched until this TCB is reused */
 } task_t;
 
 /* Create a task; returns its pid (>0) or -1. */
@@ -90,3 +93,12 @@ const char *task_state_name(task_state_t s);
 int         task_kill(uint32_t pid);
 
 int         task_kill_app(const struct app *a);          /* kill every live task of an app (not the caller); returns count */
+
+/* On-demand painted-stack estimate, scanned in <=128-byte critical sections.
+ * ERR_NOSYS: idle uses the uninstrumented boot stack. ERR_NOENT: task vanished.
+ * Not an atomic snapshot of a running task; fill-pattern matches can hide use. */
+typedef struct {
+    size_t size, used, free;
+    bool guard_ok;
+} task_stack_info_t;
+int task_stack_inspect(uint32_t pid, task_stack_info_t *out);

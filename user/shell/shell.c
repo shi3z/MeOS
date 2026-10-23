@@ -62,6 +62,8 @@
 static int  s_out = -1, s_in = -1;
 static char s_cwd[VFS_PATH_MAX] = "/";
 
+static bool sh_streq(const char *a, const char *b);
+
 /* ---------------------------------------------------------------- output */
 
 static void sh_write(const char *s, size_t n) { if (s_out >= 0) vfs_write(s_out, s, n); }
@@ -134,10 +136,16 @@ static int cmd_ps(int argc, char **argv)
     (void)argc; (void)argv;
     task_info_t t[PS_MAX];
     int n = task_snapshot(t, PS_MAX);
-    sh_puts("PID  NAME             PRI  STATE       APP\n");
+    sh_puts("PID  NAME             PRI  STATE       APP  STACK used~/size  GUARD\n");
     for (int i = 0; i < n; i++) {
-        if (t[i].app_id) SH_PRINTF("%-4u %-16s %-4u %-11s %u\n", t[i].id, t[i].name, t[i].priority, task_state_name(t[i].state), t[i].app_id);
-        else             SH_PRINTF("%-4u %-16s %-4u %-11s -\n", t[i].id, t[i].name, t[i].priority, task_state_name(t[i].state));
+        SH_PRINTF("%-4u %-16s %-4u %-11s ", t[i].id, t[i].name, t[i].priority, task_state_name(t[i].state));
+        if (t[i].app_id) SH_PRINTF("%u  ", t[i].app_id);
+        else sh_puts("-  ");
+        task_stack_info_t stack;
+        int rc = task_stack_inspect(t[i].id, &stack);
+        if (rc == ERR_OK) SH_PRINTF("%u/%u  %s\n", (unsigned)stack.used, (unsigned)stack.size,
+                                   stack.guard_ok ? "OK" : "DAMAGED");
+        else sh_puts(rc == ERR_NOSYS ? "n/a (boot stack)\n" : "n/a (task exited)\n");
     }
     return 0;
 }

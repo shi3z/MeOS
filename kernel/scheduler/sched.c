@@ -29,6 +29,7 @@
 #include <m5os/app.h>
 #include <m5os/msg.h>
 #include "sched_internal.h"
+#include "../task/stack_internal.h"
 
 task_t g_tasks[TASK_MAX];
 static task_t *s_current;
@@ -97,6 +98,7 @@ static task_t *sched_pick(void)
  * (RUNNABLE for yield, SLEEPING for sleep, TERMINATED for exit). */
 static void sched_switch(void)
 {
+    task_stack_check_switch(s_current, false);
     sched_housekeeping();
     task_t *next = sched_pick();
     if (next == NULL) {
@@ -107,6 +109,7 @@ static void sched_switch(void)
         prev->state = TASK_RUNNING;
         return;
     }
+    task_stack_check_switch(next, true);
     next->state = TASK_RUNNING;
     s_current = next;
     arch_context_switch(&prev->sp, next->sp);
