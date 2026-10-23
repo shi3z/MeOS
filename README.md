@@ -296,6 +296,33 @@ Every keyboard key goes through `drivers/ime` before it reaches the console, so 
   at `0x400000`; it is loaded into PSRAM in the background after boot). `partitions_tab5.csv` now gives the app 3.9 MB.
 * **Tests** run on the host: `tools/ime/host_test.sh [dict.bin]`.
 
+## Tab5 Device, Power and Storage Diagnostics
+
+* `devices` lists the registered devices and board capabilities, separating detected/initialized,
+  untested, unsupported and communication-error states. An unsupported device is not necessarily absent.
+  It does not initialize the camera, scan Wi-Fi, or probe unsupported peripherals.
+* `power` reads the INA226 at system-I2C address `0x41` and the charger expander without changing their
+  configuration. It reports the verified manufacturer/die identity, rail voltage, signed battery current
+  (`+` into the battery, `-` out), a coarse voltage-only 2S level estimate and the charge-permission setting.
+  The estimate is suppressed outside a plausible pack voltage; a battery-free board can still report
+  nonzero voltage/current, so these readings do not prove a battery is installed. USB-C versus external
+  DC is shown as unknown. Charge permission and raw `CHG_STAT` are not treated as proof of actual charging
+  or external power. The monitor must already be in continuous shunt+bus conversion mode; a missing,
+  mismatched, unreadable or differently configured monitor produces an explicit unavailable result.
+* `storage` identifies the current root backing and its persistence. Tab5 still uses an 8 MiB RAM disk;
+  microSD/SDMMC and FAT/exFAT support are not implemented. The separate flash-backed WASM app store survives
+  reboot. No diagnostic command mounts, writes or formats a card.
+
+All bit-banged I2C transfers share a task mutex, including read-modify-write operations. Board startup
+before the scheduler remains supported. Fixed-system-bus helpers keep touch/camera/power access separate
+from the bus selection used by the Tab5 Keyboard accessory. These APIs are not callable from an ISR.
+
+Host regressions: `sh tools/hardware/host_test.sh` and `sh tools/touch/host_test.sh`.
+The hardware tests cover INA226 identity, signed scaling, estimation bounds, unavailable/error paths,
+and existing I2C API locking/routing on Tab5, CoreS3 and Cardputer. Battery-free Tab5 measurements and
+coexistence with touch/keyboard polling have been checked; charging/discharging with an installed pack,
+external-DC source detection and physical regression on the other boards remain unqualified.
+
 ## Known Limitations / TODO
 
 * Single-core execution (`CPU1` is not started).
@@ -303,4 +330,11 @@ Every keyboard key goes through `drivers/ime` before it reaches the console, so 
 * Do not use floating-point / PIE coprocessors across tasks on ESP32-S3 (lazy FPU context saving is not implemented).
 * Strict priority scheduling without mutex priority inheritance.
 * Japanese input: `edit` still moves its cursor per byte (it inserts UTF-8 but cannot step over a multi-byte character); choices are not saved across reboots; only the Tab5 builds the IME.
-* Touch input on Tab5 (GT911 / ST7123) and RISC-V M5EX SDK build toolchain are planned for future updates.
+* Tab5 console touch auto-detects GT911 (`0x14`, ILI9881C units) or ST712x (`0x55`, ST7121/ST7123 units).
+  The ST712x protocol uses big-endian coordinates and per-slot valid bits; the GT911 ready/acknowledge
+  protocol is retained. Both use the system I2C bus even with a Tab5 Keyboard on Ext.Port1.
+  Use `osk on` / `osk off`, `osk debug`, and `osk map 0`–`3` to inspect and calibrate the console keyboard.
+  The default portrait-to-landscape mapping is `(1279 - raw_y, raw_x)`; landscape-configured controllers use map 0.
+  This does not add touch navigation to full-screen apps or implement the unsupported ST7123 LCD initialization.
+  Driver regression tests (mock I2C, GT911 and ST712x): `sh tools/touch/host_test.sh`.
+* RISC-V M5EX SDK build toolchain is planned for a future update.
