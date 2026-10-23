@@ -25,8 +25,19 @@ void hal_psram_region(uintptr_t *base, size_t *size)
     size_t sz = esp_psram_get_size();
     void *vaddr = NULL;
     if (esp_mmu_paddr_to_vaddr(0, MMU_TARGET_PSRAM0, MMU_VADDR_DATA, &vaddr) != ESP_OK || !vaddr) return;
+    if (sz <= M5OS_PSRAM_RESERVE) return;
     *base = (uintptr_t)vaddr;
     *size = sz - M5OS_PSRAM_RESERVE;                 /* the reserve stays with the IDF heap, see hal_psram_reserve_region */
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    extern uint8_t _ext_ram_bss_end;
+    uintptr_t used_end = ((uintptr_t)&_ext_ram_bss_end + 63u) & ~(uintptr_t)63u;
+    if (used_end > *base) {
+        size_t skip = used_end - *base;
+        if (skip >= *size) { *base = 0; *size = 0; return; }
+        *base = used_end;
+        *size -= skip; /* Never let MeOS's heap overwrite linker-allocated external BSS. */
+    }
+#endif
 #endif
 }
 
