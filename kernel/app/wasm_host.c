@@ -197,6 +197,7 @@ static void release_screen(void)
     ime_bypass(false);
     kconsole_set_focus(0);
     fbcon_pause(s_prev_paused);
+    display_release_claim(&s_display_owner);
 }
 
 void wasm_app_cleanup(uint32_t app_id)
@@ -209,6 +210,7 @@ m3ApiRawFunction(h_display_open)            /* i32 display_open(): the screen is
     m3ApiReturnType(int32_t)
     NEED(APP_PERM_DISPLAY);
     if (s_display_owner && s_display_owner != current_app_id()) m3ApiReturn(ERR_BUSY);
+    if (!display_try_claim(&s_display_owner)) m3ApiReturn(ERR_BUSY);
     if (!s_display_owner) s_prev_paused = fbcon_is_paused();
     s_display_owner = current_app_id();
     kconsole_set_focus(task_current()->id);          /* the keys are the game's, not the shell's */
