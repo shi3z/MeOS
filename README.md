@@ -296,11 +296,85 @@ Every keyboard key goes through `drivers/ime` before it reaches the console, so 
   at `0x400000`; it is loaded into PSRAM in the background after boot). `partitions_tab5.csv` now gives the app 3.9 MB.
 * **Tests** run on the host: `tools/ime/host_test.sh [dict.bin]`.
 
+## Tab5 Device, Power and Storage Diagnostics
+
+* `devices` lists the registered devices and board capabilities, separating detected/initialized,
+  untested, unsupported and communication-error states. An unsupported device is not necessarily absent.
+  It does not initialize the camera, scan Wi-Fi, or probe unsupported peripherals.
+* `power` reads the INA226 at system-I2C address `0x41` and the charger expander without changing their
+  configuration. It reports the verified manufacturer/die identity, rail voltage, signed battery current
+  (`+` into the battery, `-` out), a coarse voltage-only 2S level estimate and the charge-permission setting.
+  The estimate is suppressed outside a plausible pack voltage; a battery-free board can still report
+  nonzero voltage/current, so these readings do not prove a battery is installed. USB-C versus external
+  DC is shown as unknown. Charge permission and raw `CHG_STAT` are not treated as proof of actual charging
+  or external power. The monitor must already be in continuous shunt+bus conversion mode; a missing,
+  mismatched, unreadable or differently configured monitor produces an explicit unavailable result.
+* `storage` identifies the current root backing and its persistence. Tab5 still uses an 8 MiB RAM disk;
+  microSD/SDMMC and FAT/exFAT support are not implemented. The separate flash-backed WASM app store survives
+  reboot. No diagnostic command mounts, writes or formats a card.
+
+All bit-banged I2C transfers share a task mutex, including read-modify-write operations. Board startup
+before the scheduler remains supported. Fixed-system-bus helpers keep touch/camera/power access separate
+from the bus selection used by the Tab5 Keyboard accessory. These APIs are not callable from an ISR.
+
+Host regressions: `sh tools/hardware/host_test.sh` and `sh tools/touch/host_test.sh`.
+The hardware tests cover INA226 identity, signed scaling, estimation bounds, unavailable/error paths,
+and existing I2C API locking/routing on Tab5, CoreS3 and Cardputer. Battery-free Tab5 measurements and
+coexistence with touch/keyboard polling have been checked; charging/discharging with an installed pack,
+external-DC source detection and physical regression on the other boards remain unqualified.
+
 ## Known Limitations / TODO
 
 * Single-core execution (`CPU1` is not started).
 * Task stacks default to 4 KB (`kmalloc_internal`) without hardware stack guard pages (heavy tasks like `shell`, `wifid`, and `app` use 6–8 KB stacks via `task_create_stack`).
 * Do not use floating-point / PIE coprocessors across tasks on ESP32-S3 (lazy FPU context saving is not implemented).
-* Strict priority scheduling without mutex priority inheritance.
+* Strict priority scheduling with mutex priority inheritance; inheritance does not resolve deadlock cycles.
 * Japanese input: `edit` still moves its cursor per byte (it inserts UTF-8 but cannot step over a multi-byte character); choices are not saved across reboots; only the Tab5 builds the IME.
-* Touch input on Tab5 (GT911 / ST7123) and RISC-V M5EX SDK build toolchain are planned for future updates.
+* Tab5 console touch auto-detects GT911 (`0x14`, ILI9881C units) or ST712x (`0x55`, ST7121/ST7123 units).
+  The ST712x protocol uses big-endian coordinates and per-slot valid bits; the GT911 ready/acknowledge
+  protocol is retained. Both use the system I2C bus even with a Tab5 Keyboard on Ext.Port1.
+  Use `osk on` / `osk off`, `osk debug`, and `osk map 0`–`3` to inspect and calibrate the console keyboard.
+  The default portrait-to-landscape mapping is `(1279 - raw_y, raw_x)`; landscape-configured controllers use map 0.
+  This does not add touch navigation to full-screen apps or implement the unsupported ST7123 LCD initialization.
+  Driver regression tests (mock I2C, GT911 and ST712x): `sh tools/touch/host_test.sh`.
+* RISC-V M5EX SDK build toolchain is planned for a future update.
+
+## Kernel foundation diagnostics
+
+`ps` reports painted-stack usage estimates and guards. `crash` shows a validated
+previous MeOS panic when internal noinit RAM survived the reset; IDF exception
+register dumps remain separate. Boot logs include a firmware commit ID and reset
+reason. Panic output bypasses the normal console mutex and does not scan stacks.
+
+`i2c` shows transaction success/NACK/timeout/invalid counters without probing.
+Legacy boolean APIs remain supported; extended system-bus APIs return per-call
+status. SCL stretching timeouts fail the transfer, including STOP failures.
+
+`date` shows UTC derived from a manual or RTC anchor plus monotonic elapsed time.
+`date set YYYY-MM-DDTHH:MM:SSZ` changes the runtime anchor only; `date sync` reads
+the RTC. `rtc` reads the RX8130CE and `rtc set YYYY-MM-DDTHH:MM:SSZ` explicitly
+writes it. No automatic RTC writes, charging configuration, timezone or NTP sync
+is added. Invalid BCD/calendar/weekday, stopped/test mode and VLF are rejected.
+Partial calendar writes leave the RTC stopped/tainted until a successful set.
+Supported calendar range: 2000 through 2099.
+
+App cleanup is ordered and sealed during boot. DMA/workers stop before handles
+and memory are reclaimed. Failed hooks quarantine owner memory for retry.
+Mutex donation follows wait chains and is withdrawn on handoff/termination;
+normal task exit also releases held locks.
+
+`health` shows explicit progress leases. The app cleanup service renews a lease;
+sleeping tasks do not need to subscribe. A supervisor feeds the hardware watchdog
+only when scheduled task context and scheduler ticks progress. Hardware arming
+is OFF by default. An experimental Tab5 build can opt in with
+`M5OS_WATCHDOG=1 sh tools/build.sh tab5 reconfigure build`; it reserves MWDT0,
+uses a 2-second hardware reset timeout, and panics on expired progress leases.
+Do not enable this on an unqualified device expecting proven recovery behavior.
+The P4-specific implementation is not reused for S3; opting in on another board
+is a configure error. A total scheduler/interrupt stall may reset without a new
+MeOS panic record.
+
+Run `sh tools/host_checks.sh` for host regressions. GitHub Actions runs GCC/Clang
+host checks and ESP-IDF 5.4.4 Tab5 builds with watchdog disabled/enabled, retaining
+firmware, ELF, map and configuration artifacts. CI success is not physical
+RTC, reset retention, audio handoff or watchdog timeout qualification.

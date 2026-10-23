@@ -7,8 +7,8 @@
  *
  * A task that finds the mutex taken becomes TASK_BLOCKED (wait_obj = the
  * mutex) and is not scheduled again until mutex_unlock() makes it the owner.
- * No priority inheritance (a low-priority owner can delay a high-priority
- * waiter): documented limitation, fine for this stage.
+ * Priority inheritance propagates through mutex wait chains; configured
+ * priority is restored as waiters/ownership change.
  *
  * Rules: task context only, never from an interrupt handler or with
  * interrupts masked.  The idle task (pid 1) must never block, so on
@@ -28,3 +28,4 @@ void mutex_unlock(mutex_t *m);
 
 /* Kernel-internal: release every mutex owned by `t` (task_kill). Interrupts must be masked. */
 void mutex_release_all(task_t *t);
+void mutex_recompute_priorities(void); /* kernel-internal, IRQs masked */

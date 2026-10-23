@@ -24,6 +24,13 @@
 
 #define FILER_PAUSE_SETTLE_MS 100u
 #include "shell.h"
+#include <m5os/crash.h>
+#include <m5os/health.h>
+#include <m5os/wall_time.h>
+#include <m5os/hal_i2c.h>
+#include "hardware.h"
+#include <m5os/audio.h>
+#include <m5os/microphone.h>
 #include <m5os/vfs.h>
 #include <m5os/task.h>
 #include <m5os/kprintf.h>
@@ -61,6 +68,8 @@
 
 static int  s_out = -1, s_in = -1;
 static char s_cwd[VFS_PATH_MAX] = "/";
+
+static bool sh_streq(const char *a, const char *b);
 
 /* ---------------------------------------------------------------- output */
 
@@ -129,15 +138,27 @@ static int cmd_help(int argc, char **argv)
     return 0;
 }
 
+static int cmd_i2c(int argc,char **argv) {
+    (void)argc; (void)argv;hal_i2c_stats_t stats;hal_i2c_get_stats(&stats);
+    kprintf("I2C transactions: ok %u, NACK %u, timeout %u, invalid %u\n",stats.ok,stats.nack,stats.timeout,stats.invalid);return 0;
+}
+static int cmd_crash(int argc,char **argv) { (void)argc; (void)argv; crash_print_previous(); return 0; }
+
 static int cmd_ps(int argc, char **argv)
 {
     (void)argc; (void)argv;
     task_info_t t[PS_MAX];
     int n = task_snapshot(t, PS_MAX);
-    sh_puts("PID  NAME             PRI  STATE       APP\n");
+    sh_puts("PID  NAME             PRI E/B STATE       APP  STACK used~/size  GUARD\n");
     for (int i = 0; i < n; i++) {
-        if (t[i].app_id) SH_PRINTF("%-4u %-16s %-4u %-11s %u\n", t[i].id, t[i].name, t[i].priority, task_state_name(t[i].state), t[i].app_id);
-        else             SH_PRINTF("%-4u %-16s %-4u %-11s -\n", t[i].id, t[i].name, t[i].priority, task_state_name(t[i].state));
+        SH_PRINTF("%-4u %-16s %u/%u  %-11s ", t[i].id, t[i].name, t[i].priority, t[i].base_priority, task_state_name(t[i].state));
+        if (t[i].app_id) SH_PRINTF("%u  ", t[i].app_id);
+        else sh_puts("-  ");
+        task_stack_info_t stack;
+        int rc = task_stack_inspect(t[i].id, &stack);
+        if (rc == ERR_OK) SH_PRINTF("%u/%u  %s\n", (unsigned)stack.used, (unsigned)stack.size,
+                                   stack.guard_ok ? "OK" : "DAMAGED");
+        else sh_puts(rc == ERR_NOSYS ? "n/a (boot stack)\n" : "n/a (task exited)\n");
     }
     return 0;
 }
@@ -495,6 +516,7 @@ static int cmd_apps(int argc, char **argv)
             SH_PRINTF("%-4u %-8s %-8s %-4u %s  %-5u  %u B held\n", a[i].app_id, a[i].name, app_state_name(a[i].state), a[i].owner_task, perms, a[i].tasks, a[i].mem_bytes);
         else
             SH_PRINTF("%-4u %-8s %-8s %-4u %s  %-5u  %u B reclaimed\n", a[i].app_id, a[i].name, app_state_name(a[i].state), a[i].owner_task, perms, a[i].tasks, a[i].reclaimed_bytes);
+        if(a[i].cleanup_error) SH_PRINTF("     cleanup retry pending: %d; owner memory retained\n",a[i].cleanup_error);
     }
     return 0;
 }
@@ -844,6 +866,21 @@ static int cmd_mount(int argc, char **argv)
     return 0;
 }
 
+#if M5OS_BOARD_TAB5
+static int cmd_devices(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_devices(); return 0;
+}
+static int cmd_power(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_power(); return 0;
+}
+static int cmd_storage(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_storage(); return 0;
+}
+#endif
+
 /* ----------------------------------------------------------- line editing */
 
 #define HIST_MAX     32
@@ -894,7 +931,21 @@ static int cmd_history(int argc, char **argv)
 
 static const command_t s_commands[] = {
     { "help",    cmd_help,    "list commands" },
+#if M5OS_BOARD_TAB5
+#if M5OS_BOARD_TAB5
+    { "mic", microphone_command, "mic test [SECONDS] bounded microphone input test" },
+    { "audio", audio_command, "audio test      low-volume speaker test" },
+#endif
+    { "devices", cmd_devices, "board devices: detected, untested, or unsupported (read-only)" },
+    { "power",   cmd_power,   "battery voltage/current, estimated level and charger state (read-only)" },
+    { "storage", cmd_storage, "root backing, persistence and microSD support (read-only)" },
+#endif
     { "history", cmd_history, "show command history (or use Up/Down arrows)" },
+    { "date", time_command, "UTC time: date [sync|set ISO8601Z]" },
+    { "rtc", rtc_command, "RTC read or explicit set ISO8601Z" },
+    { "i2c", cmd_i2c, "I2C transaction error counters (no probe)" },
+    { "health", health_command, "progress leases and watchdog state" },
+    { "crash", cmd_crash, "previous retained MeOS panic record" },
     { "ps",      cmd_ps,      "list tasks" },
     { "kill",    cmd_kill,    "kill PID        terminate one task (an app: its owner task)" },
     { "ls",      cmd_ls,      "ls [PATH]       list a directory (/dev lists devices)" },

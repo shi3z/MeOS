@@ -34,13 +34,26 @@ if("$ENV{M5OS_SELFTEST}" STREQUAL "1")
     set(M5OS_DEFS M5OS_BOOT_SELFTEST=1)
 endif()
 
+if("$ENV{M5OS_WATCHDOG}" STREQUAL "1")
+    if(NOT "$ENV{M5OS_BOARD}" STREQUAL "tab5")
+        message(FATAL_ERROR "The opt-in hardware watchdog currently requires Tab5")
+    endif()
+    list(APPEND M5OS_DEFS M5OS_WATCHDOG_ENABLED=1)
+endif()
+
 idf_component_register(
     SRCS ${M5OS_SRCS}
     INCLUDE_DIRS ${M5OS_ROOT}/kernel/include ${M5OS_ROOT}/hal ${M5OS_ROOT}/third_party/wasm3 ${M5OS_ROOT}/third_party/quirc
     # Only low-level, FreeRTOS-free IDF pieces are linked in explicitly.
     PRIV_REQUIRES soc hal esp_rom esp_hw_support ${M5OS_ARCH_REQUIRES})
 
-target_compile_definitions(${COMPONENT_LIB} PRIVATE ${M5OS_BOARD_DEF} ${M5OS_DEFS})
+execute_process(COMMAND git -C "${M5OS_ROOT}" rev-parse --short=12 HEAD
+    OUTPUT_VARIABLE M5OS_BUILD_ID OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+if(NOT M5OS_BUILD_ID)
+    set(M5OS_BUILD_ID unknown)
+endif()
+target_compile_definitions(${COMPONENT_LIB} PRIVATE ${M5OS_BOARD_DEF} ${M5OS_DEFS}
+    M5OS_BUILD_ID="${M5OS_BUILD_ID}")
 
 # wasm3 (third_party/wasm3, MIT): the interpreter behind .wasm apps.  Vendored as is except for the allocator hook in
 # m3_core.c; its own warnings are not ours to fix.  Optimised for speed: it is the hot loop of every WebAssembly app.
