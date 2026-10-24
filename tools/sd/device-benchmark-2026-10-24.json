@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-24",
+  "device": "M5Stack Tab5 / ESP32-P4 @ 360MHz",
+  "card": {
+    "type": "SDSC",
+    "sectors": 3911680,
+    "sector_bytes": 512
+  },
+  "firmware_source": "3f80a4ab7799",
+  "firmware_sha256": "a6799bad8ccf009a9144f15af4095042460f57a12e6c9c6164ae1995e73633c3",
+  "runs": [
+    {
+      "files": 16,
+      "small_bytes": 1024,
+      "large_MiB": 1,
+      "chunk": 4096,
+      "transport": "bit-banged SPI, CMD17/CMD24",
+      "mode": "VFS write-through; content verification included in reads",
+      "phases": [
+        {
+          "phase": "small-write",
+          "files": 16,
+          "bytes": 16384,
+          "ms": 3305,
+          "KiB_s": 4.8,
+          "files_s": 4.8,
+          "verified": false
+        },
+        {
+          "phase": "small-read",
+          "files": 16,
+          "bytes": 16384,
+          "ms": 686,
+          "KiB_s": 23.3,
+          "files_s": 23.3,
+          "verified": true
+        },
+        {
+          "phase": "large-write",
+          "files": 1,
+          "bytes": 1048576,
+          "ms": 30932,
+          "KiB_s": 33.1,
+          "files_s": 0.0,
+          "verified": false
+        },
+        {
+          "phase": "large-read",
+          "files": 1,
+          "bytes": 1048576,
+          "ms": 13552,
+          "KiB_s": 75.5,
+          "files_s": 0.0,
+          "verified": true
+        },
+        {
+          "phase": "small-delete",
+          "files": 16,
+          "bytes": 0,
+          "ms": 1160,
+          "KiB_s": 0.0,
+          "files_s": 13.7,
+          "verified": false
+        }
+      ]
+    },
+    {
+      "files": 128,
+      "small_bytes": 1024,
+      "large_MiB": 8,
+      "chunk": 4096,
+      "transport": "bit-banged SPI, CMD17/CMD24",
+      "mode": "VFS write-through; content verification included in reads",
+      "phases": [
+        {
+          "phase": "small-write",
+          "files": 128,
+          "bytes": 131072,
+          "ms": 46450,
+          "KiB_s": 2.7,
+          "files_s": 2.7,
+          "verified": false
+        },
+        {
+          "phase": "small-read",
+          "files": 128,
+          "bytes": 131072,
+          "ms": 13596,
+          "KiB_s": 9.4,
+          "files_s": 9.4,
+          "verified": true
+        },
+        {
+          "phase": "large-write",
+          "files": 1,
+          "bytes": 8388608,
+          "ms": 241393,
+          "KiB_s": 33.9,
+          "files_s": 0.0,
+          "verified": false
+        },
+        {
+          "phase": "large-read",
+          "files": 1,
+          "bytes": 8388608,
+          "ms": 110527,
+          "KiB_s": 74.1,
+          "files_s": 0.0,
+          "verified": true
+        },
+        {
+          "phase": "small-delete",
+          "files": 128,
+          "bytes": 0,
+          "ms": 17238,
+          "KiB_s": 0.0,
+          "files_s": 7.4,
+          "verified": false
+        }
+      ]
+    }
+  ],
+  "integrity": "all expected bytes and EOF verified; each test directory removed; clean unmount; all task stack guards OK",
+  "scope": "single card, short sequential/metadata workload; no power-cut or long-duration qualification"
+}

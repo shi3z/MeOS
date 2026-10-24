@@ -43,13 +43,21 @@
 static tab5_panel_t s_panel = TAB5_PANEL_UNKNOWN;
 
 static bool exp_write(uint8_t addr, uint8_t reg, uint8_t v) { return hal_i2c_write_reg(addr, reg, v); }
+static bool exp_reset(uint8_t addr)
+{
+    for (unsigned attempt=0;attempt<3;attempt++) {
+        if (exp_write(addr,REG_CHIP_RESET,0xff)) return true;
+        hal_delay_us(10000); hal_i2c_init();
+    }
+    return false;
+}
 
 bool board_init(void)
 {
     hal_i2c_init();
 
     /* ---- expander 1: LCD_RST (P4) and friends ---- */
-    if (!exp_write(EXP1_ADDR, REG_CHIP_RESET, 0xFF)) {
+    if (!exp_reset(EXP1_ADDR)) {
         kprintf("tab5: expander 1 (0x%02x) does not answer\n", EXP1_ADDR);
         return false;
     }
@@ -81,7 +89,7 @@ bool board_init(void)
     hal_delay_us(RESET_PULSE_US);
 
     /* ---- expander 2: power switches (USB 5 V for the keyboard, Wi-Fi, charger) ---- */
-    if (!exp_write(EXP2_ADDR, REG_CHIP_RESET, 0xFF)) {
+    if (!exp_reset(EXP2_ADDR)) {
         kprintf("tab5: expander 2 (0x%02x) does not answer\n", EXP2_ADDR);
         return false;
     }

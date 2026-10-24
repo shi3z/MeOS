@@ -26,11 +26,22 @@
 #define VFS_O_CREATE  FS_O_CREATE
 #define VFS_O_TRUNC   FS_O_TRUNC
 #define VFS_O_APPEND  FS_O_APPEND
-#define VFS_PATH_MAX  96
+#include <m5os/board_config.h>
+#if M5OS_BOARD_TAB5
+#define VFS_NAME_MAX 767 /* UTF-8 bytes: all 255 UTF-16-unit VFAT names fit */
+#define VFS_PATH_MAX 1024
+#else
+#define VFS_NAME_MAX FS_NAME_MAX
+#define VFS_PATH_MAX 96
+#endif
 #define VFS_FD_MAX    16
 #define VFS_MOUNT_MAX 4
 
-typedef fs_info_t vfs_info_t;            /* type: FS_TYPE_FILE / FS_TYPE_DIR / FS_TYPE_DEV */
+typedef struct {
+    char name[VFS_NAME_MAX + 1];
+    fs_type_t type;
+    uint32_t size;
+} vfs_info_t;            /* type: FS_TYPE_FILE / FS_TYPE_DIR / FS_TYPE_DEV */
 
 /* What a filesystem driver provides.  `rel` is the path inside the mount,
  * always starting with '/'.  Any operation may be NULL (-> ERR_NOSYS). */

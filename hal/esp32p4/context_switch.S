@@ -2,6 +2,7 @@
  * Context switch for RISC-V (ESP32-P4).
  *
  * What a parked task's stack looks like - 16 words, pushed by arch_context_switch():
+ *     +64..+108 fs0..fs11, +112 FCSR; total frame is 128 bytes.
  *     +0 ra   +4 s0   +8 s1   +12 s2 ... +44 s11   +48..+60 unused (keeps sp 16-byte aligned)
  * Only the callee-saved registers have to be kept: arch_context_switch() is an ordinary function
  * call, so the compiler has already saved whatever else it cares about.
@@ -35,7 +36,7 @@
 
 /* void arch_context_switch(uint32_t **old_sp [a0], uint32_t *new_sp [a1]) */
 arch_context_switch:
-    addi    sp, sp, -64
+    addi    sp, sp, -128
     sw      ra,   0(sp)
     sw      s0,   4(sp)
     sw      s1,   8(sp)
@@ -49,6 +50,22 @@ arch_context_switch:
     sw      s9,  40(sp)
     sw      s10, 44(sp)
     sw      s11, 48(sp)
+    li      t0, 0x6000
+    csrs    mstatus, t0                 /* FS=Dirty: single-precision FPU enabled */
+    fsw     fs0, 64(sp)
+    fsw     fs1, 68(sp)
+    fsw     fs2, 72(sp)
+    fsw     fs3, 76(sp)
+    fsw     fs4, 80(sp)
+    fsw     fs5, 84(sp)
+    fsw     fs6, 88(sp)
+    fsw     fs7, 92(sp)
+    fsw     fs8, 96(sp)
+    fsw     fs9, 100(sp)
+    fsw     fs10, 104(sp)
+    fsw     fs11, 108(sp)
+    frcsr   t0
+    sw      t0, 112(sp)
     sw      sp, 0(a0)                  /* *old_sp = sp : "this task is parked here" */
 
     mv      sp, a1                     /* switch stacks */
@@ -65,7 +82,21 @@ arch_context_switch:
     lw      s9,  40(sp)
     lw      s10, 44(sp)
     lw      s11, 48(sp)
-    addi    sp, sp, 64
+    flw     fs0, 64(sp)
+    flw     fs1, 68(sp)
+    flw     fs2, 72(sp)
+    flw     fs3, 76(sp)
+    flw     fs4, 80(sp)
+    flw     fs5, 84(sp)
+    flw     fs6, 88(sp)
+    flw     fs7, 92(sp)
+    flw     fs8, 96(sp)
+    flw     fs9, 100(sp)
+    flw     fs10, 104(sp)
+    flw     fs11, 108(sp)
+    lw      t0, 112(sp)
+    fscsr   t0
+    addi    sp, sp, 128
 
     csrw    mepc, ra
     li      t0, MSTATUS_MPP_M

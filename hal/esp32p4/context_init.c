@@ -1,9 +1,11 @@
 #include <m5os/arch.h>
 
-/* See context_switch.S: 16 words, ra at +0, s0 at +4, s1 at +8. */
+/* See context_switch.S: 32 words, ra at +0, s0 at +4, s1 at +8. */
 extern void arch_task_trampoline(void);
 
-#define CTX_FRAME_BYTES  64u
+#define CTX_FRAME_BYTES  128u
+
+size_t arch_task_context_bytes(void) { return CTX_FRAME_BYTES; }
 
 uint32_t *arch_task_stack_init(void *stack_base, size_t size, void (*entry)(void *), void *arg)
 {
