@@ -16,3 +16,10 @@ user/ssh/ssh_local_keys.h
 # SKK dictionaries fetched/built for the input method (licences differ: not redistributed here)
 tools/ime/cache/
 apps/wasm/*.wasm
+
+/tools/doom/cache/
+/sdkconfig.doom*
+/dist/
+/.ci/
+/SOURCE_REVISION
+/SOURCE_DATE_EPOCH

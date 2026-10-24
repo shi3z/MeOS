@@ -1,4 +1,5 @@
 #include "apps.h"
+#include <m5os/doom.h>
 
 void hello_main(void *arg);
 void ticker_main(void *arg);
@@ -26,6 +27,10 @@ void web_main(void *arg);
 
 /* name, entry, permissions, stack, priority, description */
 static const app_def_t s_defs[] = {
+#if M5OS_DOOM
+    { "doom", doom_main, APP_PERM_CONSOLE | APP_PERM_DISPLAY | APP_PERM_FS_READ | APP_PERM_SPAWN,
+                        32768u, APP_PRIO_DEFAULT, "native Doom, audio 320x200; touch controls; Q quits" },
+#endif
     { "hello",  hello_main,  APP_PERM_CONSOLE, APP_STACK_DEFAULT, APP_PRIO_DEFAULT, "print a greeting and exit" },
     { "ticker", ticker_main, APP_PERM_CONSOLE, APP_STACK_DEFAULT, APP_PRIO_DEFAULT, "one line per second, five times" },
     { "hog",    hog_main,    0,                APP_STACK_DEFAULT, APP_PRIO_DEFAULT, "burn CPU forever (stop it with: stop ID)" },

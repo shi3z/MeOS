@@ -9,5 +9,17 @@ else()
     set(SDKCONFIG_DEFAULTS "sdkconfig.defaults;sdkconfig.defaults.cores3")
 endif()
 
+if("$ENV{M5OS_BOARD}" STREQUAL "tab5" AND "$ENV{M5OS_DOOM}" STREQUAL "1")
+    list(APPEND SDKCONFIG_DEFAULTS "sdkconfig.defaults.doom")
+    if("$ENV{M5OS_DOOM_RELEASE}" STREQUAL "1")
+        list(APPEND SDKCONFIG_DEFAULTS "sdkconfig.defaults.doom-release")
+    endif()
+endif()
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(m5os)
+
+if("$ENV{M5OS_BOARD}" STREQUAL "tab5" AND "$ENV{M5OS_DOOM}" STREQUAL "1")
+    # INSERT scripts must precede IDF sections.ld on the linker command line.
+    target_link_options(m5os.elf BEFORE PRIVATE "-T${CMAKE_CURRENT_SOURCE_DIR}/components/doomengine/data.ld")
+endif()

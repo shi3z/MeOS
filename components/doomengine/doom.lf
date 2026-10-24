@@ -1,0 +1,11 @@
+[scheme:doom_state]
+entries:
+    bss -> extern_ram
+    common -> extern_ram
+
+[mapping:doom_state]
+archive: libdoomengine.a
+entries:
+    * (doom_state);
+        bss -> extern_ram ALIGN(16) ALIGN(16, post) SURROUND(doom_bss),
+        common -> extern_ram ALIGN(16) ALIGN(16, post) SURROUND(doom_common)
