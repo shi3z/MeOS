@@ -1,0 +1,52 @@
+[
+  {
+    "file": "mono-8000.mp3",
+    "rate": 8000,
+    "channels": 1
+  },
+  {
+    "file": "mono-11025.mp3",
+    "rate": 11025,
+    "channels": 1
+  },
+  {
+    "file": "mono-12000.mp3",
+    "rate": 12000,
+    "channels": 1
+  },
+  {
+    "file": "mono-16000.mp3",
+    "rate": 16000,
+    "channels": 1
+  },
+  {
+    "file": "mono-22050.mp3",
+    "rate": 22050,
+    "channels": 1
+  },
+  {
+    "file": "mono-24000.mp3",
+    "rate": 24000,
+    "channels": 1
+  },
+  {
+    "file": "mono-32000.mp3",
+    "rate": 32000,
+    "channels": 1
+  },
+  {
+    "file": "mono-44100.mp3",
+    "rate": 44100,
+    "channels": 1
+  },
+  {
+    "file": "mono-48000.mp3",
+    "rate": 48000,
+    "channels": 1
+  },
+  {
+    "file": "stereo-44100.mp3",
+    "rate": 44100,
+    "channels": 2
+  }
+]

@@ -57,7 +57,9 @@ m5_mtvt_table:
  * previous level...), MIE = 0 (MPIE = old MIE = 1: the interrupted code had interrupts on or the tick
  * could not have fired).  sp is the interrupted task's stack.
  *
- * Frame, 20 words (kept a multiple of 16 bytes): 0 ra | 1..3 t0-t2 | 4..11 a0-a7 | 12..15 t3-t6
+ * Frame, 44 words (integer frame 80 bytes, caller-saved FPU registers
+ * at 80..156 and FCSR at 160).
+ * Integer frame, 20 words (kept a multiple of 16 bytes): 0 ra | 1..3 t0-t2 | 4..11 a0-a7 | 12..15 t3-t6
  *                                              | 16 mepc | 17 mcause | 18 mstatus
  * Only caller-saved registers are saved here: the C code called below keeps s0-s11, and if the scheduler
  * switches tasks it goes through arch_context_switch(), which saves and restores those.  A task parked
@@ -68,7 +70,7 @@ m5_mtvt_table:
     .global m5_tick_entry
     .type   m5_tick_entry, @function
 m5_tick_entry:
-    addi    sp, sp, -80
+    addi    sp, sp, -176
     sw      ra,   0(sp)
     sw      t0,   4(sp)
     sw      t1,   8(sp)
@@ -92,9 +94,55 @@ m5_tick_entry:
     sw      t1,  68(sp)
     sw      t2,  72(sp)
 
+    li      t0, 0x6000
+    csrs    mstatus, t0                 /* allow saves even when interrupting FS=Off code */
+    fsw     ft0, 80(sp)
+    fsw     ft1, 84(sp)
+    fsw     ft2, 88(sp)
+    fsw     ft3, 92(sp)
+    fsw     ft4, 96(sp)
+    fsw     ft5, 100(sp)
+    fsw     ft6, 104(sp)
+    fsw     ft7, 108(sp)
+    fsw     fa0, 112(sp)
+    fsw     fa1, 116(sp)
+    fsw     fa2, 120(sp)
+    fsw     fa3, 124(sp)
+    fsw     fa4, 128(sp)
+    fsw     fa5, 132(sp)
+    fsw     fa6, 136(sp)
+    fsw     fa7, 140(sp)
+    fsw     ft8, 144(sp)
+    fsw     ft9, 148(sp)
+    fsw     ft10, 152(sp)
+    fsw     ft11, 156(sp)
+    frcsr   t0
+    sw      t0, 160(sp)
     call    m5_tick_dispatch            /* C: acknowledge, re-arm, run the scheduler (may switch tasks) */
 
     csrci   mstatus, 8                  /* make sure nothing interrupts the epilogue */
+    flw     ft0, 80(sp)
+    flw     ft1, 84(sp)
+    flw     ft2, 88(sp)
+    flw     ft3, 92(sp)
+    flw     ft4, 96(sp)
+    flw     ft5, 100(sp)
+    flw     ft6, 104(sp)
+    flw     ft7, 108(sp)
+    flw     fa0, 112(sp)
+    flw     fa1, 116(sp)
+    flw     fa2, 120(sp)
+    flw     fa3, 124(sp)
+    flw     fa4, 128(sp)
+    flw     fa5, 132(sp)
+    flw     fa6, 136(sp)
+    flw     fa7, 140(sp)
+    flw     ft8, 144(sp)
+    flw     ft9, 148(sp)
+    flw     ft10, 152(sp)
+    flw     ft11, 156(sp)
+    lw      t0, 160(sp)
+    fscsr   t0
     lw      t0,  64(sp)
     lw      t1,  68(sp)
     lw      t2,  72(sp)
@@ -117,7 +165,7 @@ m5_tick_entry:
     lw      t4,  52(sp)
     lw      t5,  56(sp)
     lw      t6,  60(sp)
-    addi    sp, sp, 80
+    addi    sp, sp, 176
     mret
     .size   m5_tick_entry, . - m5_tick_entry
     .option pop

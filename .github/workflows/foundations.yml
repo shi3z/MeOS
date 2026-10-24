@@ -1,0 +1,56 @@
+name: Foundation checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: foundations-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Host regressions with sanitizers
+        env:
+          CC: ${{ matrix.compiler }}
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: sh tools/host_checks.sh
+  tab5:
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v5.4.4
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        watchdog: ['0', '1']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build Tab5 firmware
+        shell: bash
+        env:
+          M5OS_BOARD: tab5
+          M5OS_WATCHDOG: ${{ matrix.watchdog }}
+        run: |
+          . /opt/esp/idf/export.sh
+          idf.py -B build-tab5 -DSDKCONFIG=sdkconfig.tab5 -DIDF_TARGET=esp32p4 build
+      - name: Save firmware and symbols (never flash hardware)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: tab5-wdt-${{ matrix.watchdog }}-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            build-tab5/m5os.bin
+            build-tab5/m5os.elf
+            build-tab5/m5os.map
+            build-tab5/bootloader/bootloader.bin
+            build-tab5/partition_table/partition-table.bin
+            sdkconfig.tab5

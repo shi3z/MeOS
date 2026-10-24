@@ -17,6 +17,8 @@ extern void arch_task_trampoline(void);
 #define WINDOW_INC_CALL4      (1u << 30)     /* a0[31:30] = 1: return to a CALL4 caller */
 #define PC_MASK               0x3fffffffu
 
+size_t arch_task_context_bytes(void) { return CTX_FRAME_SIZE; }
+
 uint32_t *arch_task_stack_init(void *stack_base, size_t size,
                                void (*entry)(void *), void *arg)
 {

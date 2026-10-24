@@ -41,6 +41,7 @@ typedef struct app {
     uint32_t     permissions;
     bool         cleanup_pending;
     bool         cleaned;
+    int          cleanup_error; /* last failed teardown; 0 after successful reclaim */
     uint32_t     reclaimed_bytes;
 } app_t;
 
@@ -62,6 +63,7 @@ typedef struct {
     uint32_t    permissions;
     uint32_t    mem_bytes;       /* umalloc'd bytes currently held */
     uint32_t    reclaimed_bytes; /* freed by the kernel when it ended */
+    int         cleanup_error;
     uint32_t    tasks;           /* live tasks belonging to it */
 } app_info_t;
 
@@ -79,3 +81,6 @@ bool task_has_perm(uint32_t perm);
 
 /* Kernel-internal hook: `t` is ending (how = EXITED or KILLED). Called with interrupts masked. */
 void app_task_ended(task_t *t, app_state_t how);
+
+/* Abort a reserved/partially initialized app; failed cleanup quarantines memory. */
+void app_abort(app_t *app);
