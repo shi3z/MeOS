@@ -83,7 +83,9 @@ int ime_dict_lookup(const char *key, char *out, int cap)
         if (!find(&s_dict[d], key, klen, &data, &dlen)) continue;
         for (uint32_t p = 0; p < dlen;) {
             const char *c = (const char *)data + p;
-            size_t n = strnlen(c, dlen - p);
+            const char *end = memchr(c, 0, dlen - p);
+            if (!end) break;
+            size_t n = (size_t)(end - c);
             if (p + n >= dlen) break;                                    /* unterminated: corrupt */
             int r = add(out, &len, cap, c);
             if (r < 0) return count;

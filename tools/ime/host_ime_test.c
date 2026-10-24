@@ -14,6 +14,8 @@
 #include <stdarg.h>
 
 /* ---- stubs for the OS ---- */
+uint32_t arch_irq_disable(void) { return 0; }
+void arch_irq_restore(uint32_t state) { (void)state; }
 static char s_out[4096];
 static size_t s_outn;
 size_t kconsole_inject_n(const char *s, size_t n) { for (size_t i = 0; i < n; i++) s_out[s_outn++] = s[i]; s_out[s_outn] = 0; return n; }

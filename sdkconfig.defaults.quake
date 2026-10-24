@@ -1,0 +1,3 @@
+# Quake streaming framebuffer writes benefit from the larger burst unit.
+CONFIG_CACHE_L2_CACHE_LINE_64B=n
+CONFIG_CACHE_L2_CACHE_LINE_128B=y

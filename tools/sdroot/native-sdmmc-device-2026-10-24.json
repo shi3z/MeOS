@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-24",
+  "source_commit": "2948a6c35bfaba48c41d99ffdfd2a12e756392cb",
+  "app_image": {
+    "bytes": 4038720,
+    "sha256": "953e36f0a38e9f1772ee9f4f8a3e96ee40ea9592ec3805ec9323e7c5e3169948",
+    "flash_scope": "app partition only"
+  },
+  "sd": {
+    "transport": "native SDMMC slot 0",
+    "bus_width": 4,
+    "clock_khz": 20000,
+    "sectors": 30867456,
+    "root_active": true,
+    "root_epoch": 2,
+    "root_bank": 1,
+    "ramdisk_allocated": false,
+    "persistent_probe": "qualification-099"
+  },
+  "psram_kib": {
+    "total": 27431,
+    "used_after_boot": 159,
+    "free_after_boot": 27272,
+    "ram_root_fallback_used": 8287,
+    "observed_reclaimed": 8128
+  },
+  "quake_pak_verify": {
+    "bytes": 18689235,
+    "crc32": "74e3b084",
+    "seconds": 77.315,
+    "kib_per_second": 236.1
+  },
+  "wifi": {
+    "transport": "SDMMC slot 1",
+    "bus_width": 4,
+    "clock_khz": 20000,
+    "connected_with_sd_root_active": true
+  },
+  "media_writes_during_validation": false,
+  "notes": [
+    "The previous software-SPI/FAT sequential read was 74.1 KiB/s, but the card and filesystem differ.",
+    "The littlefs adapter currently issues 512-byte sector operations, so this is not raw SDMMC bandwidth.",
+    "Physical power-cut recovery and hot removal remain separate qualification gates."
+  ]
+}

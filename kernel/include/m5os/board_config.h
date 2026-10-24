@@ -16,9 +16,9 @@
 #  define M5OS_CPU_NAME       "ESP32-P4 (RISC-V)"
 #  define M5OS_DISPLAY_W      1280         /* 5" MIPI-DSI panel, used in landscape */
 #  define M5OS_DISPLAY_H      720
-#  define M5OS_HAS_TOUCH      0            /* the GT911 touch controller is not driven yet */
+#  define M5OS_HAS_TOUCH      0            /* window-manager touch path disabled; console touch uses tab5touch/osk separately */
 #  define M5OS_HAS_KEYBOARD   1            /* a USB keyboard on the USB-A host port */
-#  define M5OS_HAS_SD         0
+#  define M5OS_HAS_SD         0            /* no SD-backed M5FS root; explicit SPI/FAT mount at /sd */
 #  define M5OS_PSRAM_RESERVE  (4u * 1024u * 1024u)   /* top of PSRAM left to the IDF heap: the DSI driver allocates its framebuffer there */
 #  define M5OS_FBCON_SCALE    2            /* 1280x720 with 8x8 glyphs would be 160 columns of tiny text */
 #  define M5OS_ARCH_RISCV     1

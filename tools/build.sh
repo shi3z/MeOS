@@ -1,4 +1,8 @@
 #!/bin/sh
+# ESP-IDF export.sh requires Bash or Zsh to locate its installation.
+if [ -z "${BASH_VERSION:-}" ] && [ -z "${ZSH_VERSION:-}" ]; then
+    exec bash "$0" "$@"
+fi
 # Build for a board:   tools/build.sh [cores3|cardputer|tab5] [idf.py args...]     (default: cores3)
 #   tools/build.sh cardputer flash -p /dev/cu.usbmodemXXXX
 # Each board has its own build directory and sdkconfig, so they never mix.

@@ -15,6 +15,7 @@
 #include <m5os/hal_time.h>
 #include <m5os/task.h>
 #include <m5os/mutex.h>
+#include <m5os/bus.h>
 #include <m5os/vfs.h>
 #include <m5os/kmalloc.h>
 #include <m5os/errno.h>
@@ -24,13 +25,10 @@
 #include "soc/gpio_sig_map.h"
 #include "hal/sdmmc_ll.h"
 #include "hal/gpio_ll.h"
-#include "esp_private/esp_clk_tree_common.h"
 #include "esp_cache.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
-
-/* Satisfy HAL atomic macro check in FreeRTOS-free kernel */
-static int __DECLARE_RCC_ATOMIC_ENV;
+#include "esp32p4/sdmmc_shared.h"
 
 /* =========================================================================
  * Pin & SDIO Register Definitions
@@ -327,113 +325,30 @@ static void gpio_setup_sdio_pin(int pin, int in_sig, int out_sig, bool pullup)
     }
 }
 
-static bool sdmmc_update_clock(void)
-{
-    sdmmc_hw_cmd_t cmd;
-    mem_zero(&cmd, sizeof cmd);
-    cmd.card_num = SDIO_SLOT;
-    cmd.update_clk_reg = 1;
-    cmd.wait_complete = 1;
-    cmd.use_hold_reg = 1;
-    cmd.start_command = 1;
-
-    for (int tries = 0; tries < 200; tries++) {
-        SDMMC.rintsts.val = 0xFFFFFFFFu;
-        SDMMC.cmd = cmd;
-        for (int poll = 0; poll < 20000; poll++) {
-            if (SDMMC.rintsts.hle) break;
-            if (!SDMMC.cmd.start_command) {
-                SDMMC.rintsts.val = 0xFFFFFFFFu;
-                return true;
-            }
-            esp_rom_delay_us(1);
-        }
-        esp_rom_delay_us(10);
-    }
-    return false;
-}
-
 static bool sdmmc_set_clock_khz(uint32_t freq_khz)
 {
-    sdmmc_ll_enable_card_clock(&SDMMC, SDIO_SLOT, false);
-    if (!sdmmc_update_clock()) return false;
-
-    uint32_t host_div = 10;
-    uint32_t card_div = 20; /* 160 MHz / 10 / (2 * 20) = 400 kHz */
-    if (freq_khz >= 40000u) {
-        host_div = 4;
-        card_div = 0;       /* 160 MHz / 4 = 40 MHz */
-    } else if (freq_khz >= 20000u) {
-        host_div = 8;
-        card_div = 0;       /* 160 MHz / 8 = 20 MHz */
-    }
-
-    sdmmc_ll_set_card_clock_div(&SDMMC, SDIO_SLOT, card_div);
-    sdmmc_ll_set_clock_div(&SDMMC, host_div);
-    sdmmc_ll_init_phase_delay(&SDMMC);
-    if (!sdmmc_update_clock()) return false;
-
-    sdmmc_ll_enable_card_clock(&SDMMC, SDIO_SLOT, true);
-    sdmmc_ll_enable_card_clock_low_power(&SDMMC, SDIO_SLOT, true);
-    return sdmmc_update_clock();
+    return tab5_sdmmc_set_clock_locked(SDIO_SLOT, freq_khz);
 }
 
 static bool sdmmc_wait_idle(uint32_t timeout_us)
 {
-    for (uint32_t t = 0; t < timeout_us; t += 2u) {
-        if (!SDMMC.cmd.start_command && !sdmmc_ll_is_card_data_busy(&SDMMC)) {
-            return true;
-        }
-        esp_rom_delay_us(2);
-    }
-    return false;
+    return tab5_sdmmc_wait_idle_locked(timeout_us);
 }
 
 static bool sdmmc_send_cmd(uint32_t cmd_idx, uint32_t arg, bool expect_resp, bool check_crc,
                            bool send_init, uint32_t *out_resp)
 {
-    if (!sdmmc_wait_idle(100000u)) return false;
-
-    SDMMC.rintsts.val = 0xFFFFFFFFu;
-    SDMMC.cmdarg = arg;
-
-    sdmmc_hw_cmd_t cmd;
-    mem_zero(&cmd, sizeof cmd);
-    cmd.cmd_index = cmd_idx;
-    cmd.card_num = SDIO_SLOT;
-    cmd.response_expect = expect_resp ? 1 : 0;
-    cmd.check_response_crc = check_crc ? 1 : 0;
-    cmd.send_init = send_init ? 1 : 0;
-    cmd.wait_complete = 1;
-    cmd.use_hold_reg = 1;
-    cmd.start_command = 1;
-
-    SDMMC.cmd = cmd;
-
-    for (uint32_t t = 0; t < 200000u; t++) {
-        uint32_t rint = SDMMC.rintsts.val;
-        if (rint & SDMMC_LL_EVENT_HLE) {
-            SDMMC.rintsts.val = 0xFFFFFFFFu;
-            return false;
-        }
-        if (rint & SDMMC_LL_EVENT_CMD_DONE) {
-            if ((rint & SDMMC_LL_EVENT_RTO) ||
-                (check_crc && (rint & SDMMC_LL_EVENT_RCRC)) ||
-                (rint & SDMMC_LL_EVENT_RESP_ERR)) {
-                SDMMC.rintsts.val = 0xFFFFFFFFu;
-                return false;
-            }
-            if (out_resp) *out_resp = SDMMC.resp[0];
-            SDMMC.rintsts.val = 0xFFFFFFFFu;
-            return true;
-        }
-        esp_rom_delay_us(1);
-    }
-    SDMMC.rintsts.val = 0xFFFFFFFFu;
-    return false;
+    unsigned flags = expect_resp ? TAB5_SDMMC_RSP_PRESENT : 0;
+    if (check_crc) flags |= TAB5_SDMMC_RSP_CRC;
+    uint32_t response[4];
+    bool ok = tab5_sdmmc_command_locked(SDIO_SLOT, cmd_idx, arg, flags,
+                                        send_init, response);
+    if (ok && out_resp) *out_resp = response[0];
+    return ok;
 }
 
-static bool sdio_cmd52(bool is_write, uint8_t fn, uint32_t addr, uint8_t in_val, uint8_t *out_val)
+static bool sdio_cmd52_locked(bool is_write, uint8_t fn, uint32_t addr,
+                              uint8_t in_val, uint8_t *out_val)
 {
     uint32_t arg = (is_write ? (1u << 31) : 0u) |
                    ((uint32_t)(fn & 0x7u) << 28) |
@@ -447,8 +362,8 @@ static bool sdio_cmd52(bool is_write, uint8_t fn, uint32_t addr, uint8_t in_val,
     return true;
 }
 
-static bool sdio_cmd53(bool is_write, uint8_t fn, uint32_t addr, bool block_mode,
-                       void *buf, size_t len)
+static bool sdio_cmd53_locked(bool is_write, uint8_t fn, uint32_t addr,
+                              bool block_mode, void *buf, size_t len)
 {
     if (len == 0 || len > sizeof(s_dma_buf)) return false;
     if (!sdmmc_wait_idle(200000u)) return false;
@@ -559,6 +474,24 @@ static bool sdio_cmd53(bool is_write, uint8_t fn, uint32_t addr, bool block_mode
     return ok;
 }
 
+static bool sdio_cmd52(bool is_write, uint8_t fn, uint32_t addr,
+                       uint8_t in_val, uint8_t *out_val)
+{
+    sdmmc_bus_lock();
+    bool ok = sdio_cmd52_locked(is_write, fn, addr, in_val, out_val);
+    sdmmc_bus_unlock();
+    return ok;
+}
+
+static bool sdio_cmd53(bool is_write, uint8_t fn, uint32_t addr,
+                       bool block_mode, void *buf, size_t len)
+{
+    sdmmc_bus_lock();
+    bool ok = sdio_cmd53_locked(is_write, fn, addr, block_mode, buf, len);
+    sdmmc_bus_unlock();
+    return ok;
+}
+
 static bool sdio_reg_read(uint32_t reg, void *dst, size_t len)
 {
     reg = SDIO_REG(reg);
@@ -593,41 +526,18 @@ static void c6_hardware_reset(void)
 
 static bool sdio_init_hardware(void)
 {
+    bool ok = false;
+    sdmmc_bus_lock();
+
     /* 1. Reset ESP32-C6 co-processor over GPIO 15 */
     c6_hardware_reset();
 
-    /* 2. Enable SDMMC peripheral clock and reset controller */
-    sdmmc_ll_enable_bus_clock(&SDMMC, true);
-    sdmmc_ll_reset_register(&SDMMC);
-
-    /* Enable peripheral clock source and initial divider BEFORE controller reset (CIU needs cclk_in) */
-    esp_clk_tree_enable_src((soc_module_clk_t)SDMMC_CLK_SRC_PLL160M, true);
-    sdmmc_ll_set_clock_div(&SDMMC, 2);
-    sdmmc_ll_select_clk_source(&SDMMC, SDMMC_CLK_SRC_PLL160M);
-    sdmmc_ll_init_phase_delay(&SDMMC);
-    esp_rom_delay_us(20);
-
-    /* 3. Reset controller, FIFO, DMA */
-    sdmmc_ll_reset_controller(&SDMMC);
-    sdmmc_ll_reset_fifo(&SDMMC);
-    sdmmc_ll_reset_dma(&SDMMC);
-    for (int i = 0; i < 2000; i++) {
-        if (sdmmc_ll_is_controller_reset_done(&SDMMC) &&
-            sdmmc_ll_is_fifo_reset_done(&SDMMC) &&
-            sdmmc_ll_is_dma_reset_done(&SDMMC)) {
-            break;
-        }
-        esp_rom_delay_us(1);
+    /* 2. Initialize the shared controller once.  If slot 0 brought it up for
+     * microSD first, do not reset that live card. */
+    if (!tab5_sdmmc_host_init_locked()) {
+        kprintf("wifi: shared SDMMC controller init failed\n");
+        goto out;
     }
-
-    sdmmc_ll_clear_interrupt(&SDMMC, 0xFFFFFFFFu);
-    sdmmc_ll_enable_interrupt(&SDMMC, 0xFFFFFFFFu, false);
-    sdmmc_ll_enable_global_interrupt(&SDMMC, false);
-    sdmmc_ll_enable_busy_clear_interrupt(&SDMMC, false);
-    sdmmc_ll_init_dma(&SDMMC);
-
-    sdmmc_ll_set_response_timeout(&SDMMC, 255);
-    sdmmc_ll_set_data_timeout(&SDMMC, 0xFFFFFFu);
     sdmmc_ll_set_card_width(&SDMMC, SDIO_SLOT, SD_BUS_WIDTH_1_BIT);
 
     /* 4. Route GPIO matrix signals for Slot 1 */
@@ -657,7 +567,7 @@ static bool sdio_init_hardware(void)
     /* 5. Set 400 kHz probing clock */
     if (!sdmmc_set_clock_khz(400)) {
         kprintf("wifi: SDMMC 400kHz clock setup failed\n");
-        return false;
+        goto out;
     }
     task_sleep(10);
 
@@ -676,7 +586,7 @@ static bool sdio_init_hardware(void)
     }
     if (!cmd5_ok) {
         kprintf("wifi: SDIO CMD5 probe failed (no response from ESP32-C6)\n");
-        return false;
+        goto out;
     }
 
     uint32_t ocr = (r4 & 0x00FF8000u) ? (r4 & 0x00FF8000u) : 0x00300000u;
@@ -690,59 +600,59 @@ static bool sdio_init_hardware(void)
     }
     if (!card_ready) {
         kprintf("wifi: SDIO CMD5 OCR negotiation timed out (r4=0x%08x)\n", r4);
-        return false;
+        goto out;
     }
 
     /* 7. CMD3 (SEND_RELATIVE_ADDR) and CMD7 (SELECT_CARD) */
     uint32_t r6 = 0;
     if (!sdmmc_send_cmd(3, 0, true, true, false, &r6)) {
         kprintf("wifi: SDIO CMD3 failed\n");
-        return false;
+        goto out;
     }
     uint16_t rca = (uint16_t)(r6 >> 16);
     uint32_t r1 = 0;
     if (!sdmmc_send_cmd(7, (uint32_t)rca << 16, true, true, false, &r1)) {
         kprintf("wifi: SDIO CMD7 select card failed\n");
-        return false;
+        goto out;
     }
 
     /* Connect D3 (GPIO 8) to SDMMC slot 1 data line 3 and enable 4-bit bus + high-speed */
     gpio_setup_sdio_pin(PIN_SDIO_D3, SD_CARD_CDATA3_2_PAD_IN_IDX, SD_CARD_CDATA3_2_PAD_OUT_IDX, true);
 
     uint8_t bus_w = 0;
-    if (sdio_cmd52(false, 0, CCCR_BUS_WIDTH, 0, &bus_w)) {
+    if (sdio_cmd52_locked(false, 0, CCCR_BUS_WIDTH, 0, &bus_w)) {
         bus_w = (uint8_t)((bus_w & ~0x03u) | 0x02u); /* 4-bit bus */
-        sdio_cmd52(true, 0, CCCR_BUS_WIDTH, bus_w, NULL);
+        sdio_cmd52_locked(true, 0, CCCR_BUS_WIDTH, bus_w, NULL);
         sdmmc_ll_set_card_width(&SDMMC, SDIO_SLOT, SD_BUS_WIDTH_4_BIT);
     }
 
     uint8_t hs = 0;
-    if (sdio_cmd52(false, 0, CCCR_HIGHSPEED, 0, &hs)) {
+    if (sdio_cmd52_locked(false, 0, CCCR_HIGHSPEED, 0, &hs)) {
         if (hs & 0x01u) {
             hs |= 0x02u; /* EHS */
-            sdio_cmd52(true, 0, CCCR_HIGHSPEED, hs, NULL);
+            sdio_cmd52_locked(true, 0, CCCR_HIGHSPEED, hs, NULL);
         }
     }
 
     /* Switch to 20 MHz high-speed clock */
     if (!sdmmc_set_clock_khz(20000)) {
         kprintf("wifi: SDMMC 20MHz clock switch failed\n");
-        return false;
+        goto out;
     }
 
     /* 8. Enable SDIO Function 1 and configure 512-byte block size */
     uint8_t fn_en = 0;
-    sdio_cmd52(false, 0, CCCR_FN_ENABLE, 0, &fn_en);
+    sdio_cmd52_locked(false, 0, CCCR_FN_ENABLE, 0, &fn_en);
     fn_en |= 0x02u;
-    if (!sdio_cmd52(true, 0, CCCR_FN_ENABLE, fn_en, NULL)) {
+    if (!sdio_cmd52_locked(true, 0, CCCR_FN_ENABLE, fn_en, NULL)) {
         kprintf("wifi: failed to enable SDIO Function 1\n");
-        return false;
+        goto out;
     }
 
     bool fn1_ready = false;
     for (int i = 0; i < 50; i++) {
         uint8_t rdy = 0;
-        if (sdio_cmd52(false, 0, CCCR_FN_READY, 0, &rdy) && (rdy & 0x02u)) {
+        if (sdio_cmd52_locked(false, 0, CCCR_FN_READY, 0, &rdy) && (rdy & 0x02u)) {
             fn1_ready = true;
             break;
         }
@@ -750,23 +660,24 @@ static bool sdio_init_hardware(void)
     }
     if (!fn1_ready) {
         kprintf("wifi: SDIO Function 1 not ready\n");
-        return false;
+        goto out;
     }
 
     uint8_t int_en = 0x03u; /* IENM | IEN1 */
-    sdio_cmd52(true, 0, CCCR_INT_ENABLE, int_en, NULL);
+    sdio_cmd52_locked(true, 0, CCCR_INT_ENABLE, int_en, NULL);
 
     /* Block size = 512 (0x0200) for Fn 0 and Fn 1 */
-    sdio_cmd52(true, 0, CCCR_BLKSIZEL, 0x00u, NULL);
-    sdio_cmd52(true, 0, CCCR_BLKSIZEH, 0x02u, NULL);
-    sdio_cmd52(true, 0, FBR1_BLKSIZEL, 0x00u, NULL);
-    sdio_cmd52(true, 0, FBR1_BLKSIZEH, 0x02u, NULL);
+    sdio_cmd52_locked(true, 0, CCCR_BLKSIZEL, 0x00u, NULL);
+    sdio_cmd52_locked(true, 0, CCCR_BLKSIZEH, 0x02u, NULL);
+    sdio_cmd52_locked(true, 0, FBR1_BLKSIZEL, 0x00u, NULL);
+    sdio_cmd52_locked(true, 0, FBR1_BLKSIZEH, 0x02u, NULL);
 
     /* Open ESP-Hosted data path on ESP32-C6 (Scratch Reg 7 = BIT(0)) */
     uint8_t open_dp = ESP_OPEN_DATAPATH;
-    if (!sdio_reg_write(ESP_SLAVE_SCRATCH_REG_7, &open_dp, 1)) {
+    if (!sdio_cmd52_locked(true, 1, SDIO_REG(ESP_SLAVE_SCRATCH_REG_7),
+                           open_dp, NULL)) {
         kprintf("wifi: failed to write ESP_OPEN_DATAPATH\n");
-        return false;
+        goto out;
     }
 
     s_sdio_rx_bytes = 0;
@@ -774,7 +685,10 @@ static bool sdio_init_hardware(void)
     s_seq_num       = 0;
     s_sdio_ready    = true;
     kprintf("wifi: SDIO Slot 1 ready (RCA=0x%04x, 4-bit @ 20 MHz)\n", rca);
-    return true;
+    ok = true;
+out:
+    sdmmc_bus_unlock();
+    return ok;
 }
 
 /* =========================================================================

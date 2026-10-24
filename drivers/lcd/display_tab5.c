@@ -17,13 +17,16 @@
  * Panel-specific values (init sequence, video timing) are from M5Stack's board support package.
  */
 #include <string.h>
+#include "sdkconfig.h"
 #include <m5os/display.h>
 #include <m5os/board.h>
 #include <m5os/hal_gpio.h>
 #include <m5os/hal_mem.h>
+#include <m5os/hal_time.h>
 #include <m5os/kprintf.h>
 #include <m5os/tab5.h>
 #include "font8x8.h"
+#include "bitmap_resize.h"
 #include "font_ja16.h"
 #include "ili9881c_tab5_init.h"
 #include "st7121_tab5_init.h"
@@ -40,14 +43,13 @@
 #define PANEL_W            720          /* physical, portrait */
 #define PANEL_H            1280
 #define BYTES_PER_PIXEL    2
-#define CACHE_LINE         64u          /* ESP32-P4 L2 cache line */
+#define CACHE_LINE         CONFIG_CACHE_L2_CACHE_LINE_SIZE
 #define GLYPH_SIZE         8
 
 #define DSI_LANES          2
 #define DSI_PHY_LDO_CHAN   3            /* LDO_VO3 feeds VDD_MIPI_DPHY */
 #define DSI_PHY_LDO_MV     2500
 #define FIRST_FRAMES_MS    200
-#define SPLASH_MS          800
 #define SWRESET_MS         20           /* vendor BSP waits this long after the software reset */
 #define ST7121_RESET_MS    120          /* vendor BSP: wait after the software reset */
 #define ST7121_CMD_GAP_MS  5            /* ... and between init commands */
@@ -216,13 +218,6 @@ bool display_init(void)
     delay_ms(FIRST_FRAMES_MS);                        /* let a few frames go out, then check the refresh interrupt ran */
     kprintf("display: %u refresh interrupts, %d panel command(s) failed\n", (unsigned)s_frames, s_tx_failed);
     board_backlight(255);
-
-    /* Boot splash: colour bars (red, green, blue, white), one per quarter of the width.  They also tell the
-     * person at the board - who is the only one who can see the screen - whether scan-out works at all. */
-    static const uint16_t bars[] = { COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_WHITE };
-    for (int i = 0; i < 4; i++) display_fill_rect(i * (DISPLAY_WIDTH / 4), 0, DISPLAY_WIDTH / 4, DISPLAY_HEIGHT, bars[i]);
-    delay_ms(SPLASH_MS);
-    display_clear(COLOR_BLACK);
     return true;
 }
 
@@ -467,3 +462,55 @@ void display_draw_bitmap_scaled(int x, int y, int w, int h, const uint16_t *px, 
     }
     fb_flush_rows(DISPLAY_WIDTH - (x + x1), DISPLAY_WIDTH - 1 - (x + x0));
 }
+
+/* The panel is rotated: blit contiguous columns, then flush only that span. */
+void display_draw_bitmap_resized(int x,int y,int w,int h,const uint16_t *px,int dw,int dh)
+{
+    if (!s_fb) return;
+    int first,last;
+    if (tab5_bitmap_resize(s_draw,x,y,w,h,px,dw,dh,&first,&last))
+        fb_flush_rows(DISPLAY_WIDTH-1-last,DISPLAY_WIDTH-1-first);
+}
+
+static uint32_t s_copy_us,s_flush_us;
+void display_last_present_times(uint32_t *copy,uint32_t *flush) { *copy=s_copy_us; *flush=s_flush_us; }
+void display_draw_indexed_bitmap_prefix(int x,int y,int w,int h,const uint8_t *indices,
+    const uint16_t palette[256],int dw,int dh,int clip_rows)
+{
+    if (!s_fb) return;
+    int first,last;
+    uint64_t start=hal_time_now_us();
+    if (tab5_indexed_resize_rows(s_draw,x,y,w,h,indices,palette,dw,dh,&first,&last,clip_rows)) {
+        uint64_t copied=hal_time_now_us();
+        fb_flush_rows(DISPLAY_WIDTH-1-last,DISPLAY_WIDTH-1-first);
+        s_copy_us=(uint32_t)(copied-start); s_flush_us=(uint32_t)(hal_time_now_us()-copied);
+    }
+}
+
+uint32_t display_scanout_count(void){return s_frames;}
+
+bool display_is_ready(void) { return s_fb && s_frames; }
+
+void display_draw_indexed_bitmap_resized(int x,int y,int w,int h,const uint8_t *indices,
+    const uint16_t palette[256],int dw,int dh)
+{ display_draw_indexed_bitmap_prefix(x,y,w,h,indices,palette,dw,dh,dh); }
+
+void display_draw_indexed_viewport_delta(int x,const uint8_t *pixels,uint8_t *previous,
+    const uint16_t palette[256],bool force){
+    if(!s_fb||s_draw!=s_fb)return;
+    uint64_t start=hal_time_now_us();int first,last;
+    bool changed=tab5_indexed_viewport_delta(s_draw,x,pixels,previous,palette,force,&first,&last);
+    uint64_t copied=hal_time_now_us();
+    if(changed)fb_flush_rows(DISPLAY_WIDTH-1-last,DISPLAY_WIDTH-1-first);
+    s_copy_us=(uint32_t)(copied-start);s_flush_us=(uint32_t)(hal_time_now_us()-copied);
+}
+
+#if M5OS_QUAKE
+#include "ppa_tab5.h"
+bool display_smooth_begin(uint32_t owner){return s_draw==s_fb&&tab5_ppa_begin(owner,s_fb);}
+bool display_smooth_present(const uint8_t *pixels,const uint16_t palette[256]){
+    uint64_t start=hal_time_now_us();bool ok=tab5_ppa_present(pixels,palette);
+    s_copy_us=(uint32_t)(hal_time_now_us()-start);s_flush_us=0;return ok;
+}
+void display_smooth_end(uint32_t owner){tab5_ppa_end(owner);}
+#endif

@@ -1,0 +1,217 @@
+{
+  "date": "2026-10-24",
+  "device": "M5Stack Tab5 / ESP32-P4",
+  "firmware_source": "d94c7d8c9b114e7e279a584149774e4c48d7d8e7",
+  "application_sha256": "4089a687d915d38b7592e2ac0dbdec779136d2fe91b3cebb137782c7ffedc599",
+  "flash_offset": "0x10000",
+  "flash_backup_complete": true,
+  "backup_sha256": "b643da02e6dfc5c7aed81a4885bf6f4ac3907acda19bac80db93edc1dee07cab",
+  "sd_reformatted": false,
+  "card_sectors": 30867456,
+  "checks": [
+    {
+      "name": "persistent SD boot",
+      "passed": true
+    },
+    {
+      "name": "SD root active",
+      "passed": true
+    },
+    {
+      "name": "BASIC save",
+      "passed": true
+    },
+    {
+      "name": "BASIC replace",
+      "passed": true
+    },
+    {
+      "name": "scheme returns to shell",
+      "passed": true
+    },
+    {
+      "name": "scheme saved exact text",
+      "passed": true
+    },
+    {
+      "name": "write returns to shell",
+      "passed": true
+    },
+    {
+      "name": "write saved exact text",
+      "passed": true
+    },
+    {
+      "name": "edit returns to shell",
+      "passed": true
+    },
+    {
+      "name": "edit saved exact text",
+      "passed": true
+    },
+    {
+      "name": "reboot reaches shell",
+      "passed": true
+    },
+    {
+      "name": "at-save.bas reboot persistence",
+      "passed": true
+    },
+    {
+      "name": "at-save.scm reboot persistence",
+      "passed": true
+    },
+    {
+      "name": "at-save.txt reboot persistence",
+      "passed": true
+    },
+    {
+      "name": "at-edit.txt reboot persistence",
+      "passed": true
+    },
+    {
+      "name": "BASIC load and run after reboot",
+      "passed": true
+    }
+  ],
+  "memory_KiB": {
+    "psram_total": 28672,
+    "psram_used": 731,
+    "psram_free": 27940,
+    "internal_free": 79
+  },
+  "physical_keyboard_ime_qualified": false,
+  "physical_power_cut_qualified": false,
+  "raw_logs": "private local /tmp/meos-atomic-device/",
+  "verified_files": [
+    {
+      "path": "/home/at-save.bas",
+      "bytes": 32,
+      "sha256": "ba7b48f7d2baa44dc6c3fab5a8cb4e345db4b10350a6447626b1f1dc9619d219",
+      "post_reset_exact_match": true
+    },
+    {
+      "path": "/home/at-save.scm",
+      "bytes": 28,
+      "sha256": "c298bd578d348e30fb0685a9b7eb1138a5149b5300c63d11b06cdfcafd50e1b4",
+      "post_reset_exact_match": true
+    },
+    {
+      "path": "/home/at-save.txt",
+      "bytes": 31,
+      "sha256": "8da71156d193ccad812cf1437602d220941b5b548d01bad93cdf1940d4440974",
+      "post_reset_exact_match": true
+    },
+    {
+      "path": "/home/at-edit.txt",
+      "bytes": 18,
+      "sha256": "cb0adaa883d04fbab72d9d355099eb7782336f25a679a6901460985e874340b5",
+      "post_reset_exact_match": true
+    }
+  ],
+  "reset_campaign": {
+    "status": "incomplete_sd_unresponsive_after_fourth_reset",
+    "attempted": 4,
+    "planned": 5,
+    "completed_old_or_new_checks": 3,
+    "results": [
+      {
+        "name": "reset probe baseline saved",
+        "passed": true
+      },
+      {
+        "name": "reset during save #0 reaches shell",
+        "passed": true
+      },
+      {
+        "name": "reset during save #0 old-or-new exact",
+        "passed": true,
+        "selected": "old",
+        "reset_delay_seconds": 0
+      },
+      {
+        "name": "reset during save #1 reaches shell",
+        "passed": true
+      },
+      {
+        "name": "reset during save #1 old-or-new exact",
+        "passed": true,
+        "selected": "old",
+        "reset_delay_seconds": 0.005
+      },
+      {
+        "name": "reset during save #2 reaches shell",
+        "passed": true
+      },
+      {
+        "name": "reset during save #2 old-or-new exact",
+        "passed": true,
+        "selected": "old",
+        "reset_delay_seconds": 0.02
+      },
+      {
+        "name": "reset during save #3 reaches shell",
+        "passed": true
+      },
+      {
+        "name": "reset during save #3 old-or-new exact",
+        "passed": false
+      }
+    ],
+    "fourth_reset_delay_seconds": 0.05,
+    "fourth_reset_boot": "RAM fallback: all three SD probes returned R1=0xff before littlefs mount",
+    "sd_data_integrity_after_fourth_reset": "subsequent SD-root boot verified four normal-save files and exact complete old interrupted-save file",
+    "fifth_reset": "not run",
+    "readiness_seconds": [
+      66.8,
+      66.7,
+      69.5,
+      70.8,
+      4.2
+    ]
+  },
+  "device_left_running": "d94c7d8 application, persistent SD root active",
+  "qualification": "normal saves and subsequent recovery contents passed; intermittent SD probe failure unresolved; fifth reset not run",
+  "subsequent_recovery": {
+    "explicit_reset_sent": false,
+    "power_cycle": "user reports device was powered off, left off for a while, then started; physical rail state not measured",
+    "checks": [
+      {
+        "path": "/home/at-save.bas",
+        "exact_match": true,
+        "bytes": 32,
+        "sha256": "ba7b48f7d2baa44dc6c3fab5a8cb4e345db4b10350a6447626b1f1dc9619d219"
+      },
+      {
+        "path": "/home/at-save.scm",
+        "exact_match": true,
+        "bytes": 28,
+        "sha256": "c298bd578d348e30fb0685a9b7eb1138a5149b5300c63d11b06cdfcafd50e1b4"
+      },
+      {
+        "path": "/home/at-save.txt",
+        "exact_match": true,
+        "bytes": 31,
+        "sha256": "8da71156d193ccad812cf1437602d220941b5b548d01bad93cdf1940d4440974"
+      },
+      {
+        "path": "/home/at-edit.txt",
+        "exact_match": true,
+        "bytes": 18,
+        "sha256": "cb0adaa883d04fbab72d9d355099eb7782336f25a679a6901460985e874340b5"
+      }
+    ],
+    "observed_boot_builds": [
+      "Build: d94c7d8c9b11; reset reason: 11"
+    ],
+    "sdroot_status": "sdroot\nSDROOT active=1 card_sectors=30867456 high_capacity=1 littlefs=1\nSDROOT epoch=2 bank=1 committed=497352 logical_KiB=8192 index_KiB=64\n> ",
+    "sd_active": true,
+    "interrupted_file": {
+      "path": "/home/at-r3.txt",
+      "old_or_new_exact": true,
+      "selected": "old",
+      "bytes": 2058
+    },
+    "memory": "mem\ninternal  total 192 KB   used 112 KB   free 79 KB   largest 75 KB   peak used 116 KB   fails 0\npsram     total 28672 KB   used 731 KB   free 27940 KB   largest 27940 KB   peak used 731 KB   fails 0\n> "
+  }
+}

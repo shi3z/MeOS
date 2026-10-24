@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-24",
+  "base_commit": "434490a",
+  "qualification": "host and firmware build only; not flashed",
+  "changes": [
+    "aggregate host phase and VFS timing",
+    "startup-to-signon timing",
+    "exact float-to-integer rasterizer ceilings"
+  ],
+  "host_render_frames": 130,
+  "host_completed_profile_frames": 120,
+  "host_read_bytes": 3276694,
+  "render_sha256": "88b7f83db7da86e371452ed78ddefd1788701f5c356f6380cb30dd5296a6c06a",
+  "render_matches_previous": true,
+  "reference_math_cases": 1000000,
+  "firmware_bytes": 4037408,
+  "firmware_sha256": "fa3664e2ae36384d722188a8200170f33a0e63b42c73b72bfbef751d052150c6",
+  "native_ceil_libm_calls_in_r_draw": 0,
+  "physical_speed_impact": "unmeasured",
+  "device_gate": "Coordinate with independent native-SDMMC work before replacing device firmware.",
+  "clean_source_simulator": "PASS: Scheme, replay, Japanese writing saves and six-app handoff"
+}

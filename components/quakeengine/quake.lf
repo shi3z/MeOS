@@ -1,0 +1,11 @@
+[scheme:quake_state]
+entries:
+    bss -> extern_ram
+    common -> extern_ram
+
+[mapping:quake_state]
+archive: libquakeengine.a
+entries:
+    * (quake_state);
+        bss -> extern_ram ALIGN(16) ALIGN(16, post) SURROUND(quake_bss),
+        common -> extern_ram ALIGN(16) ALIGN(16, post) SURROUND(quake_common)

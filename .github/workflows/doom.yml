@@ -1,0 +1,42 @@
+name: Doom candidate checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  host:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - run: |
+          python3 tools/doom/release_test.py
+          sh tools/doom/host_test.sh
+          sh tools/touch/host_test.sh
+          sh tools/hardware/host_test.sh
+          sh tools/sd/host_test.sh
+  firmware:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: espressif/esp-idf
+          ref: 296b6eab9445fd720e71aecab961e2d3fbca9944
+          path: .ci/esp-idf
+          submodules: recursive
+          persist-credentials: false
+      - run: git -C .ci/esp-idf fetch --depth=1 origin tag v5.4.4
+      - run: .ci/esp-idf/install.sh esp32p4
+        env:
+          IDF_TOOLS_PATH: ${{ runner.temp }}/idf-tools
+      - run: sh tools/doom/release_build.sh
+        env:
+          IDF_TOOLS_PATH: ${{ runner.temp }}/idf-tools
+          M5OS_IDF_P4: ${{ github.workspace }}/.ci/esp-idf
+      # Deliberately no firmware upload or release publishing while licensing is unresolved.

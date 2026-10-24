@@ -51,3 +51,45 @@ int  fs_delete(const char *path);                /* a file, or an empty director
 int  fs_list(const char *path, int (*cb)(const fs_info_t *info, void *ctx), void *ctx);
 
 bool fs_selftest(void);                          /* runs on a RAM disk; never touches real media */
+
+/* Optional transactional backend. Durable callbacks return zero on success.
+ * recover abandons pending writes and selects authoritative durable state; after
+ * an uncertain commit that may be the old OR new complete transaction. */
+typedef struct {
+    void *ctx;
+    int (*begin)(void *);
+    int (*commit)(void *);
+    int (*recover)(void *);
+    /* Optional no-IO headroom hint (data + metadata + commit records). */
+    int (*reserve)(void *, uint32_t records);
+} fs_tx_backend_t;
+int fs_mount_atomic(blockdev_t *, uint32_t base_lba, const fs_tx_backend_t *);
+int fs_mount_readonly(blockdev_t *, uint32_t base_lba);
+/* Discard descriptors and volatile metadata without issuing writes. */
+int fs_discard(void);
+
+/* Callback-scoped API, all operations under the single filesystem mutex.
+ * Callback returns 0 to commit or a negative ERR_* to abort. Any failed API call
+ * (or short write) poisons the group even if callback ignores its result.
+ * Use ONLY this table inside the callback: public fs_* would deadlock. Do not
+ * retain the table or block indefinitely. Abandoned transactional owners are
+ * recovered at next lock acquisition after kernel mutex release; real-device
+ * task-kill qualification is still required.
+ * Abort/recovery invalidates ALL open descriptors; reopen after any failed
+ * transactional operation. Successful normal fs_* mutations commit individually.
+ * Use fs_transaction to group truncate+write+close into one durable save. */
+typedef struct {
+    int (*open)(const char *, uint32_t);
+    int (*close)(int);
+    int (*read)(int, void *, size_t);
+    int (*write)(int, const void *, size_t);
+    int (*seek)(int, int32_t, int);
+    int (*stat)(const char *, fs_info_t *);
+    int (*mkdir)(const char *);
+    int (*unlink)(const char *);
+} fs_tx_ops_t;
+int fs_transaction(int (*callback)(const fs_tx_ops_t *, void *), void *);
+/* Whole-buffer replacement under the volume lock. Atomic with a transactional
+ * backend; raw RAM volumes preserve legacy close/flush behavior. No fallback
+ * after failure and no full-file copy. Recovery invalidates existing descriptors. */
+int fs_replace_file(const char *path, const void *data, size_t len, size_t *written);

@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-24",
+  "device": "M5Stack Tab5 / ESP32-P4 v1.3",
+  "firmware_source": "cd95cc15e6eea542550402c05a0d44bfd523e20f",
+  "default_app_sha256": "88d78af3f973e8a82dd2cb27d8b45cee12a25c7625850c24dd3f414c385e288f",
+  "card_sectors": 30867456,
+  "existing_sd_data_preserved": true,
+  "sd_root_boot": true,
+  "wasm_apps_restored": 2,
+  "basic_program": "10 PRINT 2+3",
+  "basic_result": "5",
+  "basic_save_path": "/home/integration.bas",
+  "basic_reboot_load_verified": true,
+  "fat_probe_exclusion_verified": true,
+  "application_flash_partition_bytes": 4063232,
+  "build_bytes": {
+    "default": 3747648,
+    "doom_without_wad": 4019936,
+    "quake": 3964304
+  },
+  "default_psram_KiB": {
+    "total": 28672,
+    "used": 731,
+    "free": 27940
+  },
+  "physical_power_cut_qualified": false,
+  "optional_engines_combined_image_play_qualified": false,
+  "raw_logs": "private local /tmp/meos-integration-checks/"
+}

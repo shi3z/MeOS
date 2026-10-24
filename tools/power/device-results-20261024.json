@@ -1,0 +1,111 @@
+{
+  "date": "2026-10-24",
+  "device": "M5Stack Tab5 / ESP32-P4",
+  "firmware_expected_source": "d94c7d8c9b114e7e279a584149774e4c48d7d8e7",
+  "firmware_flashed_this_test": false,
+  "explicit_reset_sent": false,
+  "charger_configuration_changed": false,
+  "sd_reformatted": false,
+  "usb_disconnect_reconnect": {
+    "status": "passed",
+    "disconnect_seconds": 63.006804374977946,
+    "baseline": {
+      "explicit_reset_sent": false,
+      "charger_settings_changed": false,
+      "connected": true,
+      "events": [
+        {
+          "event": "connected",
+          "host_monotonic": 417068.827530208
+        }
+      ],
+      "port": "/dev/cu.usbmodem101",
+      "last_sample": {
+        "host_monotonic": 417083.957229666,
+        "uptime": "uptime\nup 0:04:50.525   (24721 scheduler ticks)\n> ",
+        "power": "power\nINA226 @0x41: ready\nIdentity: manufacturer 0x5449, die 0x2260; config 0x4127\nBattery rail: 7930 mV\nBattery current: -500 uA (+ into battery / - out; 5 mOhm shunt)\nFlow: near zero / indeterminate\nLevel: ~78% (coarse 2S voltage estimate; load/charging affect it)\nCharge permission: disabled (configuration only)\nCHG_STAT: low (raw input; not proof of external power)\nPower source: unknown (USB-C / external DC / battery not independently detected)\nRead-only: charger and INA226 configuration are unchanged.\n> ",
+        "sdroot": "sdroot\nSDROOT active=1 card_sectors=30867456 high_capacity=1 littlefs=1\nSDROOT epoch=2 bank=1 committed=502872 logical_KiB=8192 index_KiB=64\n> "
+      }
+    },
+    "after": {
+      "host_monotonic": 417195.6376255,
+      "responses": {
+        "uptime": "uptime\nup 0:06:37.235   (35392 scheduler ticks)\n> ",
+        "power": "power\nINA226 @0x41: ready\nIdentity: manufacturer 0x5449, die 0x2260; config 0x4127\nBattery rail: 7913 mV\nBattery current: 0 uA (+ into battery / - out; 5 mOhm shunt)\nFlow: near zero / indeterminate\nLevel: ~77% (coarse 2S voltage estimate; load/charging affect it)\nCharge permission: disabled (configuration only)\nCHG_STAT: low (raw input; not proof of external power)\nPower source: unknown (USB-C / external DC / battery not independently detected)\nRead-only: charger and INA226 configuration are unchanged.\n> ",
+        "sdroot": "sdroot\nSDROOT active=1 card_sectors=30867456 high_capacity=1 littlefs=1\nSDROOT epoch=2 bank=1 committed=508392 logical_KiB=8192 index_KiB=64\n> ",
+        "cat /home/at-save.bas": "cat /home/at-save.bas\n10 PRINT 424242\n20 PRINT 737373\n> ",
+        "cat /home/at-save.scm": "cat /home/at-save.scm\n(define atomic-check 424242)> ",
+        "cat /home/at-save.txt": "cat /home/at-save.txt\n日本語の保存確認 424242> ",
+        "cat /home/at-edit.txt": "cat /home/at-edit.txt\nAtomic edit 737373> ",
+        "cat /home/at-r3.txt": "cat /home/at-r3.txt\nRESETBASE-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef> "
+      }
+    },
+    "file_checks": [
+      {
+        "path": "/home/at-save.bas",
+        "exact_match": true,
+        "sha256": "ba7b48f7d2baa44dc6c3fab5a8cb4e345db4b10350a6447626b1f1dc9619d219"
+      },
+      {
+        "path": "/home/at-save.scm",
+        "exact_match": true,
+        "sha256": "c298bd578d348e30fb0685a9b7eb1138a5149b5300c63d11b06cdfcafd50e1b4"
+      },
+      {
+        "path": "/home/at-save.txt",
+        "exact_match": true,
+        "sha256": "8da71156d193ccad812cf1437602d220941b5b548d01bad93cdf1940d4440974"
+      },
+      {
+        "path": "/home/at-edit.txt",
+        "exact_match": true,
+        "sha256": "cb0adaa883d04fbab72d9d355099eb7782336f25a679a6901460985e874340b5"
+      },
+      {
+        "path": "/home/at-r3.txt",
+        "exact_match": true,
+        "sha256": "e549fbda2518084012816697847eaa62a8a34dabf7842a934243e4753cb9e3d4"
+      }
+    ],
+    "battery_only_current_measured": false,
+    "display_observation": "awaiting user report",
+    "uptime_continuity": {
+      "before_seconds": 290.525,
+      "after_seconds": 397.235,
+      "host_elapsed_seconds": 111.68039583397331,
+      "uptime_elapsed_seconds": 106.71000000000004,
+      "difference_seconds": -4.970395833973271,
+      "no_reset_detected": true,
+      "host_elapsed_is_upper_bound_between_uptime_measurements": true,
+      "timing_note": "Host timestamps bracket command batches, so uptime delta can be several seconds smaller than host delta; after-uptime exceeds the entire host interval and remains above before-uptime."
+    }
+  },
+  "normal_poweroff": {
+    "status": "awaiting_user_operation",
+    "prepared_save": {
+      "host_monotonic": 417263.09379525,
+      "responses": {
+        "basic": "basic\nMeOS numeric BASIC. HELP for commands; BYE exits. SAVE writes via VFS.\nReady> ",
+        "10 PRINT 246810": "10 PRINT 246810\nReady> ",
+        "SAVE \"/home/pwr-20261024.bas\"": "SAVE \"/home/pwr-20261024.bas\"\nbasic: saved /home/pwr-20261024.bas (16 bytes)\nReady> ",
+        "BYE": "BYE\n> ",
+        "cat /home/pwr-20261024.bas": "cat /home/pwr-20261024.bas\n10 PRINT 246810\n> ",
+        "uptime": "uptime\nup 0:07:49.632   (42631 scheduler ticks)\n> ",
+        "power": "power\nINA226 @0x41: ready\nIdentity: manufacturer 0x5449, die 0x2260; config 0x4127\nBattery rail: 7921 mV\nBattery current: 0 uA (+ into battery / - out; 5 mOhm shunt)\nFlow: near zero / indeterminate\nLevel: ~77% (coarse 2S voltage estimate; load/charging affect it)\nCharge permission: disabled (configuration only)\nCHG_STAT: low (raw input; not proof of external power)\nPower source: unknown (USB-C / external DC / battery not independently detected)\nRead-only: charger and INA226 configuration are unchanged.\n> ",
+        "sdroot": "sdroot\nSDROOT active=1 card_sectors=30867456 high_capacity=1 littlefs=1\nSDROOT epoch=2 bank=1 committed=517776 logical_KiB=8192 index_KiB=64\n> "
+      }
+    },
+    "path": "/home/pwr-20261024.bas",
+    "expected_content": "10 PRINT 246810\n"
+  },
+  "interrupted_save_physical_power_cut": {
+    "status": "not_run"
+  },
+  "limits": [
+    "Power source cannot be independently classified by INA226 or CHG_STAT.",
+    "Voltage percent is a coarse estimate, not a fuel-gauge reading.",
+    "No telemetry was available while USB was disconnected.",
+    "User display observations are not yet recorded."
+  ],
+  "raw_logs": "private local /tmp/meos-power-device/"
+}

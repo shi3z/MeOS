@@ -2609,8 +2609,9 @@ static void tailscale_daemon_task(void *arg)
     s_daemon_running = false;
 }
 
-void tailscale_boot_start(void)
+static void tailscale_boot_task(void *unused)
 {
+    (void)unused;
     ts_ensure_lock();
     ts_lock();
     ts_load_or_gen_keys();
@@ -2623,6 +2624,25 @@ void tailscale_boot_start(void)
         task_create_stack("tailscaled", tailscale_daemon_task, NULL, TASK_PRIO_DEFAULT, 24576);
     }
     ts_unlock();
+
+    task_stack_info_t stack;
+    if (task_stack_inspect(task_current()->id, &stack) == 0) {
+        kprintf("tailscale: boot stack %u/%u bytes, guard %s\n",
+                (unsigned)stack.used, (unsigned)stack.size,
+                stack.guard_ok ? "OK" : "FAILED");
+    }
+}
+
+void tailscale_boot_start(void)
+{
+    static bool scheduled;
+    if (scheduled) return;
+    scheduled = true;
+    if (task_create_stack("tsboot", tailscale_boot_task, NULL,
+                          TASK_PRIO_DEFAULT, 16384) < 0) {
+        scheduled = false;
+        kprintf("tailscale: cannot schedule boot initialization\n");
+    }
 }
 
 bool tailscale_up(const char *auth_key)

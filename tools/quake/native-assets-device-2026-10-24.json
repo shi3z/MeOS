@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-24",
+  "board": "Tab5 ESP32-P4",
+  "runtime_source_commit": "aa9236c",
+  "app_sha256": "c84e9f72d60b09624fb7659211a739b36dd2b01404c796f2eddcd92d47877aac",
+  "app_bytes": 4046976,
+  "storage_path": "/assets/quake/id1/pak0.pak",
+  "native_root_logical_bytes": 8388608,
+  "pak_bytes": 18689235,
+  "pak_crc32_source": "74e3b084",
+  "pak_crc32_received": "74e3b084",
+  "pak_crc32_stored_reread": "74e3b084",
+  "upload_seconds": 1528.9,
+  "root_probe_before": "qualification-099",
+  "root_probe_after": "qualification-099",
+  "formatted": false,
+  "reset_gameplay_qualified": true,
+  "notes": [
+    "Runtime built before commit with 55bf5cc-dirty build identifier.",
+    "Initial transfer was interrupted by macOS sleep; incomplete destination was removed by receive timeout.",
+    "Successful transfer used scoped caffeinate sleep prevention.",
+    "Game assets, binaries and captures are not included."
+  ],
+  "map": "start",
+  "observed_presentations_per_second": [
+    15.6,
+    15.4
+  ],
+  "sampled_stack_used_bytes": 15424,
+  "stack_bytes": 49152,
+  "stack_guard": "OK",
+  "native_key_transitions_observed": 26,
+  "root_probe_after_reset": "qualification-099"
+}

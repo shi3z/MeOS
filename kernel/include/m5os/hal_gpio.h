@@ -12,3 +12,4 @@ void hal_gpio_od_drive_low(int pin);
 int  hal_gpio_read(int pin);
 void hal_gpio_write(int pin, int level);
 void hal_delay_us(uint32_t us);
+void hal_i2c_fast_tick(void); /* >=1us cycle-counted delay; fast I2C only */

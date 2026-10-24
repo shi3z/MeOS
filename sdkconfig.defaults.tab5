@@ -12,8 +12,9 @@ CONFIG_SPIRAM_SPEED_200M=y
 CONFIG_SPIRAM_USE_MEMMAP=y
 CONFIG_SPIRAM_MEMTEST=n
 
-# Flash map with a big application slot and the input-method dictionary region (see partitions_tab5.csv).
+# Flash map with factory recovery plus two equal OTA application slots (see partitions_tab5.csv).
 CONFIG_PARTITION_TABLE_SINGLE_APP=n
+CONFIG_PARTITION_TABLE_TWO_OTA=n
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_tab5.csv"
 CONFIG_PARTITION_TABLE_FILENAME="partitions_tab5.csv"

@@ -1,0 +1,19 @@
+{
+  "archive_url": "https://deb.debian.org/debian/pool/main/x/xfonts-efont-unicode/xfonts-efont-unicode_0.4.2.orig.tar.bz2",
+  "archive_sha256": "7cd38f40f70fb6c6ce7cab46ef00231c2352b1555e31f5c54f5f5683f38baaa2",
+  "status": "research comparison only; not selected or embedded in the firmware",
+  "files": {
+    "README": {
+      "sha256": "edacc896384e82da7362417e24c848d2cd554e4c46a8c19d9baa811230864e16"
+    },
+    "COPYRIGHT": {
+      "sha256": "27c2942bbe8da9d5a8128695763d9a1da8d1697683ece43d7197f32a2de5c731"
+    },
+    "jiskan24_uni.hex": {
+      "sha256": "cd0492681f7550cbf43923ffc39ce23d99751bac1fd19d2c33b1f952f2a3cae6"
+    },
+    "etl24-unicode.hex": {
+      "sha256": "fe20aa970878aada91689b8c4e700a66ad6f0b8832017bb69a3473b6fa8ef5d9"
+    }
+  }
+}

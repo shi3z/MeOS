@@ -18,6 +18,7 @@
 #include <m5os/display.h>
 #include <m5os/kmalloc.h>
 #include <m5os/board_config.h>
+#include <m5os/arch.h>
 #include "../lcd/fbcon.h"
 #include "ime_util.h"
 #include "ime_dict.h"
@@ -53,6 +54,8 @@ static struct {
     int        snap_y, snap_rows, drawn_rows;   /* the saved rows (pixels / cells) and how many we have painted on */
     bool       bypass;                     /* keys go through untouched (see ime_bypass) */
     bool       anchor_set;                 /* the program told us where its insertion point is */
+    bool       app_view;
+    uint32_t   view_revision;
     int        ax, ay;
 } g;
 #define SNAP_ROWS (PAGE + 3)
@@ -618,6 +621,7 @@ void ime_clear_anchor(void)
 
 static void view_update(void)
 {
+    if (g.app_view) return;
     bool bar = fbcon_is_paused();
     if (!bar && g.bar_saved) bar_hide();
     if (bar) {
@@ -662,5 +666,43 @@ void ime_feed(const char *key)
     else if (g.converting) conv_key(kt, ch, key);
     else if (composing()) pre_key(kt, ch, key);
     else idle_key(kt, ch, key);
+    g.view_revision++;
     if (g.mode != IME_OFF || g.shown) view_update();
+}
+
+void ime_set_app_view(bool enabled)
+{
+    bar_hide();
+    fbcon_overlay_begin(); fbcon_overlay_end();
+    uint32_t irq = arch_irq_disable();
+    pre_reset(); g.app_view = enabled; g.shown = false; g.view_revision++;
+    arch_irq_restore(irq);
+}
+
+bool ime_read_view(ime_view *out)
+{
+    uint32_t irq = arch_irq_disable();
+    memset(out, 0, sizeof *out);
+    if (!B) { arch_irq_restore(irq); return false; }
+    out->revision = g.view_revision; out->active = g.mode != IME_OFF;
+    out->converting = g.converting; out->listing = g.listing;
+    build_preedit(&B->bpre);
+    out->count = B->bpre.n;
+    for (int i = 0; i < out->count; i++) {
+        out->text[i] = B->bpre.cp[i]; out->styles[i] = B->bpre.st[i];
+    }
+    out->selected = -1;
+    if (g.converting && g.listing) {
+        int selected = s_cv.seg[g.focus].sel, first = selected / PAGE * PAGE;
+        for (int i = first; i < B->cl.n && i < first + PAGE; i++) {
+            int n = out->candidate_count++;
+            const char *text = B->cl.pool + B->cl.off[i];
+            size_t length = strlen(text);
+            if (length >= sizeof out->candidates[n]) length = sizeof out->candidates[n] - 1;
+            while (length && ((unsigned char)text[length] & 0xc0) == 0x80) length--;
+            memcpy(out->candidates[n], text, length); out->numbers[n] = i - first + 1;
+            if (i == selected) out->selected = n;
+        }
+    }
+    arch_irq_restore(irq); return true;
 }

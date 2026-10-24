@@ -1,0 +1,6 @@
+10 A=1
+20 FOR I=1 TO 6
+30 A=A*I
+40 NEXT I
+50 PRINT "6! =",A
+60 END
