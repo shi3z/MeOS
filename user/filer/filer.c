@@ -1,4 +1,5 @@
 #include "filer.h"
+#include "name_text.h"
 #include "../tui/dqwin.h"
 #include "../edit/edit.h"
 #include "../camera/camera_app.h"
@@ -9,6 +10,7 @@
 #include "../../drivers/lcd/fbcon.h"
 
 #include <m5os/display.h>
+#include <m5os/player.h>
 #include <m5os/kmalloc.h>
 #include <m5os/vfs.h>
 #include <m5os/fs.h>
@@ -20,21 +22,21 @@
 #define COL_WIDTH     34             /* cells per column: mark + name + size */
 #define COPY_CHUNK    512
 #define VIEW_BYTES    8192           /* the viewer shows the first 8 KB */
-#define NAME_COLS     (FS_NAME_MAX + 1)
+#define NAME_COLS     (VFS_NAME_MAX + 1)
 #define HEADER_ROWS   3              /* title window */
 #define FOOTER_ROWS   4              /* key guide + status window */
 #define PATH_MAX_     VFS_PATH_MAX
 
-typedef struct { char name[FS_NAME_MAX + 1]; bool dir; uint32_t size; } entry_t;
+typedef struct { char name[VFS_NAME_MAX + 1]; bool dir; uint32_t size; } entry_t;
 
 /* One filer exists at a time; its state is static so that the (6 KB) shell stack does not carry it. */
-static entry_t s_ent[MAX_ENTRIES];
+static entry_t *s_ent;
 static bool    s_mark[MAX_ENTRIES];
 static int     s_n, s_sel, s_top;
 static char    s_path[PATH_MAX_];
 static char    s_status[80];
 static uint8_t s_chunk[COPY_CHUNK];
-static char    s_view[VIEW_BYTES + 1];
+static char   *s_view;
 
 /* ---------------------------------------------------------------- paths */
 
@@ -55,7 +57,7 @@ static int collect(const vfs_info_t *info, void *ctx)
     if (s_n >= MAX_ENTRIES) return 0;
     entry_t *e = &s_ent[s_n++];
     int i = 0;
-    for (; info->name[i] && i < FS_NAME_MAX; i++) e->name[i] = info->name[i];
+    for (; info->name[i] && i < VFS_NAME_MAX; i++) e->name[i] = info->name[i];
     e->name[i] = 0;
     e->dir = info->type == FS_TYPE_DIR;
     e->size = info->size;
@@ -79,7 +81,9 @@ static void reload(const char *keep_name)
     s_n = 0;
     if (s_path[1]) { entry_t *e = &s_ent[s_n++]; e->name[0] = '.'; e->name[1] = '.'; e->name[2] = 0; e->dir = true; e->size = 0; }
     int first = s_n;
-    vfs_readdir(s_path, collect, NULL);
+    int rc=vfs_readdir(s_path, collect, NULL);
+    if(rc<0)ksnprintf(s_status,sizeof s_status,"directory read error %d",rc);
+    else if(s_n==MAX_ENTRIES)say("list limited to 160 entries");
     for (int i = first + 1; i < s_n; i++) {                     /* insertion sort: small n, no extra memory */
         entry_t t = s_ent[i];
         int j = i - 1;
@@ -115,15 +119,9 @@ static void draw_entry(int idx)
     const entry_t *e = &s_ent[idx];
     char size[12];
     if (e->dir) ksnprintf(size, sizeof size, "<DIR>"); else ksnprintf(size, sizeof size, "%u", (unsigned)e->size);
-    char line[COL_WIDTH + 40];
-    int cells = 0;
-    for (const char *q = e->name; *q; q++) if (((unsigned char)*q & 0xC0) != 0x80) cells++;     /* names are UTF-8: pad by characters */
-    char pad[FS_NAME_MAX + 1];
-    int np = FS_NAME_MAX - cells;
-    if (np < 0) np = 0;
-    for (int i = 0; i < np; i++) pad[i] = ' ';
-    pad[np] = 0;
-    ksnprintf(line, sizeof line, "%c%s%s %8s ", s_mark[idx] ? '*' : ' ', e->name, pad, size);   /* 1 + 23 + 1 + 8 + 1 = 34 = COL_WIDTH */
+    char label[96],line[COL_WIDTH+100];
+    filer_name_label(e->name,label,23);
+    ksnprintf(line,sizeof line,"%c%s %8s ",s_mark[idx]?'*':' ',label,size);
     if (idx == s_sel) dq_text_rev(cx, cy, line); else dq_text(cx, cy, line);
 }
 
@@ -292,7 +290,7 @@ static void do_delete(void)
 
 static void do_mkdir(void)
 {
-    char name[FS_NAME_MAX + 1] = "";
+    char name[VFS_NAME_MAX + 1] = "";
     if (!dq_input("New directory name:", name, sizeof name) || !name[0]) { say("cancelled"); return; }
     char p[PATH_MAX_];
     path_join(p, s_path, name);
@@ -305,7 +303,7 @@ static void do_rename(void)
     const entry_t *e = &s_ent[s_sel];
     if (s_n == 0 || (e->name[0] == '.' && e->name[1] == '.')) return;
     if (e->dir) { say("renaming a directory is not supported"); return; }
-    char name[FS_NAME_MAX + 1];
+    char name[VFS_NAME_MAX + 1];
     ksnprintf(name, sizeof name, "%s", e->name);
     if (!dq_input("Rename to:", name, sizeof name) || !name[0]) { say("cancelled"); return; }
     char src[PATH_MAX_], dst[PATH_MAX_];
@@ -402,6 +400,12 @@ static void view_image_file(int idx)
 
 static void view_file(const entry_t *e)
 {
+    if(mp3_is_name(e->name)){
+        char path[PATH_MAX_];path_join(path,s_path,e->name);
+        int rc=path[0]?mp3_play_file(path):ERR_NAMETOOLONG;
+        if(rc<0)ksnprintf(s_status,sizeof s_status,"MP3 start failed (%d)",rc);
+        return;
+    }
     if (camera_is_bmp_name(e->name)) {
         view_image_file(s_sel);
         return;
@@ -466,9 +470,9 @@ static void enter_dir(const char *name)
         int n = 0;
         while (s_path[n]) n++;
         while (n > 1 && s_path[n - 1] != '/') n--;               /* drop the last component */
-        char last[FS_NAME_MAX + 1];
+        char last[VFS_NAME_MAX + 1];
         int l = 0;
-        for (int i = n; s_path[i] && l < FS_NAME_MAX; i++) last[l++] = s_path[i];
+        for (int i = n; s_path[i] && l < VFS_NAME_MAX; i++) last[l++] = s_path[i];
         last[l] = 0;
         if (n > 1) n--;
         s_path[n] = 0;
@@ -484,6 +488,13 @@ static void enter_dir(const char *name)
 
 void filer_run(const char *start_dir)
 {
+    if(s_ent){dq_message("File manager is already open","");return;}
+    s_ent=kmalloc_psram(MAX_ENTRIES*sizeof *s_ent);
+    if(!s_ent)s_ent=kmalloc(MAX_ENTRIES*sizeof *s_ent);
+    if(!s_ent){dq_message("File list allocation failed","");return;}
+    s_view=kmalloc_psram(VIEW_BYTES+1);
+    if(!s_view)s_view=kmalloc(VIEW_BYTES+1);
+    if(!s_view){kfree(s_ent);s_ent=NULL;dq_message("Preview allocation failed","");return;}
     ksnprintf(s_path, sizeof s_path, "%s", start_dir && start_dir[0] ? start_dir : "/");
     s_status[0] = 0;
     reload(NULL);
@@ -494,7 +505,7 @@ void filer_run(const char *start_dir)
         int rows = list_rows();
         s_status[0] = 0;
         switch (k) {
-        case 'q': case 'Q': case DQK_ESC: return;
+        case 'q': case 'Q': case DQK_ESC: kfree(s_view);s_view=NULL;kfree(s_ent);s_ent=NULL;return;
         case DQK_DOWN: case 'j': move_to(s_sel + 1); break;
         case DQK_UP:   case 'k': move_to(s_sel - 1); break;
         case DQK_RIGHT: case 'l': move_to(s_sel + rows); break;
@@ -519,7 +530,7 @@ void filer_run(const char *start_dir)
             }
             break;
         case 'f': case 'F': {                                       /* new file */
-            char name[FS_NAME_MAX + 1] = "";
+            char name[VFS_NAME_MAX + 1] = "";
             if (dq_input("New file name:", name, sizeof name) && name[0]) {
                 char p[PATH_MAX_];
                 path_join(p, s_path, name);

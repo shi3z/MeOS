@@ -24,6 +24,16 @@
 
 #define FILER_PAUSE_SETTLE_MS 100u
 #include "shell.h"
+#include <m5os/crash.h>
+#include <m5os/health.h>
+#include <m5os/wall_time.h>
+#include <m5os/hal_i2c.h>
+#include "hardware.h"
+#include "../../apps/calculator/expr.h"
+#include "sd.h"
+#include <m5os/audio.h>
+#include <m5os/player.h>
+#include <m5os/microphone.h>
 #include <m5os/vfs.h>
 #include <m5os/task.h>
 #include <m5os/kprintf.h>
@@ -47,7 +57,7 @@
 #endif
 #endif
 
-#define LINE_MAX     128
+#define LINE_MAX     (VFS_PATH_MAX+32)
 #define ARG_MAX      16
 #define OUT_BUF      160
 #define CAT_CHUNK    128
@@ -61,6 +71,8 @@
 
 static int  s_out = -1, s_in = -1;
 static char s_cwd[VFS_PATH_MAX] = "/";
+
+static bool sh_streq(const char *a, const char *b);
 
 /* ---------------------------------------------------------------- output */
 
@@ -129,15 +141,65 @@ static int cmd_help(int argc, char **argv)
     return 0;
 }
 
+static int cmd_i2c(int argc,char **argv) {
+    (void)argc; (void)argv;hal_i2c_stats_t stats;hal_i2c_get_stats(&stats);
+    kprintf("I2C transactions: ok %u, NACK %u, timeout %u, invalid %u\n",stats.ok,stats.nack,stats.timeout,stats.invalid);return 0;
+}
+#if M5OS_BOARD_TAB5
+static int cmd_play(int argc,char **argv) {
+    char path[VFS_PATH_MAX];
+    if(argc!=2 || !resolve(argv[1],path)){sh_puts("usage: play \"/sd/path/track.mp3\"\n");return 1;}
+    int rc=mp3_play_file(path);if(rc<0)SH_PRINTF("play: error %d\n",rc);return rc<0?1:0;
+}
+#endif
+static int cmd_crash(int argc,char **argv) { (void)argc; (void)argv; crash_print_previous(); return 0; }
+
+#if M5OS_BOARD_TAB5
+static calc_context s_calc = { .degrees = 1 };
+static int cmd_calc(int argc, char **argv)
+{
+    if (argc == 2 && (sh_streq(argv[1], "deg") || sh_streq(argv[1], "rad"))) {
+        s_calc.degrees = sh_streq(argv[1], "deg");
+        SH_PRINTF("calc: %s\n", s_calc.degrees ? "DEG" : "RAD"); return 0;
+    }
+    char text[LINE_MAX], output[24];
+    size_t len = 0, error_pos = 0;
+    if (argc < 2) { sh_puts("usage: calc EXPR | deg | rad   (sin cos tan sqrt log ln exp abs; pi e Ans)\n"); return 1; }
+    for (int i = 1; i < argc; i++) {
+        if (i > 1) {
+            if (len + 1 >= sizeof text) { sh_puts("calc: expression too long\n"); return 1; }
+            text[len++] = ' ';
+        }
+        for (const char *p = argv[i]; *p; p++) {
+            if (len + 1 >= sizeof text) { sh_puts("calc: expression too long\n"); return 1; }
+            text[len++] = *p;
+        }
+    }
+    text[len] = 0;
+    double value;
+    const char *error = calc_eval_context(text, &s_calc, &value, &error_pos);
+    if (error) { SH_PRINTF("calc: %s (column %u)\n", error, (unsigned)error_pos + 1); return 1; }
+    if (!calc_format(value, output, sizeof output)) { sh_puts("calc: cannot format result\n"); return 1; }
+    SH_PRINTF("%s\n", output);
+    return 0;
+}
+#endif
+
 static int cmd_ps(int argc, char **argv)
 {
     (void)argc; (void)argv;
     task_info_t t[PS_MAX];
     int n = task_snapshot(t, PS_MAX);
-    sh_puts("PID  NAME             PRI  STATE       APP\n");
+    sh_puts("PID  NAME             PRI E/B STATE       APP  STACK used~/size  GUARD\n");
     for (int i = 0; i < n; i++) {
-        if (t[i].app_id) SH_PRINTF("%-4u %-16s %-4u %-11s %u\n", t[i].id, t[i].name, t[i].priority, task_state_name(t[i].state), t[i].app_id);
-        else             SH_PRINTF("%-4u %-16s %-4u %-11s -\n", t[i].id, t[i].name, t[i].priority, task_state_name(t[i].state));
+        SH_PRINTF("%-4u %-16s %u/%u  %-11s ", t[i].id, t[i].name, t[i].priority, t[i].base_priority, task_state_name(t[i].state));
+        if (t[i].app_id) SH_PRINTF("%u  ", t[i].app_id);
+        else sh_puts("-  ");
+        task_stack_info_t stack;
+        int rc = task_stack_inspect(t[i].id, &stack);
+        if (rc == ERR_OK) SH_PRINTF("%u/%u  %s\n", (unsigned)stack.used, (unsigned)stack.size,
+                                   stack.guard_ok ? "OK" : "DAMAGED");
+        else sh_puts(rc == ERR_NOSYS ? "n/a (boot stack)\n" : "n/a (task exited)\n");
     }
     return 0;
 }
@@ -495,6 +557,7 @@ static int cmd_apps(int argc, char **argv)
             SH_PRINTF("%-4u %-8s %-8s %-4u %s  %-5u  %u B held\n", a[i].app_id, a[i].name, app_state_name(a[i].state), a[i].owner_task, perms, a[i].tasks, a[i].mem_bytes);
         else
             SH_PRINTF("%-4u %-8s %-8s %-4u %s  %-5u  %u B reclaimed\n", a[i].app_id, a[i].name, app_state_name(a[i].state), a[i].owner_task, perms, a[i].tasks, a[i].reclaimed_bytes);
+        if(a[i].cleanup_error) SH_PRINTF("     cleanup retry pending: %d; owner memory retained\n",a[i].cleanup_error);
     }
     return 0;
 }
@@ -844,6 +907,21 @@ static int cmd_mount(int argc, char **argv)
     return 0;
 }
 
+#if M5OS_BOARD_TAB5
+static int cmd_devices(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_devices(); return 0;
+}
+static int cmd_power(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_power(); return 0;
+}
+static int cmd_storage(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_storage(); return 0;
+}
+#endif
+
 /* ----------------------------------------------------------- line editing */
 
 #define HIST_MAX     32
@@ -856,7 +934,11 @@ static int cmd_mount(int argc, char **argv)
 #define CH_CTRL_N    0x0E
 #define CH_CTRL_P    0x10
 
+#if M5OS_BOARD_TAB5
+static char (*s_history)[LINE_MAX]; /* long command history belongs in PSRAM */
+#else
 static char s_history[HIST_MAX][LINE_MAX];
+#endif
 static int  s_hist_count = 0;
 
 static bool str_eq(const char *a, const char *b) { while (*a && *a == *b) { a++; b++; } return *a == *b; }
@@ -878,6 +960,9 @@ static void history_add(const char *line)
     while (line[i] == ' ' || line[i] == '\t') i++;
     if (!line[i]) return;
     if (s_hist_count > 0 && str_eq(line, s_history[(s_hist_count - 1) % HIST_MAX])) return;
+#if M5OS_BOARD_TAB5
+    if(!s_history)return;
+#endif
     str_copy_len(s_history[s_hist_count % HIST_MAX], line, LINE_MAX);
     s_hist_count++;
 }
@@ -894,7 +979,24 @@ static int cmd_history(int argc, char **argv)
 
 static const command_t s_commands[] = {
     { "help",    cmd_help,    "list commands" },
+#if M5OS_BOARD_TAB5
+#if M5OS_BOARD_TAB5
+    { "mic", microphone_command, "mic test [SECONDS] bounded microphone input test" },
+    { "play", cmd_play, "play PATH       MP3 player (Q stops)" },
+    { "audio", audio_command, "audio test      low-volume speaker test" },
+#endif
+    { "calc", cmd_calc, "calc EXPR | deg | rad  numeric expressions" },
+    { "devices", cmd_devices, "board devices: detected, untested, or unsupported (read-only)" },
+    { "power",   cmd_power,   "battery voltage/current, estimated level and charger state (read-only)" },
+    { "sd", shell_sd, "sd [status|probe|mount [ro|rw]|unmount] microSD" },
+    { "storage", cmd_storage, "root backing, persistence and microSD support (read-only)" },
+#endif
     { "history", cmd_history, "show command history (or use Up/Down arrows)" },
+    { "date", time_command, "UTC time: date [sync|set ISO8601Z]" },
+    { "rtc", rtc_command, "RTC read or explicit set ISO8601Z" },
+    { "i2c", cmd_i2c, "I2C transaction error counters (no probe)" },
+    { "health", health_command, "progress leases and watchdog state" },
+    { "crash", cmd_crash, "previous retained MeOS panic record" },
     { "ps",      cmd_ps,      "list tasks" },
     { "kill",    cmd_kill,    "kill PID        terminate one task (an app: its owner task)" },
     { "ls",      cmd_ls,      "ls [PATH]       list a directory (/dev lists devices)" },
@@ -1209,6 +1311,9 @@ static void execute(char *line)
 void shell_task(void *arg)
 {
     (void)arg;
+#if M5OS_BOARD_TAB5
+    if(!s_history)s_history=kmalloc_psram(HIST_MAX*sizeof *s_history);
+#endif
     s_out = vfs_open("/dev/uart", VFS_O_WRITE);
     s_in  = vfs_open("/dev/uart", VFS_O_READ);
     if (s_out < 0 || s_in < 0) { kprintf("shell: cannot open /dev/uart\n"); return; }

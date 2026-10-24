@@ -79,6 +79,7 @@ void arch_tick_init(uint32_t period_us, void (*handler)(void))
     /* Tell IDF's interrupt allocator the tick line is taken, so a driver's esp_intr_alloc() never picks it. */
     if (esp_intr_reserve(TICK_LINE, 0) != ESP_OK) kprintf("irq: CPU line %u was already in use by IDF\n", (unsigned)TICK_LINE);
     uint32_t flags = arch_irq_disable();
+    __asm__ volatile("csrs mstatus, %0" :: "r"(0x6000u) : "memory"); /* FS=Dirty before any tick FPU save */
     s_handler = handler;
     s_period = period_us * TICKS_PER_US;
 

@@ -4,7 +4,7 @@
 #include <m5os/kprintf.h>
 #include <m5os/app.h>
 
-typedef struct { bool used; char path[VFS_PATH_MAX]; const vfs_fs_t *fs; void *fsdata; uint8_t len; } mount_t;
+typedef struct { bool used; char path[VFS_PATH_MAX]; const vfs_fs_t *fs; void *fsdata; uint16_t len; } mount_t;
 typedef struct { bool used; const mount_t *m; void *file; uint32_t owner_app; } vfd_t;
 
 static mount_t s_mounts[VFS_MOUNT_MAX];
@@ -91,7 +91,7 @@ int vfs_mount(const char *target, const vfs_fs_t *fs, void *fsdata)
         mount_t *m = &s_mounts[slot];
         size_t n = slen(norm);
         for (size_t i = 0; i <= n; i++) m->path[i] = norm[i];
-        m->len = (uint8_t)n; m->fs = fs; m->fsdata = fsdata; m->used = true;
+        m->len = (uint16_t)n; m->fs = fs; m->fsdata = fsdata; m->used = true;
     }
     arch_irq_restore(irq);
     return rc;
@@ -264,7 +264,7 @@ int vfs_readdir(const char *path, int (*cb)(const vfs_info_t *, void *), void *c
         if (nested) continue;
         vfs_info_t info = { .type = FS_TYPE_DIR, .size = 0 };
         size_t j = 0;
-        while (name[j] && j < FS_NAME_MAX) { info.name[j] = name[j]; j++; }
+        while (name[j] && j < VFS_NAME_MAX) { info.name[j] = name[j]; j++; }
         info.name[j] = 0;
         count++;
         if (cb(&info, ctx)) stopped = true;
