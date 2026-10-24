@@ -1,4 +1,6 @@
 #include <m5os/kernel.h>
+#include <m5os/crash.h>
+#include <m5os/health.h>
 #include <m5os/kprintf.h>
 #include <m5os/hal_console.h>
 #include <m5os/hal_time.h>
@@ -42,11 +44,6 @@ bool rootfs_mount(blockdev_t *sd);
 static blockdev_t *s_sd;
 static bool lcd_ready;
 
-void kernel_panic(const char *msg)
-{
-    kprintf("\n*** MeOS PANIC: %s\n", msg);
-    for (;;) { }
-}
 
 #if M5OS_BOOT_SELFTEST
 /* =========================================================================
@@ -380,6 +377,7 @@ void kernel_main(void)
 {
     hal_console_init();
     hal_time_init();
+    crash_boot_report();
     kprintf("\nMeOS %s booting...\n", M5OS_VERSION_STRING);
     kprintf("Board: %s\n", M5OS_BOARD_NAME);
     kprintf("CPU: %s\nScheduler: MeOS (preemptive, %u ms tick)\nFreeRTOS: disabled\n",
@@ -430,6 +428,7 @@ void kernel_main(void)
 #endif
     task_create_stack("shell", shell_task, NULL, TASK_PRIO_DEFAULT + 1, 32768);
 #endif
+    health_start();
     sched_start_preemption();
 
     for (;;) arch_cpu_idle();

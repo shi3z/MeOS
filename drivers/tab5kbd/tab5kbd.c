@@ -87,7 +87,7 @@ void keyboard_stats(keyboard_stats_t *out)
 void keyboard_start(void)
 {
     ime_init();                                       /* Japanese input: keys pass through it (off until Ctrl+Space) */
-    hal_i2c_set_pins(PIN_SCL, PIN_SDA);              /* the system bus is no longer needed after board_init() */
+    hal_i2c_set_pins(PIN_SCL, PIN_SDA);              /* legacy helpers use Ext.Port1; fixed-system helpers still serve touch/camera/power */
     hal_i2c_init();
     uint8_t fw = 0;
     if (hal_i2c_read_reg(KBD_ADDR, REG_FIRMWARE, &fw)) {
