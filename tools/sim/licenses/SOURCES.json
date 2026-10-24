@@ -1,0 +1,22 @@
+{
+  "SDL2-LICENSE.txt": {
+    "sha256": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+    "url": "https://raw.githubusercontent.com/libsdl-org/SDL/8acf7cfc0f88717e5c036f60f0314bfcafe39189/LICENSE.txt"
+  },
+  "efont-upstream-notices.txt": {
+    "section": "Copyright (all supplied notices, including component font notices)",
+    "sha256": "ed3b90e055ca22f328c09224a92709897c6fc798f46f152953f0e48270cd137b",
+    "url": "https://raw.githubusercontent.com/wiki/olikraus/u8g2/fntgrpefont.md"
+  },
+  "font8x8-README.txt": {
+    "sha256": "885cc022fa9c844695b364e77e6a18ab2be74678a181827f1ce893071205cb65",
+    "url": "https://raw.githubusercontent.com/dhepper/font8x8/8e279d2d864e79128e96188a6b9526cfa3fbfef9/README"
+  },
+  "local-font-provenance-status": {
+    "status": "existing source header only; exact originating BDF and generation chain not yet established"
+  },
+  "u8g2-LICENSE.txt": {
+    "sha256": "35070a56a2cb59560278c1734c51da94b679bc208c5244625769a0f1df001d30",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/d6c8499c5f2707cac8eccd09fd8f677d12b17977/LICENSE"
+  }
+}

@@ -20,6 +20,26 @@ static void held_remove(task_t *t, mutex_t *m)
     m->next_held = NULL;
 }
 
+/* TASK_MAX is small: a bounded fixed-point calculation also handles transitive
+ * donation, multiple held locks and cycles without recursion or allocation. */
+void mutex_recompute_priorities(void)
+{
+    for(int i=0;i<TASK_MAX;i++) g_tasks[i].priority=g_tasks[i].base_priority;
+    for(int pass=0;pass<TASK_MAX;pass++) {
+        bool changed=false;
+        for(int i=0;i<TASK_MAX;i++) {
+            task_t *waiter=&g_tasks[i];
+            if(waiter->state!=TASK_BLOCKED || !waiter->wait_mutex) continue;
+            task_t *owner=waiter->wait_mutex->owner;
+            if(owner && owner->state!=TASK_UNUSED && owner->state!=TASK_TERMINATED &&
+                owner->priority<waiter->priority) {
+                owner->priority=waiter->priority; changed=true;
+            }
+        }
+        if(!changed) break;
+    }
+}
+
 /* Give `m` (owned by `owner`) to the best waiter, or free it.  Returns the task
  * that received it (NULL if none).  Interrupts must be masked. */
 static task_t *release_locked(mutex_t *m, task_t *owner)
@@ -33,10 +53,12 @@ static task_t *release_locked(mutex_t *m, task_t *owner)
     if (best) {
         held_push(best, m);
         best->wait_obj = NULL;
+        best->wait_mutex = NULL;
         best->state = TASK_RUNNABLE;
     } else {
         m->owner = NULL;
     }
+    mutex_recompute_priorities();
     return best;
 }
 
@@ -64,7 +86,9 @@ void mutex_lock(mutex_t *m)
         held_push(self, m);
     } else {
         self->wait_obj = m;
+        self->wait_mutex = m;
         self->state = TASK_BLOCKED;
+        mutex_recompute_priorities();
         sched_reschedule();                     /* returns once unlock() handed the mutex to us */
         if (m->owner != self) kernel_panic("mutex_lock: woken without ownership");
     }
@@ -85,5 +109,7 @@ void mutex_unlock(mutex_t *m)
 
 void mutex_release_all(task_t *t)
 {
+    t->wait_mutex=NULL;
     while (t->held) release_locked(t->held, t);
+    mutex_recompute_priorities();
 }

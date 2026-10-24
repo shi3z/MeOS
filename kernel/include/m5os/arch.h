@@ -14,6 +14,7 @@ void arch_context_switch(uint32_t **old_sp, uint32_t *new_sp);
 /* Build, at the top of [stack_base, stack_base+size), a context that makes the
  * first arch_context_switch() into it start entry(arg).  If entry returns,
  * the task falls into task_exit().  Returns the initial saved sp. */
+size_t arch_task_context_bytes(void); /* saved frame footprint above SP */
 uint32_t *arch_task_stack_init(void *stack_base, size_t size,
                                void (*entry)(void *), void *arg);
 

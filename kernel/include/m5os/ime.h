@@ -27,6 +27,22 @@ void ime_init(void);                    /* optional: loads the large dictionary 
 void ime_feed(const char *key);         /* the console bytes of one key press, replaces kconsole_inject() */
 bool ime_active(void);                  /* on (Japanese input) ? */
 const char *ime_status(void);
+/* App-owned composition UI for proportional/large-font text editors. The
+ * normal IME renderer stays unchanged for other apps. Snapshot copies state;
+ * no pointers into the conversion engine escape to the application. */
+#define IME_VIEW_CPS 200
+#define IME_VIEW_CANDIDATES 9
+typedef struct {
+    uint32_t revision;
+    bool active, converting, listing;
+    int count, candidate_count, selected;
+    uint16_t text[IME_VIEW_CPS];
+    uint8_t styles[IME_VIEW_CPS];
+    char candidates[IME_VIEW_CANDIDATES][192];
+    int numbers[IME_VIEW_CANDIDATES];
+} ime_view;
+void ime_set_app_view(bool enabled);
+bool ime_read_view(ime_view *out);
 /* A full-screen program that edits a line of text says where its insertion point is (in text cells); while it is set
  * the composition is drawn inline there, with the candidate list under it, instead of as a bar at the bottom.
  * Call it before every wait for a key (cheap), and ime_clear_anchor() when the field goes away. */
