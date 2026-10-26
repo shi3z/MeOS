@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-26",
+  "source_commit": "f4e9ddb1ae891ee5e87afeea9b02bbe18ac64af1",
+  "firmware_sha256": "2a8ca61867f04fc2c4b2d8de2079b18768e92cdb9558efb18d27f85b672aaa82",
+  "resolution": [
+    512,
+    300
+  ],
+  "viewport": {
+    "x": 128,
+    "y": 60,
+    "width": 1024,
+    "height": 600
+  },
+  "cpu_mhz": 360,
+  "l2_cache_kib": 128,
+  "surface_cache_kib": 600,
+  "stack_bytes": 49152,
+  "timedemo_command": "timedemo demo1;toggleconsole",
+  "audio": "ES8388 24000Hz stereo -18dB",
+  "flash": "App only to OTA slot 0; factory, other slot and SD preserved; no backup or format",
+  "visual": {
+    "static_cpu_mismatches": 0,
+    "static_dma_mismatches": 0,
+    "moving_dma_mismatches": 0,
+    "static_fnv32": "a4258a41",
+    "user_confirmation": "pending"
+  },
+  "qualification": "Physical full-view timedemo complete; automated pixel comparison and normal quit/relaunch passed; human display/audio/input acceptance pending",
+  "timedemo_runs": [
+    {
+      "mode": "dma",
+      "frames": 969,
+      "seconds": 168.7,
+      "fps": 5.7
+    },
+    {
+      "mode": "dma",
+      "frames": 969,
+      "seconds": 168.7,
+      "fps": 5.7
+    },
+    {
+      "mode": "cpu",
+      "frames": 969,
+      "seconds": 90.4,
+      "fps": 10.7
+    },
+    {
+      "mode": "cpu",
+      "frames": 969,
+      "seconds": 90.3,
+      "fps": 10.7
+    }
+  ],
+  "stack": {
+    "maximum_sampled_bytes": 18368,
+    "capacity_bytes": 49152,
+    "all_sampled_guards_ok": true
+  },
+  "normal_exit_audio_blocks": [
+    25786,
+    9870,
+    1139
+  ],
+  "startup_load_ms": [
+    10882,
+    10480,
+    10869
+  ],
+  "observations": [
+    "DMA static start view approximately 23 FPS is not the timedemo mean.",
+    "Moving DMA transfer intervals approximately 130ms/frame, CPU approximately 60ms/frame.",
+    "150 KiB indexed frame exceeds 128 KiB L2; column access/cache behavior is a hypothesis for follow-up, not yet isolated.",
+    "No renderer/cache/compiler changes during baseline. CPU remains default; existing 320x200 configuration retained.",
+    "Final device runs CPU 512x300 E1M1."
+  ]
+}

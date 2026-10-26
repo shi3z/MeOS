@@ -28,7 +28,7 @@
 
 static char s_buf[EDIT_MAX + 1];
 static int  s_len, s_cur, s_top, s_hscroll, s_want;
-static bool s_modified, s_saved_any;
+static bool s_modified, s_saved_any, s_save_failed;
 static char s_status[STATUS_LEN];
 static char s_path[VFS_PATH_MAX];
 
@@ -233,18 +233,8 @@ static void move_down(void)
 
 /* ---- file ------------------------------------------------------------------------ */
 
-static int load(void)
+static int validate_text(void)
 {
-    vfs_info_t st;
-    s_len = 0;
-    if (vfs_stat(s_path, &st) != ERR_OK) return 0;                 /* a new file */
-    if (st.type != FS_TYPE_FILE) return ERR_INVAL;
-    if (st.size > EDIT_MAX) return ERR_NOSPC;
-    int fd = vfs_open(s_path, VFS_O_READ);
-    if (fd < 0) return fd;
-    int n;
-    while (s_len < EDIT_MAX && (n = vfs_read(fd, &s_buf[s_len], (size_t)(EDIT_MAX - s_len))) > 0) s_len += n;
-    vfs_close(fd);
     for (int i = 0; i < s_len;) {                                  /* text only: ASCII and well-formed UTF-8, no control bytes */
         unsigned char c = (unsigned char)s_buf[i];
         if (c < 0x80) {
@@ -259,28 +249,48 @@ static int load(void)
     }
     return 0;
 }
+static int load(void)
+{
+    vfs_info_t st;
+    s_len = 0;
+    if (vfs_stat(s_path, &st) != ERR_OK) return 0;                 /* a new file */
+    if (st.type != FS_TYPE_FILE) return ERR_INVAL;
+    if (st.size > EDIT_MAX) return ERR_NOSPC;
+    int fd = vfs_open(s_path, VFS_O_READ);
+    if (fd < 0) return fd;
+    int n;
+    while (s_len < EDIT_MAX && (n = vfs_read(fd, &s_buf[s_len], (size_t)(EDIT_MAX - s_len))) > 0) s_len += n;
+    vfs_close(fd);
+    return validate_text();
+}
 
 static bool save(void)
 {
-    int fd = vfs_open(s_path, VFS_O_WRITE | VFS_O_CREATE | VFS_O_TRUNC);
-    if (fd < 0) { ksnprintf(s_status, sizeof s_status, "save failed: cannot open (error %d)", fd); return false; }
-    int w = s_len ? vfs_write(fd, s_buf, (size_t)s_len) : 0;
-    vfs_close(fd);
-    if (w != s_len) { ksnprintf(s_status, sizeof s_status, "save failed: wrote %d of %d bytes (error %d)", w, s_len, w < 0 ? w : ERR_NOSPC); return false; }
+    int rc = vfs_replace_file(s_path,s_buf,(size_t)s_len,NULL);
+    if (rc < 0) {
+        s_save_failed = true;
+        ksnprintf(s_status, sizeof s_status, "save failed (error %d); buffer retained", rc);
+        return false;
+    }
+    s_save_failed = false;
     s_modified = false;
     s_saved_any = true;
     say("saved");
     return true;
 }
 
-bool edit_file(const char *path)
+static bool edit_initial(const char *path, const char *initial, size_t length)
 {
     ksnprintf(s_path, sizeof s_path, "%s", path);
     if (!s_shown) s_shown = kmalloc_psram(sizeof(struct row) * MAX_SCREEN_ROWS);
     if (!s_shown) { dq_message("Out of memory.", NULL); return false; }
     s_full = true;
-    s_status[0] = 0; s_cur = s_top = s_hscroll = s_want = 0; s_modified = s_saved_any = false;
-    int rc = load();
+    s_status[0] = 0; s_cur = s_top = s_hscroll = s_want = 0; s_modified = s_saved_any = s_save_failed = false;
+    int rc;
+    if (initial) {
+        if (length > EDIT_MAX) rc = ERR_NOSPC;
+        else { memcpy(s_buf, initial, length); s_len = (int)length; rc = validate_text(); }
+    } else rc = load();
     if (rc == ERR_NOSPC) { dq_message("File is larger than the editor buffer", "(32 KB)."); return false; }
     if (rc == ERR_INVAL) { dq_message("Cannot edit: not a UTF-8 text file.", NULL); return false; }
     if (rc < 0)          { dq_message("Cannot open the file.", NULL); return false; }
@@ -294,7 +304,7 @@ bool edit_file(const char *path)
         switch (k) {
         case K_SAVE: save(); break;
         case K_QUIT: case DQK_ESC:
-            if (!s_modified || dq_confirm("Discard unsaved changes?")) { ime_clear_anchor(); return s_saved_any; }
+            if (!s_modified || dq_confirm("Discard unsaved changes?")) { ime_clear_anchor(); return s_saved_any && (!initial || !s_save_failed); }
             s_full = true;                                           /* the dialog covered the text */
             break;
         case DQK_UP:    move_up(); break;
@@ -322,4 +332,10 @@ bool edit_file(const char *path)
             break;
         }
     }
+}
+
+bool edit_file(const char *path) { return edit_initial(path, NULL, 0); }
+bool edit_file_with_text(const char *path, const char *text, size_t length)
+{
+    return edit_initial(path, text, length);
 }

@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-24",
+  "source_base": "c932851",
+  "source_state": "audio/direct-map working changes on experiment/quake",
+  "firmware_sha256": "735b49f8c870bf31512148a359cd2528d6443aa1b25706127b6d22abc6839988",
+  "firmware_bytes": 4036400,
+  "map": "e1m1",
+  "map_title": "The Slipgate Complex",
+  "data": "shareware v1.06 pak0, original registration checks retained",
+  "backend": "classic CPU; PPA acquisition reported busy",
+  "mixer_rate": 11025,
+  "hardware_output_rate": 24000,
+  "game_frames_at_normal_exit": 2716,
+  "dma_blocks": 9968,
+  "dma_reported_underruns_errors": 0,
+  "output_frames": 5103616,
+  "nonzero_output_frames": 766576,
+  "audio_idle_after_exit": true,
+  "keyboard_text_restored": true,
+  "sampled_stack_bytes": 13088,
+  "stack_capacity_bytes": 49152,
+  "stack_guard_ok": true,
+  "allocation_failures_internal_psram": [
+    0,
+    0
+  ],
+  "audible_user_confirmation": "user confirmed effect audio audible",
+  "bgm_supported": false,
+  "host_checks": "ASan/UBSan audio ring and existing Quake adapter/render/math suite passed",
+  "builds": [
+    "Quake 128-byte L2 cache lines",
+    "WAD-free Doom 64-byte L2 cache lines"
+  ],
+  "notes": [
+    "FPS depends on map/viewpoint; this is not a controlled comparison to the start-map PPA session.",
+    "Second E1M1 launch reached gameplay; sampled start-view intervals 44.1-44.2 FPS, stack guard OK.",
+    "No card formatting, data replacement or firmware publication."
+  ],
+  "second_launch_gameplay": true
+}

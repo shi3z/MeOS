@@ -14,6 +14,8 @@
 #include <stdarg.h>
 
 /* ---- stubs for the OS ---- */
+uint32_t arch_irq_disable(void) { return 0; }
+void arch_irq_restore(uint32_t state) { (void)state; }
 static char s_out[4096];
 static size_t s_outn;
 size_t kconsole_inject_n(const char *s, size_t n) { for (size_t i = 0; i < n; i++) s_out[s_outn++] = s[i]; s_out[s_outn] = 0; return n; }
@@ -114,6 +116,23 @@ int main(int argc, char **argv)
     expect("toggle commits", "ni<toggle>", "に", false);
     expect("off again", "x", "x", false);
     expect("f10", "<toggle>abc<f10><enter><toggle>", "abc", false);
+    ime_set_app_view(true);
+    expect("app commit bypasses byte stream", "<toggle>nihongo<enter>", "", false);
+    char commit[IME_COMMIT_BYTES];
+    size_t committed=ime_take_commit(commit,sizeof commit);
+    const char *want_commit="にほんご";
+    if(strict&&(committed!=strlen(want_commit)||memcmp(commit,want_commit,committed))) {
+        printf("FAIL app commit: got %zu bytes\n",committed);fails++;
+    }
+    if(ime_take_commit(commit,sizeof commit)!=0) {printf("FAIL app commit delivered twice\n");fails++;}
+    expect("small destination leaves commit pending", "ai<enter>", "", false);
+    if(ime_take_commit(commit,1)!=0) {printf("FAIL short app commit buffer accepted\n");fails++;}
+    committed=ime_take_commit(commit,sizeof commit);
+    if(strict&&(committed!=strlen("あい")||memcmp(commit,"あい",committed))) {
+        printf("FAIL pending app commit: got %zu bytes\n",committed);fails++;
+    }
+    ime_set_app_view(false);
+    expect("app view disabled", "<toggle>x", "x", false);
     printf(fails ? "ime: %d FAIL\n" : "ime: all pass\n", fails);
     return fails != 0;
 }

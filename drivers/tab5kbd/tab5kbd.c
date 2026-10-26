@@ -17,6 +17,7 @@
 #include "../usbkbd/hid_keys.h"
 #include "osk.h"
 #include <m5os/ime.h>
+#include <m5os/keyboard_raw.h>
 #include <m5os/hal_i2c.h>
 #include <m5os/kprintf.h>
 #include <m5os/task.h>
@@ -43,6 +44,7 @@ static bool s_caps;
 
 static void emit(uint8_t usage, uint8_t mods)
 {
+    if(keyboard_raw_active())return;
     char buf[8];
     hid_decode(usage, mods, s_caps, buf);
     if (buf[0]) { ime_feed(buf); s_stats.last_char = (unsigned char)buf[0]; }
@@ -52,12 +54,38 @@ static void kbd_task(void *arg)
 {
     (void)arg;
     uint8_t held = 0, held_mods = 0;
+    bool native=false;
+    uint32_t epoch=0;
     uint64_t pressed_at = 0, last_repeat = 0;
 
     for (;;) {
         task_sleep(POLL_MS);
+        bool wanted=keyboard_raw_active();
+        uint32_t gen=keyboard_raw_generation();
+        if(wanted!=native||(wanted&&gen!=epoch)){
+            uint8_t mode=wanted?0:MODE_HID,actual=0xff;
+            if(!hal_i2c_write_reg(KBD_ADDR,REG_MODE,mode) ||
+               !hal_i2c_read_reg(KBD_ADDR,REG_MODE,&actual) || actual!=mode ||
+               !hal_i2c_write_reg(KBD_ADDR,REG_EVENT_NUM,0)){
+                keyboard_raw_clear();s_stats.i2c_errors++;continue;
+            }
+            native=wanted;epoch=gen;held=0;keyboard_raw_clear();
+            kputs(native?"keyboard: game input active\n":"keyboard: text input restored\n");
+        }
         uint8_t count = 0;
-        if (!hal_i2c_read_reg(KBD_ADDR, REG_EVENT_NUM, &count)) { s_stats.i2c_errors++; continue; }
+        if (!hal_i2c_read_reg(KBD_ADDR, REG_EVENT_NUM, &count)) { keyboard_raw_clear();s_stats.i2c_errors++; continue; }
+        if(native){
+            if(count>=32){keyboard_raw_clear();hal_i2c_write_reg(KBD_ADDR,REG_EVENT_NUM,0);continue;}
+            keyboard_raw_ready(epoch);
+            for(unsigned n=0;n<MAX_PER_POLL && count;n++,count--){
+                uint8_t event=0xff;
+                if(!hal_i2c_read_reg(KBD_ADDR,0x20,&event)){keyboard_raw_clear();s_stats.i2c_errors++;break;}
+                if(event==0xff)break;
+                if(event&0x80){s_stats.presses++;s_stats.last_x=event&15;s_stats.last_y=(event>>4)&7;}
+                keyboard_raw_matrix(epoch,event);
+            }
+            continue;
+        }
         for (int n = 0; n < MAX_PER_POLL && count > 0; n++, count--) {
             uint8_t ev[2];
             if (!hal_i2c_read_regs(KBD_ADDR, REG_HID_EVENT, ev, 2)) { s_stats.i2c_errors++; break; }
@@ -87,7 +115,7 @@ void keyboard_stats(keyboard_stats_t *out)
 void keyboard_start(void)
 {
     ime_init();                                       /* Japanese input: keys pass through it (off until Ctrl+Space) */
-    hal_i2c_set_pins(PIN_SCL, PIN_SDA);              /* the system bus is no longer needed after board_init() */
+    hal_i2c_set_pins(PIN_SCL, PIN_SDA);              /* legacy helpers use Ext.Port1; fixed-system helpers still serve touch/camera/power */
     hal_i2c_init();
     uint8_t fw = 0;
     if (hal_i2c_read_reg(KBD_ADDR, REG_FIRMWARE, &fw)) {

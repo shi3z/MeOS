@@ -1,0 +1,1043 @@
+{
+  "date": "2026-10-25",
+  "result": "PASS",
+  "board": "M5Stack Tab5, ESP32-P4 revision 1.3",
+  "firmware": {
+    "commit": "1358fd6192d9b26de9e1bf7c086f984242d49017",
+    "harness_commit": "c9e545c4515e5470208404e379429a0397ea369b",
+    "boot_version": "1358fd6",
+    "app_bytes": 1773936,
+    "app_sha256": "488e88b9ac0e7b4cf53ffed5231bb44a8460af88460b9bc220f5988e07af466a",
+    "boot_slot": "ota_1 at 0x7f0000",
+    "persistent_sd_root": true,
+    "transport": "native SDMMC slot 0, 4-bit, 20000 kHz",
+    "card_sectors": 30867456
+  },
+  "hardware_handoff": {
+    "factory_boot_version_before": "db56a6c-dirty",
+    "factory_boot_version_after": "db56a6c-dirty",
+    "factory_offset": "0x10000",
+    "original_boot_selection": "empty otadata; factory default",
+    "preflight_partition_map": {
+      "factory": {
+        "offset": "0x10000",
+        "bytes": "0x3e0000"
+      },
+      "otadata": {
+        "offset": "0x400000",
+        "bytes": "0x2000"
+      },
+      "ota_0": {
+        "offset": "0x410000",
+        "bytes": "0x3e0000"
+      },
+      "ota_1": {
+        "offset": "0x7f0000",
+        "bytes": "0x3e0000"
+      }
+    },
+    "preflight_serial_log_sha256": "03181ff7c4c07149f10238986516622f2bd6035fea8713d9cd1d9ee75f6f5839",
+    "existing_ota_1_image_verified_against_app_sha256": true,
+    "new_app_write_this_session": false,
+    "boot_selection_temporarily_changed_to": "ota_1",
+    "restored_boot_selection": "factory; erased otadata",
+    "factory_boot_and_active_native_sd_root_verified_after_restore": true,
+    "restoration_serial_log_sha256": "bebc0df20ad335569d9fe1eabbf2a43ed0854e323b8acc894fa55fc8fdf75cc2",
+    "serial_port_released": true,
+    "new_backup_taken": false,
+    "backup_omission_previously_authorized": true,
+    "bootloader_partition_table_and_factory_image_modified_this_session": false,
+    "sd_reformatted": false
+  },
+  "measurement": {
+    "harness": "tools/sdroot/wifi_coexistence_device.py",
+    "host_idle_sleep_prevented": "caffeinate -i for each harness process",
+    "serial_logs_retained_privately": true,
+    "reports_contain_network_identity": false,
+    "crc_payload_bytes": 18689235,
+    "crc32": "74e3b084",
+    "network_payload_bytes": 1400,
+    "loss_limit_percent_per_phase": 5,
+    "max_trimmed_psram_drop_kib": 32,
+    "quiet_sd_counter_scope": "one CRC read",
+    "network_sd_counter_scope": "combined PAK CRC, fontbench and unsaved Write workload; not per phase",
+    "write_performance_qualified": false,
+    "notes": [
+      "Requested pps is a pacing target; actual sent/received counts are in each phase.",
+      "All eight native read/write bucket rows were required and checked for errors.",
+      "No native write calls were observed; this workload does not qualify write throughput or latency.",
+      "All timing stages and lock occupancy include task preemption; peaks from different stages must not be summed.",
+      "Two quiet samples are independent process runs; loaded rates have one sample each.",
+      "The 25 pps idle phase lost one host reply; the device recorded no ICMP reply failures.",
+      "The measured 16 KiB trimmed PSRAM drop is within the existing 32 KiB allowance."
+    ]
+  },
+  "trials": [
+    {
+      "label": "uniform",
+      "harness_arguments": [
+        "--reset",
+        "--settle-seconds",
+        "60",
+        "--pps",
+        "25",
+        "100",
+        "--reads",
+        "1",
+        "--diagnostics",
+        "--sd-diagnostics"
+      ],
+      "report_sha256": "5c43f423023162031325db6423df8408941e5ee374a03ff0fa20e8acbb649589",
+      "serial_log_sha256": "77a20df2e9e8c3f411659fdbdc2a48747ae1bf980c9b0512ecddeaefb72e3511",
+      "report": {
+        "result": "PASS",
+        "baseline": [
+          {
+            "seconds": 38.846,
+            "host_seconds": 38.875,
+            "wall_seconds": 38.876,
+            "device_ms": 38846,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 469.8,
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 28886,
+                  "blocks": 28886,
+                  "errors": 0,
+                  "wait_ms": 294,
+                  "prepare_ms": 877,
+                  "dma_ms": 25959,
+                  "finish_ms": 724,
+                  "hold_ms": 27607,
+                  "max_wait_us": 10656,
+                  "max_prepare_us": 938,
+                  "max_dma_us": 10901,
+                  "max_finish_us": 787,
+                  "max_hold_us": 10969,
+                  "max_polls": 1114
+                },
+                "8": {
+                  "calls": 8,
+                  "blocks": 62,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 8,
+                  "finish_ms": 1,
+                  "hold_ms": 9,
+                  "max_wait_us": 53,
+                  "max_prepare_us": 30,
+                  "max_dma_us": 1055,
+                  "max_finish_us": 194,
+                  "max_hold_us": 1239,
+                  "max_polls": 892
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 286,
+                  "blocks": 36608,
+                  "errors": 0,
+                  "wait_ms": 1,
+                  "prepare_ms": 10,
+                  "dma_ms": 2239,
+                  "finish_ms": 877,
+                  "hold_ms": 3128,
+                  "max_wait_us": 286,
+                  "max_prepare_us": 57,
+                  "max_dma_us": 15818,
+                  "max_finish_us": 4029,
+                  "max_hold_us": 18978,
+                  "max_polls": 6995
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            }
+          }
+        ],
+        "loads": [
+          {
+            "pps": 25,
+            "payload_bytes": 1400,
+            "burst_packets": 1,
+            "invalid_replies": 0,
+            "phases": {
+              "idle": {
+                "sent": 70,
+                "received": 69,
+                "loss_percent": 1.429,
+                "rtt_median_ms": 20.23,
+                "rtt_p95_ms": 155.064
+              },
+              "pak": {
+                "sent": 903,
+                "received": 903,
+                "loss_percent": 0,
+                "rtt_median_ms": 23.993,
+                "rtt_p95_ms": 97.013
+              },
+              "font": {
+                "sent": 77,
+                "received": 77,
+                "loss_percent": 0,
+                "rtt_median_ms": 23.067,
+                "rtt_p95_ms": 97.872
+              },
+              "write": {
+                "sent": 45,
+                "received": 45,
+                "loss_percent": 0,
+                "rtt_median_ms": 22.833,
+                "rtt_p95_ms": 114.516
+              }
+            },
+            "device_diagnostics": {
+              "rx_frames": 1693,
+              "rx_partials": 0,
+              "rx_bad": 0,
+              "rx_max_pending": 4761,
+              "rx_reg_errors": 0,
+              "rx_io_errors": 0,
+              "rx_plan_errors": 0,
+              "tx_no_credit": 0,
+              "tx_io_errors": 0,
+              "icmp_requests": 1095,
+              "icmp_replies": 1095,
+              "icmp_failures": 0,
+              "time_poll_gap_us": 150438,
+              "time_poll_duration_us": 140334,
+              "time_bus_wait_us": 82243
+            },
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 30771,
+                  "blocks": 30771,
+                  "errors": 0,
+                  "wait_ms": 1172,
+                  "prepare_ms": 942,
+                  "dma_ms": 27340,
+                  "finish_ms": 774,
+                  "hold_ms": 29107,
+                  "max_wait_us": 10677,
+                  "max_prepare_us": 978,
+                  "max_dma_us": 10816,
+                  "max_finish_us": 843,
+                  "max_hold_us": 10885,
+                  "max_polls": 1087
+                },
+                "8": {
+                  "calls": 70,
+                  "blocks": 447,
+                  "errors": 0,
+                  "wait_ms": 12,
+                  "prepare_ms": 2,
+                  "dma_ms": 88,
+                  "finish_ms": 8,
+                  "hold_ms": 99,
+                  "max_wait_us": 9594,
+                  "max_prepare_us": 57,
+                  "max_dma_us": 10666,
+                  "max_finish_us": 195,
+                  "max_hold_us": 10866,
+                  "max_polls": 1209
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 395,
+                  "blocks": 50560,
+                  "errors": 0,
+                  "wait_ms": 27,
+                  "prepare_ms": 14,
+                  "dma_ms": 3144,
+                  "finish_ms": 1302,
+                  "hold_ms": 4463,
+                  "max_wait_us": 9641,
+                  "max_prepare_us": 733,
+                  "max_dma_us": 75168,
+                  "max_finish_us": 13473,
+                  "max_hold_us": 88683,
+                  "max_polls": 7002
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            },
+            "pak": [
+              {
+                "seconds": 39.016,
+                "host_seconds": 39.052,
+                "wall_seconds": 39.052,
+                "device_ms": 39016,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 467.8
+              }
+            ],
+            "font_receipt": "24 px: load=641 ms metric=147944 us first=450660 us warm=7303 us misses=52 hits=72 raster=439455 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+          },
+          {
+            "pps": 100,
+            "payload_bytes": 1400,
+            "burst_packets": 1,
+            "invalid_replies": 0,
+            "phases": {
+              "idle": {
+                "sent": 259,
+                "received": 259,
+                "loss_percent": 0,
+                "rtt_median_ms": 18.385,
+                "rtt_p95_ms": 88.237
+              },
+              "pak": {
+                "sent": 3590,
+                "received": 3590,
+                "loss_percent": 0,
+                "rtt_median_ms": 21.158,
+                "rtt_p95_ms": 142.485
+              },
+              "font": {
+                "sent": 313,
+                "received": 313,
+                "loss_percent": 0,
+                "rtt_median_ms": 21.585,
+                "rtt_p95_ms": 59.813
+              },
+              "write": {
+                "sent": 179,
+                "received": 179,
+                "loss_percent": 0,
+                "rtt_median_ms": 20.294,
+                "rtt_p95_ms": 82.755
+              }
+            },
+            "device_diagnostics": {
+              "rx_frames": 4976,
+              "rx_partials": 52,
+              "rx_bad": 0,
+              "rx_max_pending": 27626,
+              "rx_reg_errors": 0,
+              "rx_io_errors": 0,
+              "rx_plan_errors": 0,
+              "tx_no_credit": 0,
+              "tx_io_errors": 0,
+              "icmp_requests": 4341,
+              "icmp_replies": 4341,
+              "icmp_failures": 0,
+              "time_poll_gap_us": 239419,
+              "time_poll_duration_us": 226698,
+              "time_bus_wait_us": 68104
+            },
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 30771,
+                  "blocks": 30771,
+                  "errors": 0,
+                  "wait_ms": 3607,
+                  "prepare_ms": 931,
+                  "dma_ms": 27252,
+                  "finish_ms": 762,
+                  "hold_ms": 28995,
+                  "max_wait_us": 58748,
+                  "max_prepare_us": 830,
+                  "max_dma_us": 10155,
+                  "max_finish_us": 735,
+                  "max_hold_us": 10220,
+                  "max_polls": 1094
+                },
+                "8": {
+                  "calls": 70,
+                  "blocks": 447,
+                  "errors": 0,
+                  "wait_ms": 30,
+                  "prepare_ms": 2,
+                  "dma_ms": 79,
+                  "finish_ms": 8,
+                  "hold_ms": 91,
+                  "max_wait_us": 10664,
+                  "max_prepare_us": 650,
+                  "max_dma_us": 11555,
+                  "max_finish_us": 203,
+                  "max_hold_us": 11794,
+                  "max_polls": 1214
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 395,
+                  "blocks": 50560,
+                  "errors": 0,
+                  "wait_ms": 39,
+                  "prepare_ms": 14,
+                  "dma_ms": 3087,
+                  "finish_ms": 1281,
+                  "hold_ms": 4385,
+                  "max_wait_us": 1090,
+                  "max_prepare_us": 597,
+                  "max_dma_us": 14425,
+                  "max_finish_us": 4031,
+                  "max_hold_us": 17669,
+                  "max_polls": 7023
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            },
+            "pak": [
+              {
+                "seconds": 40.875,
+                "host_seconds": 40.982,
+                "wall_seconds": 40.982,
+                "device_ms": 40875,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 446.5
+              }
+            ],
+            "font_receipt": "24 px: load=684 ms metric=156263 us first=483352 us warm=7054 us misses=52 hits=72 raster=473947 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+          }
+        ],
+        "settle_seconds": 60,
+        "firmware_boot_version": "1358fd6",
+        "host_clock": {
+          "monotonic_seconds": 223.87,
+          "wall_seconds": 223.873
+        },
+        "last_read_timing": {
+          "seconds": 40.875,
+          "host_seconds": 40.982,
+          "wall_seconds": 40.982,
+          "device_ms": 40875,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 446.5
+        },
+        "trimmed_psram_before_kib": 23135,
+        "trimmed_psram_after_kib": 23119
+      }
+    },
+    {
+      "label": "burst",
+      "harness_arguments": [
+        "--reset",
+        "--settle-seconds",
+        "60",
+        "--pps",
+        "100",
+        "--burst-packets",
+        "12",
+        "--reads",
+        "1",
+        "--diagnostics",
+        "--sd-diagnostics"
+      ],
+      "report_sha256": "d16f102ee78492396066ae2e58d2b34220f1e576dbfff515c04c9e32fea8e9ae",
+      "serial_log_sha256": "d6d551ceb6fd39746d7d114e6ebb3e8fffc42eaf0c78fe27b9c1a6ee085329a1",
+      "report": {
+        "result": "PASS",
+        "baseline": [
+          {
+            "seconds": 38.845,
+            "host_seconds": 38.884,
+            "wall_seconds": 38.885,
+            "device_ms": 38845,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 469.8,
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 28886,
+                  "blocks": 28886,
+                  "errors": 0,
+                  "wait_ms": 283,
+                  "prepare_ms": 881,
+                  "dma_ms": 25995,
+                  "finish_ms": 727,
+                  "hold_ms": 27651,
+                  "max_wait_us": 10628,
+                  "max_prepare_us": 839,
+                  "max_dma_us": 11623,
+                  "max_finish_us": 785,
+                  "max_hold_us": 11691,
+                  "max_polls": 1113
+                },
+                "8": {
+                  "calls": 8,
+                  "blocks": 62,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 8,
+                  "finish_ms": 1,
+                  "hold_ms": 9,
+                  "max_wait_us": 1,
+                  "max_prepare_us": 30,
+                  "max_dma_us": 1141,
+                  "max_finish_us": 192,
+                  "max_hold_us": 1324,
+                  "max_polls": 897
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 286,
+                  "blocks": 36608,
+                  "errors": 0,
+                  "wait_ms": 1,
+                  "prepare_ms": 11,
+                  "dma_ms": 2242,
+                  "finish_ms": 886,
+                  "hold_ms": 3140,
+                  "max_wait_us": 294,
+                  "max_prepare_us": 752,
+                  "max_dma_us": 15291,
+                  "max_finish_us": 3962,
+                  "max_hold_us": 18406,
+                  "max_polls": 6968
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            }
+          }
+        ],
+        "loads": [
+          {
+            "pps": 100,
+            "payload_bytes": 1400,
+            "burst_packets": 12,
+            "invalid_replies": 0,
+            "phases": {
+              "idle": {
+                "sent": 300,
+                "received": 300,
+                "loss_percent": 0,
+                "rtt_median_ms": 20.715,
+                "rtt_p95_ms": 37.818
+              },
+              "pak": {
+                "sent": 4008,
+                "received": 4008,
+                "loss_percent": 0,
+                "rtt_median_ms": 34.294,
+                "rtt_p95_ms": 66.662
+              },
+              "font": {
+                "sent": 348,
+                "received": 348,
+                "loss_percent": 0,
+                "rtt_median_ms": 30.708,
+                "rtt_p95_ms": 96.496
+              },
+              "write": {
+                "sent": 192,
+                "received": 192,
+                "loss_percent": 0,
+                "rtt_median_ms": 35.891,
+                "rtt_p95_ms": 113.825
+              }
+            },
+            "device_diagnostics": {
+              "rx_frames": 5479,
+              "rx_partials": 748,
+              "rx_bad": 0,
+              "rx_max_pending": 18948,
+              "rx_reg_errors": 0,
+              "rx_io_errors": 0,
+              "rx_plan_errors": 0,
+              "tx_no_credit": 0,
+              "tx_io_errors": 0,
+              "icmp_requests": 4848,
+              "icmp_replies": 4848,
+              "icmp_failures": 0,
+              "time_poll_gap_us": 210207,
+              "time_poll_duration_us": 194386,
+              "time_bus_wait_us": 60091
+            },
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 30771,
+                  "blocks": 30771,
+                  "errors": 0,
+                  "wait_ms": 2518,
+                  "prepare_ms": 935,
+                  "dma_ms": 27409,
+                  "finish_ms": 774,
+                  "hold_ms": 29168,
+                  "max_wait_us": 10623,
+                  "max_prepare_us": 784,
+                  "max_dma_us": 60359,
+                  "max_finish_us": 936,
+                  "max_hold_us": 60434,
+                  "max_polls": 1116
+                },
+                "8": {
+                  "calls": 70,
+                  "blocks": 447,
+                  "errors": 0,
+                  "wait_ms": 31,
+                  "prepare_ms": 2,
+                  "dma_ms": 109,
+                  "finish_ms": 9,
+                  "hold_ms": 120,
+                  "max_wait_us": 9228,
+                  "max_prepare_us": 62,
+                  "max_dma_us": 11392,
+                  "max_finish_us": 204,
+                  "max_hold_us": 11633,
+                  "max_polls": 1223
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 395,
+                  "blocks": 50560,
+                  "errors": 0,
+                  "wait_ms": 38,
+                  "prepare_ms": 13,
+                  "dma_ms": 3077,
+                  "finish_ms": 1287,
+                  "hold_ms": 4380,
+                  "max_wait_us": 8793,
+                  "max_prepare_us": 60,
+                  "max_dma_us": 8286,
+                  "max_finish_us": 9092,
+                  "max_hold_us": 17339,
+                  "max_polls": 6987
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            },
+            "pak": [
+              {
+                "seconds": 41.146,
+                "host_seconds": 41.212,
+                "wall_seconds": 41.213,
+                "device_ms": 41146,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 443.6
+              }
+            ],
+            "font_receipt": "24 px: load=680 ms metric=155719 us first=477775 us warm=7016 us misses=52 hits=72 raster=467598 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+          }
+        ],
+        "settle_seconds": 60,
+        "firmware_boot_version": "1358fd6",
+        "host_clock": {
+          "monotonic_seconds": 174.651,
+          "wall_seconds": 174.654
+        },
+        "last_read_timing": {
+          "seconds": 41.146,
+          "host_seconds": 41.212,
+          "wall_seconds": 41.213,
+          "device_ms": 41146,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 443.6
+        },
+        "trimmed_psram_before_kib": 23135,
+        "trimmed_psram_after_kib": 23119
+      }
+    }
+  ]
+}

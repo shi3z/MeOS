@@ -1,0 +1,125 @@
+{
+  "result": "PASS",
+  "baseline": [
+    {
+      "seconds": 38.571,
+      "bytes": 18689235,
+      "crc32": "74e3b084",
+      "kib_per_second": 473.2
+    },
+    {
+      "seconds": 38.44,
+      "bytes": 18689235,
+      "crc32": "74e3b084",
+      "kib_per_second": 474.8
+    }
+  ],
+  "loads": [
+    {
+      "pps": 25,
+      "payload_bytes": 1400,
+      "invalid_replies": 0,
+      "phases": {
+        "idle": {
+          "sent": 69,
+          "received": 69,
+          "loss_percent": 0.0,
+          "rtt_median_ms": 16.458,
+          "rtt_p95_ms": 27.637
+        },
+        "pak": {
+          "sent": 1795,
+          "received": 1795,
+          "loss_percent": 0.0,
+          "rtt_median_ms": 19.736,
+          "rtt_p95_ms": 33.313
+        },
+        "font": {
+          "sent": 76,
+          "received": 76,
+          "loss_percent": 0.0,
+          "rtt_median_ms": 17.273,
+          "rtt_p95_ms": 39.023
+        },
+        "write": {
+          "sent": 45,
+          "received": 45,
+          "loss_percent": 0.0,
+          "rtt_median_ms": 23.248,
+          "rtt_p95_ms": 77.295
+        }
+      },
+      "pak": [
+        {
+          "seconds": 38.902,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 469.2
+        },
+        {
+          "seconds": 38.833,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 470.0
+        }
+      ],
+      "font_receipt": "24 px: load=638 ms metric=147813 us first=449127 us warm=6864 us misses=52 hits=72 raster=437240 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+    },
+    {
+      "pps": 100,
+      "payload_bytes": 1400,
+      "invalid_replies": 0,
+      "phases": {
+        "idle": {
+          "sent": 263,
+          "received": 263,
+          "loss_percent": 0.0,
+          "rtt_median_ms": 16.562,
+          "rtt_p95_ms": 30.264
+        },
+        "pak": {
+          "sent": 7187,
+          "received": 7187,
+          "loss_percent": 0.0,
+          "rtt_median_ms": 18.821,
+          "rtt_p95_ms": 32.632
+        },
+        "font": {
+          "sent": 311,
+          "received": 311,
+          "loss_percent": 0.0,
+          "rtt_median_ms": 21.434,
+          "rtt_p95_ms": 59.269
+        },
+        "write": {
+          "sent": 180,
+          "received": 177,
+          "loss_percent": 1.667,
+          "rtt_median_ms": 19.794,
+          "rtt_p95_ms": 94.285
+        }
+      },
+      "pak": [
+        {
+          "seconds": 40.705,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 448.4
+        },
+        {
+          "seconds": 40.732,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 448.1
+        }
+      ],
+      "font_receipt": "24 px: load=682 ms metric=155786 us first=477015 us warm=9491 us misses=52 hits=72 raster=465468 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+    }
+  ],
+  "firmware_boot_version": "373285b",
+  "firmware_commit": "373285bfdfc038fd84dc0da4601f1f469e1a2ab4",
+  "app_sha256": "4248f552c313ff4c0ade5b600234ddeb57b8311f36d6e97a2527550097f9e90c",
+  "private_serial_log_sha256": "e8f22d7a47a1b2f183474bc06003845d3ff706b8c70556eb2bfbe60e7b940f88",
+  "trimmed_psram_before_kib": 23135,
+  "trimmed_psram_after_kib": 23119
+}

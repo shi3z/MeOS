@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-26",
+  "source_commit": "1f893c3a0f458c4c78ffa6959721558914ee6539",
+  "qualification": "Host and native builds only; physical profiling pending coordinated hardware access.",
+  "runs": [
+    {
+      "detail_enabled": true,
+      "steps": 120,
+      "gameplay_fnv1a64": "de60dcf25da70b2b",
+      "gameplay_frames": 101,
+      "cache_report": "HEADLESS cache: hit=7974 rebuild=1721 alloc=508 evict=253 wrap=3 thrash=0 pixels=9741984 bytes=2283696 dynamic=1203 texture=11 lightstyle=0"
+    },
+    {
+      "detail_enabled": false,
+      "steps": 120,
+      "gameplay_fnv1a64": "de60dcf25da70b2b",
+      "gameplay_frames": 101,
+      "cache_report": "HEADLESS cache: hit=7974 rebuild=1721 alloc=508 evict=253 wrap=3 thrash=0 pixels=9741984 bytes=2283696 dynamic=1203 texture=11 lightstyle=0"
+    },
+    {
+      "detail_enabled": true,
+      "steps": 1200,
+      "gameplay_fnv1a64": "bfc101a42954ef9a",
+      "gameplay_frames": 1181,
+      "cache_report": "HEADLESS cache: hit=64528 rebuild=26966 alloc=6019 evict=5889 wrap=44 thrash=0 pixels=137996288 bytes=26947824 dynamic=20749 texture=212 lightstyle=8"
+    },
+    {
+      "detail_enabled": false,
+      "steps": 1200,
+      "gameplay_fnv1a64": "bfc101a42954ef9a",
+      "gameplay_frames": 1181,
+      "cache_report": "HEADLESS cache: hit=64528 rebuild=26966 alloc=6019 evict=5889 wrap=44 thrash=0 pixels=137996288 bytes=26947824 dynamic=20749 texture=212 lightstyle=8"
+    }
+  ],
+  "frame20_sha256": "1d628a0abd6ee31e11620efa3c91d6358a6b62026cbc7cfd75eaf82c521b7ac9",
+  "same_frame20_without_detail": true,
+  "default_native_engine_detail_references": 0,
+  "profile_native_engine_detail_references": "present",
+  "profile_firmware_sha256": "3ee5c6e2f8ba378bff64e81334d7c1e8aabd6e1581e334ab6aa0aa2f8496039f",
+  "default_firmware_source": "2aa9997",
+  "default_firmware_sha256": "584b65a5aa1cbdf2e97e25df8350892b78cf1cb148e48c90769cfa1e8252356b",
+  "checks": [
+    "ASan/UBSan profiler accounting/reset/invalid tags/default disabled clock reads/enabled macros",
+    "Quake host checks at both resolutions including delayed production DMA model",
+    "Doom host checks",
+    "Clean-source application simulator",
+    "Native default 512x300 and diagnostic 512x300 builds",
+    "Engine stack check",
+    "Compile definitions checked for engine and adapter; nm confirms absent detail timer calls in default renderer"
+  ],
+  "physical_flash_attempt": "Exclusive serial lock denied during Wi-Fi/SD coexistence test; no partition read/write performed.",
+  "device_timings": null,
+  "notes": [
+    "Scopes are inclusive wall time; edges contains cache/spans, cache contains build, build contains lightmaps. Never add nested scopes.",
+    "Clock calibration is an observed average including loop/IRQs, not a strict latency bound or complete profiler cost.",
+    "No renderer math, cache budget, DMA algorithm, allocator or CPU1 behavior changes.",
+    "Host timing is not a Tab5 performance measurement; compare complete sound-enabled timedemos with the normal image before performance claims."
+  ]
+}

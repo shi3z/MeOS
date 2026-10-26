@@ -1,0 +1,8 @@
+10 DIM A(2)
+20 S=0
+30 FOR I=0 TO 2
+40 INPUT "Value"; A(I)
+50 S=S+A(I)
+60 NEXT I
+70 PRINT "SUM =",S
+80 END

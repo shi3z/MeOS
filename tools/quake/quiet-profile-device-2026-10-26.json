@@ -1,0 +1,522 @@
+{
+  "date": "2026-10-26",
+  "production_source_commit": "58f037c46be066152ad845bd18e820f0b18e96c1",
+  "qualification": "Physical normal/profile runs complete; Z-pitch comparison pending USB reconnection.",
+  "device": "ESP32-P4 rev1.3 Tab5, MAC e8:f6:0a:e2:e8:9c",
+  "resolution": [
+    512,
+    300
+  ],
+  "cpu_mhz": 360,
+  "l2_cache_kib": 128,
+  "surface_cache_kib": 600,
+  "dma_batch_columns": 2,
+  "audio": {
+    "sample_rate": 24000,
+    "channels": 2,
+    "dac_attenuation_register": 191,
+    "dac_attenuation_db": -95.5,
+    "both_channels_read_back_before_amp_enable": true,
+    "pcm_mixing_and_dma_enabled": true,
+    "reference": "https://github.com/espressif/esp-adf/blob/release/v2.x/components/audio_hal/driver/es8388/es8388.c"
+  },
+  "timedemo_command": "timedemo demo1;toggleconsole",
+  "images": {
+    "base": {
+      "build": "build-quake-512x300-quiet",
+      "zpad": 0,
+      "detail": false,
+      "quiet": true,
+      "sha256": "71ac9349e89e305d5b7721d5c1c293ecb74b7a5b294e2ef6cd4308e083b4c32a",
+      "bytes": 2018160,
+      "source": "58f037c"
+    },
+    "profile": {
+      "build": "build-quake-512x300-profile-quiet",
+      "zpad": 0,
+      "detail": true,
+      "quiet": true,
+      "sha256": "d4a3a92564ccfd8741bf25d94594a47503a663cad381fb176242fe848e1cbea6",
+      "bytes": 2019168,
+      "source": "58f037c"
+    },
+    "z32": {
+      "build": "build-quake-512x300-zpad32-quiet",
+      "zpad": 32,
+      "detail": false,
+      "quiet": true,
+      "sha256": "a0d24356b218cc5075b60bbbdd1b656ab8dcc299b34d01366e0e1a8efe2f3e15",
+      "bytes": 2018256,
+      "source": "58f037c"
+    },
+    "z64": {
+      "build": "build-quake-512x300-zpad64-quiet",
+      "zpad": 64,
+      "detail": false,
+      "quiet": true,
+      "sha256": "46a48a3bb8e0fbfac15e7354c8b88fdeebabd75f7c55eedcc6c5e2ba35bf33b1",
+      "bytes": 2018224,
+      "source": "58f037c"
+    }
+  },
+  "runs": {
+    "normal": [
+      {
+        "frames": 969,
+        "seconds": 52.3,
+        "fps": 18.5
+      },
+      {
+        "frames": 969,
+        "seconds": 52.4,
+        "fps": 18.5
+      }
+    ],
+    "profile": [
+      {
+        "frames": 969,
+        "seconds": 52.5,
+        "fps": 18.4
+      },
+      {
+        "frames": 969,
+        "seconds": 52.6,
+        "fps": 18.4
+      }
+    ]
+  },
+  "audio_exit": {
+    "normal": [
+      {
+        "blocks": 7811,
+        "errors": 0
+      },
+      {
+        "blocks": 3216,
+        "errors": 0
+      }
+    ],
+    "profile": [
+      {
+        "blocks": 3236,
+        "errors": 0
+      },
+      {
+        "blocks": 3211,
+        "errors": 0
+      }
+    ]
+  },
+  "pcm_exit": {
+    "normal": [
+      {
+        "frames": 3999232,
+        "nonzero_frames": 1253420
+      },
+      {
+        "frames": 1646592,
+        "nonzero_frames": 1254846
+      }
+    ],
+    "profile": [
+      {
+        "frames": 1656832,
+        "nonzero_frames": 1257933
+      },
+      {
+        "frames": 1644032,
+        "nonzero_frames": 1260865
+      }
+    ]
+  },
+  "stack": {
+    "normal": {
+      "maximum_sampled_bytes": 29920,
+      "capacity": 49152,
+      "all_sampled_guards_ok": true
+    },
+    "profile": {
+      "maximum_sampled_bytes": 29888,
+      "capacity": 49152,
+      "all_sampled_guards_ok": true
+    }
+  },
+  "renderer_intervals": [
+    {
+      "setup": 259,
+      "edges": 27516,
+      "entities": 3836,
+      "viewmodel": 1249,
+      "particles": 369,
+      "warp": 0,
+      "cache": 3352,
+      "build": 2986,
+      "light": 147,
+      "spans": 11799,
+      "z": 5829,
+      "sky": 0,
+      "water": 0,
+      "run": 1,
+      "completed_frames": 100,
+      "timer_pairs": 23231,
+      "draw_us": 14812
+    },
+    {
+      "setup": 257,
+      "edges": 39047,
+      "entities": 6090,
+      "viewmodel": 1293,
+      "particles": 1975,
+      "warp": 0,
+      "cache": 10474,
+      "build": 9771,
+      "light": 765,
+      "spans": 13029,
+      "z": 6439,
+      "sky": 0,
+      "water": 0,
+      "run": 1,
+      "completed_frames": 100,
+      "timer_pairs": 44559,
+      "draw_us": 15454
+    },
+    {
+      "setup": 234,
+      "edges": 28405,
+      "entities": 2183,
+      "viewmodel": 1671,
+      "particles": 534,
+      "warp": 0,
+      "cache": 3617,
+      "build": 3316,
+      "light": 229,
+      "spans": 11600,
+      "z": 5989,
+      "sky": 0,
+      "water": 0,
+      "run": 1,
+      "completed_frames": 100,
+      "timer_pairs": 17308,
+      "draw_us": 14736
+    },
+    {
+      "setup": 227,
+      "edges": 24694,
+      "entities": 1401,
+      "viewmodel": 2250,
+      "particles": 49,
+      "warp": 0,
+      "cache": 1245,
+      "build": 1043,
+      "light": 53,
+      "spans": 11034,
+      "z": 5302,
+      "sky": 0,
+      "water": 0,
+      "run": 1,
+      "completed_frames": 100,
+      "timer_pairs": 10642,
+      "draw_us": 15100
+    },
+    {
+      "setup": 219,
+      "edges": 28677,
+      "entities": 2561,
+      "viewmodel": 2203,
+      "particles": 110,
+      "warp": 0,
+      "cache": 3577,
+      "build": 3086,
+      "light": 162,
+      "spans": 12045,
+      "z": 5646,
+      "sky": 0,
+      "water": 30,
+      "run": 1,
+      "completed_frames": 100,
+      "timer_pairs": 29554,
+      "draw_us": 14758
+    },
+    {
+      "setup": 229,
+      "edges": 34156,
+      "entities": 3655,
+      "viewmodel": 1987,
+      "particles": 463,
+      "warp": 0,
+      "cache": 8357,
+      "build": 7792,
+      "light": 446,
+      "spans": 11985,
+      "z": 6142,
+      "sky": 0,
+      "water": 978,
+      "run": 1,
+      "completed_frames": 100,
+      "timer_pairs": 31937,
+      "draw_us": 15276
+    },
+    {
+      "setup": 249,
+      "edges": 31958,
+      "entities": 3726,
+      "viewmodel": 2114,
+      "particles": 212,
+      "warp": 0,
+      "cache": 5940,
+      "build": 5470,
+      "light": 263,
+      "spans": 12522,
+      "z": 6012,
+      "sky": 0,
+      "water": 0,
+      "run": 1,
+      "completed_frames": 100,
+      "timer_pairs": 25823,
+      "draw_us": 14737
+    },
+    {
+      "setup": 222,
+      "edges": 29108,
+      "entities": 2759,
+      "viewmodel": 1990,
+      "particles": 241,
+      "warp": 0,
+      "cache": 4885,
+      "build": 4572,
+      "light": 221,
+      "spans": 11466,
+      "z": 6161,
+      "sky": 0,
+      "water": 293,
+      "run": 1,
+      "completed_frames": 100,
+      "timer_pairs": 15686,
+      "draw_us": 14451
+    },
+    {
+      "setup": 211,
+      "edges": 26039,
+      "entities": 2432,
+      "viewmodel": 1989,
+      "particles": 34,
+      "warp": 0,
+      "cache": 1327,
+      "build": 1074,
+      "light": 46,
+      "spans": 9696,
+      "z": 5516,
+      "sky": 0,
+      "water": 2650,
+      "run": 1,
+      "completed_frames": 100,
+      "timer_pairs": 14965,
+      "draw_us": 15178
+    },
+    {
+      "setup": 268,
+      "edges": 27720,
+      "entities": 4016,
+      "viewmodel": 1254,
+      "particles": 411,
+      "warp": 0,
+      "cache": 3448,
+      "build": 3078,
+      "light": 166,
+      "spans": 11889,
+      "z": 5830,
+      "sky": 0,
+      "water": 0,
+      "run": 2,
+      "completed_frames": 100,
+      "timer_pairs": 23124,
+      "draw_us": 14808
+    },
+    {
+      "setup": 262,
+      "edges": 39117,
+      "entities": 5969,
+      "viewmodel": 1276,
+      "particles": 1942,
+      "warp": 0,
+      "cache": 10172,
+      "build": 9473,
+      "light": 748,
+      "spans": 13152,
+      "z": 6518,
+      "sky": 0,
+      "water": 0,
+      "run": 2,
+      "completed_frames": 100,
+      "timer_pairs": 44734,
+      "draw_us": 15610
+    },
+    {
+      "setup": 233,
+      "edges": 28442,
+      "entities": 2079,
+      "viewmodel": 1682,
+      "particles": 534,
+      "warp": 0,
+      "cache": 3729,
+      "build": 3427,
+      "light": 210,
+      "spans": 11540,
+      "z": 6022,
+      "sky": 0,
+      "water": 0,
+      "run": 2,
+      "completed_frames": 100,
+      "timer_pairs": 16785,
+      "draw_us": 14752
+    },
+    {
+      "setup": 210,
+      "edges": 24859,
+      "entities": 1462,
+      "viewmodel": 2288,
+      "particles": 57,
+      "warp": 0,
+      "cache": 1204,
+      "build": 996,
+      "light": 45,
+      "spans": 11028,
+      "z": 5243,
+      "sky": 0,
+      "water": 0,
+      "run": 2,
+      "completed_frames": 100,
+      "timer_pairs": 10556,
+      "draw_us": 15122
+    },
+    {
+      "setup": 237,
+      "edges": 28903,
+      "entities": 2600,
+      "viewmodel": 2249,
+      "particles": 131,
+      "warp": 0,
+      "cache": 3771,
+      "build": 3283,
+      "light": 181,
+      "spans": 12157,
+      "z": 5722,
+      "sky": 0,
+      "water": 24,
+      "run": 2,
+      "completed_frames": 100,
+      "timer_pairs": 30665,
+      "draw_us": 14712
+    },
+    {
+      "setup": 221,
+      "edges": 34172,
+      "entities": 3672,
+      "viewmodel": 2017,
+      "particles": 482,
+      "warp": 0,
+      "cache": 8467,
+      "build": 7898,
+      "light": 450,
+      "spans": 11985,
+      "z": 6168,
+      "sky": 0,
+      "water": 960,
+      "run": 2,
+      "completed_frames": 100,
+      "timer_pairs": 31281,
+      "draw_us": 15316
+    },
+    {
+      "setup": 234,
+      "edges": 32116,
+      "entities": 3571,
+      "viewmodel": 2106,
+      "particles": 218,
+      "warp": 0,
+      "cache": 5931,
+      "build": 5462,
+      "light": 240,
+      "spans": 12518,
+      "z": 6160,
+      "sky": 0,
+      "water": 0,
+      "run": 2,
+      "completed_frames": 100,
+      "timer_pairs": 25779,
+      "draw_us": 14585
+    },
+    {
+      "setup": 222,
+      "edges": 28758,
+      "entities": 2803,
+      "viewmodel": 2008,
+      "particles": 257,
+      "warp": 0,
+      "cache": 4399,
+      "build": 4091,
+      "light": 203,
+      "spans": 11551,
+      "z": 6185,
+      "sky": 0,
+      "water": 301,
+      "run": 2,
+      "completed_frames": 100,
+      "timer_pairs": 15089,
+      "draw_us": 14605
+    },
+    {
+      "setup": 216,
+      "edges": 25990,
+      "entities": 2435,
+      "viewmodel": 1967,
+      "particles": 34,
+      "warp": 0,
+      "cache": 1321,
+      "build": 1069,
+      "light": 52,
+      "spans": 9437,
+      "z": 5501,
+      "sky": 0,
+      "water": 2980,
+      "run": 2,
+      "completed_frames": 100,
+      "timer_pairs": 15321,
+      "draw_us": 15170
+    }
+  ],
+  "notes": [
+    "Initial attempts after USB-only reset rejected exact DMA because its clock was already enabled; CPU fallback runs were excluded from DMA comparisons. No guard was bypassed and no existing clock owner was stolen.",
+    "esptool watchdog reset cleared the module state; normal app quit before subsequent USB resets retained working DMA.",
+    "One quiet zpad32 image was written and verified, but USB enumeration was lost after its subsequent watchdog reset before the monitor opened. No zpad timedemo result or cause of USB disappearance is claimed.",
+    "No format, PAK upload, bootloader/partition-table replacement or backup. Only OTA app slot 0 written; activation switched from slot 1 to slot 0; factory/other app slot retained.",
+    "Normal audio_open unlinked machine text remains identical to the previous normal-gain build (1368 bytes).",
+    "Physical sound-pressure/listening acceptance is separate from DAC readback and nonzero PCM. Human quiet/display acceptance pending.",
+    "All renderer details are inclusive wall times; nested scopes must not be summed. Per-interval medians are not full-run FPS or exclusive CPU time."
+  ],
+  "median_us_per_frame": {
+    "setup": 231.0,
+    "edges": 28717.5,
+    "entities": 2781.0,
+    "viewmodel": 1989.5,
+    "particles": 249.0,
+    "warp": 0.0,
+    "cache": 3750.0,
+    "build": 3371.5,
+    "light": 206.5,
+    "spans": 11844.0,
+    "z": 6000.5,
+    "sky": 0.0,
+    "water": 0.0,
+    "draw_us": 14810.0
+  },
+  "clock_calibration_ns_including_loop_irqs": [
+    669,
+    669
+  ],
+  "observed_diagnostic_duration_difference_percent": 0.3820439350525451,
+  "zpad_runs": {
+    "32": null,
+    "64": null
+  }
+}

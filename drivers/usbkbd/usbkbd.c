@@ -19,6 +19,7 @@
 #include "usbkbd.h"
 #include "hid_keys.h"
 #include <m5os/ime.h>
+#include <m5os/keyboard_raw.h>
 #include <m5os/hal_usbh.h>
 #include <m5os/kprintf.h>
 #include <m5os/task.h>
@@ -83,6 +84,7 @@ static int ctrl(uint8_t type, uint8_t req, uint16_t value, uint16_t index, void 
 
 static void emit(uint8_t usage, uint8_t mods)
 {
+    if(keyboard_raw_active())return;
     char buf[8];
     hid_decode(usage, mods, s_caps, buf);
     if (buf[0]) { ime_feed(buf); s_stats.last_char = (unsigned char)buf[0]; }
@@ -142,19 +144,25 @@ static void keyboard_session(int iface)
     uint8_t held = 0;                                   /* the key that auto-repeats */
     uint64_t pressed_at = 0, last_repeat = 0;
     int fails = 0;
+    bool native_previous=false;
 
     for (;;) {
         task_sleep(POLL_MS);
         usbh_event_t ev = hal_usbh_poll();
-        if (ev == USBH_EVENT_DISCONNECT || ev == USBH_EVENT_DISABLED) return;
+        if (ev == USBH_EVENT_DISCONNECT || ev == USBH_EVENT_DISABLED) {keyboard_raw_clear();return;}
 
+        uint32_t epoch=keyboard_raw_generation();
         int n = ctrl(0xA1, HID_GET_REPORT, (HID_REPORT_INPUT << 8), (uint16_t)iface, cur, REPORT_BYTES);
         if (n < REPORT_BYTES) {
+            keyboard_raw_clear();
             s_stats.i2c_errors++;                       /* (field reused as "transfer errors") */
             if (++fails >= MAX_FAILS) return;
             continue;
         }
         fails = 0;
+        keyboard_raw_usb(epoch,cur);
+        bool native=keyboard_raw_active();
+        if(native!=native_previous){held=0;memcpy(prev,cur,sizeof prev);native_previous=native;}
 
         uint8_t mods = cur[0];
         uint64_t now = hal_time_now_us();

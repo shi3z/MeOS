@@ -19,11 +19,41 @@
 #if M5OS_BOARD_TAB5
 #include "../wasmapps/wasmapps.h"
 #include "../wasmapps/qrinstall.h"
+#include "../home/home.h"
+#include "../fontbench/fontbench.h"
 #endif
 #include "../../drivers/lcd/fbcon.h"
+#if M5OS_BOARD_TAB5
+#include "../../drivers/lcd/bizud.h"
+#endif
 
 #define FILER_PAUSE_SETTLE_MS 100u
 #include "shell.h"
+#include <m5os/crash.h>
+#include <m5os/health.h>
+#include <m5os/wall_time.h>
+#include <m5os/hal_i2c.h>
+#include "hardware.h"
+#include "../basic/basic.h"
+#include "../basic/file.h"
+#include "../basic/console.h"
+#include "../basic/graphics.h"
+#include <m5os/program_fs.h>
+#if M5OS_BOARD_TAB5
+#include <m5os/sdroot.h>
+#endif
+
+#include "../scheme/ide.h"
+#include "../write/write.h"
+
+#include <m5os/doom.h>
+#include <m5os/quake.h>
+#include "../../apps/calculator/expr.h"
+#include "sd.h"
+#include "checksum.h"
+#include <m5os/audio.h>
+#include <m5os/player.h>
+#include <m5os/microphone.h>
 #include <m5os/vfs.h>
 #include <m5os/task.h>
 #include <m5os/kprintf.h>
@@ -47,7 +77,7 @@
 #endif
 #endif
 
-#define LINE_MAX     128
+#define LINE_MAX     (VFS_PATH_MAX+32)
 #define ARG_MAX      16
 #define OUT_BUF      160
 #define CAT_CHUNK    128
@@ -61,6 +91,8 @@
 
 static int  s_out = -1, s_in = -1;
 static char s_cwd[VFS_PATH_MAX] = "/";
+
+static bool sh_streq(const char *a, const char *b);
 
 /* ---------------------------------------------------------------- output */
 
@@ -118,6 +150,7 @@ static bool resolve(const char *arg, char *out)       /* relative to cwd -> norm
 /* --------------------------------------------------------------- commands */
 
 static int read_line_ex(char *line, bool echo);
+static int read_byte(void);
 
 typedef struct { const char *name; int (*fn)(int, char **); const char *help; } command_t;
 static const command_t s_commands[];
@@ -129,15 +162,168 @@ static int cmd_help(int argc, char **argv)
     return 0;
 }
 
+static int cmd_i2c(int argc,char **argv) {
+    (void)argc; (void)argv;hal_i2c_stats_t stats;hal_i2c_get_stats(&stats);
+    kprintf("I2C transactions: ok %u, NACK %u, timeout %u, invalid %u\n",stats.ok,stats.nack,stats.timeout,stats.invalid);return 0;
+}
+#if M5OS_BOARD_TAB5
+static int cmd_play(int argc,char **argv) {
+    char path[VFS_PATH_MAX];
+    if(argc!=2 || !resolve(argv[1],path)){sh_puts("usage: play \"/sd/path/track.mp3\"\n");return 1;}
+    int rc=mp3_play_file(path);if(rc<0)SH_PRINTF("play: error %d\n",rc);return rc<0?1:0;
+}
+#endif
+static int cmd_crash(int argc,char **argv) { (void)argc; (void)argv; crash_print_previous(); return 0; }
+
+#if M5OS_BOARD_TAB5
+static calc_context s_calc = { .degrees = 1 };
+static int cmd_calc(int argc, char **argv)
+{
+    if (argc == 2 && (sh_streq(argv[1], "deg") || sh_streq(argv[1], "rad"))) {
+        s_calc.degrees = sh_streq(argv[1], "deg");
+        SH_PRINTF("calc: %s\n", s_calc.degrees ? "DEG" : "RAD"); return 0;
+    }
+    char text[LINE_MAX], output[24];
+    size_t len = 0, error_pos = 0;
+    if (argc < 2) { sh_puts("usage: calc EXPR | deg | rad   (sin cos tan sqrt log ln exp abs; pi e Ans)\n"); return 1; }
+    for (int i = 1; i < argc; i++) {
+        if (i > 1) {
+            if (len + 1 >= sizeof text) { sh_puts("calc: expression too long\n"); return 1; }
+            text[len++] = ' ';
+        }
+        for (const char *p = argv[i]; *p; p++) {
+            if (len + 1 >= sizeof text) { sh_puts("calc: expression too long\n"); return 1; }
+            text[len++] = *p;
+        }
+    }
+    text[len] = 0;
+    double value;
+    const char *error = calc_eval_context(text, &s_calc, &value, &error_pos);
+    if (error) { SH_PRINTF("calc: %s (column %u)\n", error, (unsigned)error_pos + 1); return 1; }
+    if (!calc_format(value, output, sizeof output)) { sh_puts("calc: cannot format result\n"); return 1; }
+    SH_PRINTF("%s\n", output);
+    return 0;
+}
+#endif
+
+static void basic_write(const char *buf, size_t len, void *opaque)
+{
+    (void)opaque; sh_write(buf, len);
+}
+typedef struct {
+    basic_session *session;
+    unsigned ticks;
+    basic_console console;
+    basic_graphics graphics;
+    char last_path[VFS_PATH_MAX];
+} basic_shell;
+static int basic_cancel(void *opaque)
+{
+    basic_shell *ctx = opaque;
+    if (!(++ctx->ticks % 32)) task_sleep(1);
+    return basic_console_feed(&ctx->console, kconsole_getc());
+}
+static const char *basic_draw(void *opaque, int op, const int32_t args[5], const char *text, size_t len)
+{
+    basic_shell *ctx = opaque;
+    return basic_graphics_command(&ctx->graphics, op, args, text, len, basic_cancel, opaque);
+}
+static int basic_input_key(void *opaque)
+{
+    (void)opaque; return read_byte();
+}
+static int basic_input(void *opaque, char *buffer, size_t capacity)
+{
+    basic_shell *ctx = opaque;
+    return basic_console_readline(&ctx->console, buffer, capacity, basic_input_key, basic_write, opaque);
+}
+static int basic_files(void *opaque, int action, const char *filename)
+{
+    basic_shell *ctx = opaque;
+    char path[VFS_PATH_MAX];
+    if (!*filename) filename = ctx->last_path;
+    if (!*filename) { sh_puts("basic: specify a file path first\n"); return ERR_INVAL; }
+    if (!resolve(filename, path)) { fail("basic", "bad path", ERR_INVAL); return ERR_INVAL; }
+    if (action == BASIC_EDIT) {
+#if M5OS_HAS_KEYBOARD
+        vfs_info_t info;
+        int rc = vfs_stat(path, &info);
+        if (rc == ERR_OK && info.type != FS_TYPE_FILE) rc = ERR_INVAL;
+        if (rc != ERR_OK && rc != ERR_NOENT) { fail("basic", path, rc); return rc; }
+        size_t len = basic_session_export(ctx->session);
+        fbcon_pause(true);
+        task_sleep(FILER_PAUSE_SETTLE_MS);
+        dq_clear();
+        bool saved = edit_file_with_text(path, ctx->session->program, len);
+        fbcon_pause(false);
+        if (!saved) { sh_puts("basic: editor returned; current program kept\n"); return ERR_OK; }
+        action = BASIC_LOAD;
+#else
+        sh_puts("basic: EDIT requires a keyboard\n"); return ERR_NOSYS;
+#endif
+    }
+    basic_file_result result;
+    int rc = action == BASIC_LOAD ? basic_file_load(ctx->session, path, &result)
+                                 : basic_file_save(ctx->session, path, &result);
+    if (rc < 0) {
+        if (result.line) SH_PRINTF("basic: %s: source line %u: %s\n", path, result.line, result.detail);
+        else SH_PRINTF("basic: %s: %s: %s (%d)\n", path, result.detail, err_text(rc), rc);
+        return rc;
+    }
+    ksnprintf(ctx->last_path, sizeof ctx->last_path, "%s", path);
+    SH_PRINTF("basic: %s %s (%u bytes)\n", result.detail, path, (unsigned)result.bytes);
+    return ERR_OK;
+}
+static int cmd_basic(int argc, char **argv)
+{
+#if !M5OS_BOARD_TAB5
+    (void)argc; (void)argv;
+    sh_puts("basic: floating-point BASIC currently requires Tab5\n"); return 1;
+#else
+
+    if (argc > 2) { sh_puts("usage: basic [FILE.bas]\n"); return 1; }
+    basic_session *session = kmalloc_psram(sizeof *session);
+    if (!session) session = kmalloc(sizeof *session);
+    if (!session) { sh_puts("basic: out of memory\n"); return 1; }
+    basic_shell ctx = { .session = session };
+    basic_session_init(session, basic_write, basic_cancel, &ctx);
+    session->file = basic_files;
+    session->input = basic_input;
+    session->graphics = basic_draw;
+    if (argc == 2) {
+        int rc = basic_files(&ctx, BASIC_LOAD, argv[1]);
+        if (rc == ERR_OK) rc = basic_session_run(session);
+        kfree(session);
+        return rc == 0 ? 0 : 1;
+    }
+    sh_puts("MeOS numeric BASIC. HELP for commands; BYE exits. SAVE writes via VFS.\n");
+    char line[LINE_MAX];
+    for (;;) {
+        ctx.console = (basic_console){0};
+        sh_puts("Ready> ");
+        if (read_line_ex(line, true) <= 0) continue;
+        if (basic_session_submit(session, line)) break;
+    }
+    kfree(session);
+    return 0;
+#endif
+}
+
 static int cmd_ps(int argc, char **argv)
 {
     (void)argc; (void)argv;
     task_info_t t[PS_MAX];
     int n = task_snapshot(t, PS_MAX);
-    sh_puts("PID  NAME             PRI  STATE       APP\n");
+    sh_puts("PID  NAME             PRI E/B STATE       APP  STACK used~/size  GUARD\n");
     for (int i = 0; i < n; i++) {
-        if (t[i].app_id) SH_PRINTF("%-4u %-16s %-4u %-11s %u\n", t[i].id, t[i].name, t[i].priority, task_state_name(t[i].state), t[i].app_id);
-        else             SH_PRINTF("%-4u %-16s %-4u %-11s -\n", t[i].id, t[i].name, t[i].priority, task_state_name(t[i].state));
+        SH_PRINTF("%-4u %-16s %u/%u  %-11s ", t[i].id, t[i].name, t[i].priority, t[i].base_priority, task_state_name(t[i].state));
+        if (t[i].app_id) SH_PRINTF("%u  ", t[i].app_id);
+        else sh_puts("-  ");
+        task_stack_info_t stack;
+        int rc = task_stack_inspect(t[i].id, &stack);
+        if (rc == ERR_OK) SH_PRINTF("%u/%u  %s\n", (unsigned)stack.used, (unsigned)stack.size,
+                                   stack.guard_ok ? "OK" : "DAMAGED");
+        else sh_puts(rc == ERR_NOSYS ? "n/a (boot stack)\n" : "n/a (task exited)\n");
     }
     return 0;
 }
@@ -205,6 +391,14 @@ static int cmd_cat(int argc, char **argv)
     return 0;
 }
 
+static int cmd_crc32(int argc,char **argv)
+{
+    char path[VFS_PATH_MAX];
+    if(argc!=2||!resolve(argv[1],path)){sh_puts("usage: crc32 FILE\n");return 1;}
+    int rc=shell_crc32_file(path);
+    return rc<0?fail("crc32",path,rc):0;
+}
+
 static int cmd_echo(int argc, char **argv)
 {
     int end = argc;
@@ -243,12 +437,36 @@ static void print_heap(const char *name, const kmem_stats_t *st)
 
 static int cmd_mem(int argc, char **argv)
 {
-    (void)argc; (void)argv;
+#if M5OS_BOARD_TAB5
+    if (argc == 2 && sh_streq(argv[1], "trim")) {
+        size_t bytes = bizud_trim();
+        SH_PRINTF("BIZ UD cache: %s (%u KB released)\n",
+                  bytes ? "trimmed" : bizud_cache_users() ? "busy" : "empty",
+                  (uint32_t)(bytes / 1024u));
+        bytes = sdroot_asset_cache_trim();
+        SH_PRINTF("SD asset cache: %s (%u KB released)\n",
+                  bytes ? "trimmed" : sdroot_active() ? "empty" : "unavailable",
+                  (uint32_t)(bytes / 1024u));
+    } else
+#endif
+    if (argc != 1) {
+#if M5OS_BOARD_TAB5
+        SH_PRINTF("usage: mem [trim]\n");
+#else
+        SH_PRINTF("usage: mem\n");
+#endif
+        return 1;
+    }
     kmem_stats_t mi, mp;
     kmem_internal_stats(&mi);
     kmem_psram_stats(&mp);
     print_heap("internal", &mi);
     print_heap("psram", &mp);
+#if M5OS_BOARD_TAB5
+    SH_PRINTF("BIZ UD   %u KB cached   %u active user(s)\n",
+              (uint32_t)(bizud_cache_bytes() / 1024u), bizud_cache_users());
+    SH_PRINTF("SD asset %u KB cached\n",(uint32_t)(sdroot_asset_cache_bytes()/1024u));
+#endif
     return 0;
 }
 
@@ -281,7 +499,7 @@ static int list_m5ex_cb(const vfs_info_t *i, void *ctx)
     while (i->name[n]) n++;
     if (i->type == FS_TYPE_FILE && n > 5 && i->name[n - 5] == '.' && i->name[n - 4] == 'm' && i->name[n - 3] == '5' &&
         i->name[n - 2] == 'e' && i->name[n - 1] == 'x') {
-        char base[FS_NAME_MAX + 1];                    /* name without ".m5ex" (kprintf has no %.*s) */
+        char base[VFS_NAME_MAX + 1];                    /* name without ".m5ex" (kprintf has no %.*s) */
         for (size_t k = 0; k < n - 5; k++) base[k] = i->name[k];
         base[n - 5] = 0;
         SH_PRINTF("  %-14s (%u bytes)\n", base, i->size);
@@ -382,6 +600,52 @@ static int cmd_put(int argc, char **argv)
     if (rc != ERR_OK) { vfs_unlink(path); return fail("put", path, rc); }
     SH_PRINTF("put: wrote %u bytes, crc32 %08x\n", total, crc);
     return 0;
+}
+
+static bool parse_hex32(const char *s,uint32_t *out)
+{
+    uint32_t v=0;unsigned n=0;
+    for(;*s;s++,n++) {
+        unsigned d=*s>='0'&&*s<='9'?(unsigned)(*s-'0'):
+                   *s>='a'&&*s<='f'?(unsigned)(*s-'a'+10):
+                   *s>='A'&&*s<='F'?(unsigned)(*s-'A'+10):16;
+        if(d>=16||n>=8)return false;
+        v=(v<<4)|d;
+    }
+    *out=v;return n!=0;
+}
+
+/* Bounded raw developer transfer. Each 4 KiB acknowledgement is flow control;
+ * CRC verifies the stream and failures remove the incomplete destination. */
+static int cmd_putraw(int argc,char **argv)
+{
+    char path[VFS_PATH_MAX];uint32_t size,want;
+    if(argc!=4||!resolve(argv[1],path)||!parse_uint(argv[2],&size)||
+       !parse_hex32(argv[3],&want)||!size||size>64u*1024u*1024u) {
+        sh_puts("usage: putraw PATH BYTES CRC32hex\n");return 1;
+    }
+    int fd=vfs_open(path,VFS_O_WRITE|VFS_O_CREATE|VFS_O_TRUNC);
+    if(fd<0)return fail("putraw",path,fd);
+    uint8_t data[4096];uint32_t done=0,sum=0;
+    SH_PRINTF("PUTREADY %u 4096\n",size);
+    while(done<size) {
+        unsigned need=size-done;if(need>sizeof data)need=sizeof data;
+        unsigned got=0;uint64_t deadline=hal_time_now_us()+5000000u;
+        while(got<need) {
+            int c=kconsole_getc();
+            if(c>=0){data[got++]=(uint8_t)c;deadline=hal_time_now_us()+5000000u;}
+            else if(hal_time_now_us()>deadline)goto failed;
+            else task_yield();
+        }
+        if(vfs_write(fd,data,need)!=(int)need)goto failed;
+        sum=crc32_update(sum,data,need);done+=need;SH_PRINTF("PUTACK %u\n",done);
+    }
+    if(sum!=want)goto failed;
+    if(vfs_close(fd)<0){fd=-1;goto failed;}fd=-1;
+    SH_PRINTF("PUTDONE %u %08x\n",done,sum);return 0;
+failed:
+    if(fd>=0)vfs_close(fd);
+    int rc=vfs_unlink(path);SH_PRINTF("PUTFAIL %u %08x cleanup %d\n",done,sum,rc);return 1;
 }
 
 static int cmd_send(int argc, char **argv)
@@ -495,6 +759,7 @@ static int cmd_apps(int argc, char **argv)
             SH_PRINTF("%-4u %-8s %-8s %-4u %s  %-5u  %u B held\n", a[i].app_id, a[i].name, app_state_name(a[i].state), a[i].owner_task, perms, a[i].tasks, a[i].mem_bytes);
         else
             SH_PRINTF("%-4u %-8s %-8s %-4u %s  %-5u  %u B reclaimed\n", a[i].app_id, a[i].name, app_state_name(a[i].state), a[i].owner_task, perms, a[i].tasks, a[i].reclaimed_bytes);
+        if(a[i].cleanup_error) SH_PRINTF("     cleanup retry pending: %d; owner memory retained\n",a[i].cleanup_error);
     }
     return 0;
 }
@@ -511,6 +776,37 @@ static int cmd_stop(int argc, char **argv)
 }
 
 #if M5OS_HAS_KEYBOARD
+#if M5OS_BOARD_TAB5
+static int cmd_write(int argc, char **argv)
+{
+    char path[VFS_PATH_MAX];
+    if (argc > 2) { SH_PRINTF("usage: write [FILE.txt]\n"); return 1; }
+    if (!resolve(argc == 2 ? argv[1] : "note.txt", path)) return fail("write", "bad path", ERR_INVAL);
+    if (!write_file(path)) return fail("write", path, ERR_INVAL);
+    return 0;
+}
+
+static int cmd_scheme(int argc, char **argv)
+{
+    char path[VFS_PATH_MAX];
+    if (argc > 2) { SH_PRINTF("usage: scheme [FILE.scm]\n"); return 1; }
+    if (argc == 2 && !resolve(argv[1], path)) return fail("scheme", "bad path", ERR_INVAL);
+    scheme_ide(argc == 2 ? path : NULL);
+    return 0;
+}
+
+static int cmd_fontbench(int argc,char **argv)
+{
+    unsigned size=24;
+    if(argc==2) {
+        size=0;for(const char *p=argv[1];*p;p++){if(*p<'0'||*p>'9')return fail("fontbench","size must be 12..48",ERR_INVAL);size=size*10u+(unsigned)(*p-'0');}
+    }
+    if(argc>2||size<12||size>48)return fail("fontbench","usage: fontbench [12..48]",ERR_INVAL);
+    if(!fontbench_run(size))return fail("fontbench","OpenType face unavailable",ERR_INVAL);
+    return 0;
+}
+#endif
+
 static int cmd_files(int argc, char **argv)
 {
     char path[VFS_PATH_MAX];
@@ -600,6 +896,18 @@ static void print_wifi_status(void)
 
 static int cmd_wifi(int argc, char **argv)
 {
+    if (argc >= 2 && sh_streq(argv[1], "stats")) {
+        if (argc >= 3 && sh_streq(argv[2], "reset")) wifi_reset_diagnostics();
+        wifi_diagnostics_t d; wifi_get_diagnostics(&d);
+        SH_PRINTF("WIFI RX frames=%u partials=%u bad=%u max_pending=%u reg_errors=%u io_errors=%u plan_errors=%u\n",
+                  d.rx_frames,d.rx_partials,d.rx_bad_headers,d.rx_max_pending,d.rx_reg_errors,d.rx_io_errors,d.rx_plan_errors);
+        SH_PRINTF("WIFI TX no_credit=%u io_errors=%u\n", d.tx_no_credit,d.tx_io_errors);
+        SH_PRINTF("WIFI ICMP requests=%u replies=%u failures=%u\n",
+                  d.icmp_requests,d.icmp_replies,d.icmp_reply_failures);
+        SH_PRINTF("WIFI TIME poll_gap_us=%u poll_duration_us=%u bus_wait_us=%u\n",
+                  d.poll_max_gap_us,d.poll_max_duration_us,d.bus_max_wait_us);
+        return 0;
+    }
 #if M5OS_HAS_KEYBOARD
     if (argc < 2 || sh_streq(argv[1], "gui")) {
         fbcon_pause(true);
@@ -705,6 +1013,7 @@ static int cmd_wifi(int argc, char **argv)
             "  wifi                       launch graphical Wi-Fi configuration app\n"
             "  wifi gui                   launch graphical Wi-Fi configuration app\n"
             "  wifi status                show Wi-Fi connection & IPv4 status\n"
+            "  wifi stats [reset]         show/reset transport diagnostic counters\n"
             "  wifi scan                  scan nearby Wi-Fi networks\n"
             "  wifi connect <SSID> [PASS] connect & save credentials for auto-connect\n"
             "  wifi disconnect [gui]      disconnect Wi-Fi (or open GUI disconnect modal)\n"
@@ -750,6 +1059,54 @@ static int cmd_web(int argc, char **argv)
 #endif
     return web_cmd_main(argc, argv);
 }
+
+#if M5OS_BOARD_TAB5
+static bool home_touch(int *x, int *y, void *context)
+{
+    (void)context;
+    return tab5_touch_read(x, y);
+}
+
+static int cmd_home(int argc, char **argv)
+{
+    (void)argc; (void)argv;
+    static int selected;
+    for (;;) {
+        fbcon_pause(true);
+        task_sleep(FILER_PAUSE_SETTLE_MS);
+        dq_clear();
+        home_action_t action = home_select(&selected, home_touch, NULL);
+        dq_clear();
+        fbcon_pause(false);
+
+        if (action != HOME_WRITE && action != HOME_SCHEME) bizud_trim();
+
+        char *one[1];
+        switch (action) {
+        case HOME_WRITE:     one[0] = "write";     cmd_write(1, one);     break;
+        case HOME_SCHEME:    one[0] = "scheme";    cmd_scheme(1, one);    break;
+        case HOME_FILES:     one[0] = "files";     cmd_files(1, one);     break;
+        case HOME_CAMERA:    one[0] = "camera";    cmd_camera(1, one);    break;
+        case HOME_WEB:       one[0] = "web";       cmd_web(1, one);       break;
+        case HOME_WIFI:      one[0] = "wifi";      cmd_wifi(1, one);      break;
+        case HOME_SSH:       one[0] = "ssh";       cmd_ssh(1, one);       break;
+        case HOME_TAILSCALE: one[0] = "tailscale"; cmd_tailscale(1, one); break;
+        case HOME_APPS:      one[0] = "apps";      cmd_apps(1, one);      break;
+        case HOME_BASIC:     one[0] = "basic";     cmd_basic(1, one);     break;
+        case HOME_DOOM:
+            one[0] = "doom";
+            return doom_command(1, one);
+        case HOME_QUAKE:
+            one[0] = "quake";
+            return quake_command(1, one);
+        case HOME_SHELL:
+        case HOME_NONE:
+        default:
+            return 0;
+        }
+    }
+}
+#endif
 
 static int cmd_install(int argc, char **argv)
 {
@@ -844,6 +1201,36 @@ static int cmd_mount(int argc, char **argv)
     return 0;
 }
 
+#if M5OS_BOARD_TAB5
+static int cmd_sdroot(int argc, char **argv)
+{
+    uint32_t sectors;
+    if (argc == 1) { sdroot_status(); return 0; }
+    if (argc == 2 && sh_streq(argv[1], "io-reset")) {
+        sdroot_io_reset(); sh_puts("SDROOT IO reset\n"); return 0;
+    }
+    if (argc == 3 && sh_streq(argv[1], "format") && parse_uint(argv[2], &sectors)) {
+        int rc = sdroot_format(sectors); SH_PRINTF("sdroot format rc=%d\n", rc); return rc != 0;
+    }
+    if (argc == 3 && sh_streq(argv[1], "save")) {
+        int rc = sdroot_save_probe(argv[2]); SH_PRINTF("SDROOT SAVE rc=%d\n", rc); return rc != 0;
+    }
+    sh_puts("usage: sdroot [io-reset | format EXPECTED_SECTORS | save TEXT]\n"); return 1;
+}
+static int cmd_devices(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_devices(); return 0;
+}
+static int cmd_power(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_power(); return 0;
+}
+static int cmd_storage(int argc, char **argv)
+{
+    (void)argc; (void)argv; hardware_print_storage(); return 0;
+}
+#endif
+
 /* ----------------------------------------------------------- line editing */
 
 #define HIST_MAX     32
@@ -856,7 +1243,11 @@ static int cmd_mount(int argc, char **argv)
 #define CH_CTRL_N    0x0E
 #define CH_CTRL_P    0x10
 
+#if M5OS_BOARD_TAB5
+static char (*s_history)[LINE_MAX]; /* long command history belongs in PSRAM */
+#else
 static char s_history[HIST_MAX][LINE_MAX];
+#endif
 static int  s_hist_count = 0;
 
 static bool str_eq(const char *a, const char *b) { while (*a && *a == *b) { a++; b++; } return *a == *b; }
@@ -878,6 +1269,9 @@ static void history_add(const char *line)
     while (line[i] == ' ' || line[i] == '\t') i++;
     if (!line[i]) return;
     if (s_hist_count > 0 && str_eq(line, s_history[(s_hist_count - 1) % HIST_MAX])) return;
+#if M5OS_BOARD_TAB5
+    if(!s_history)return;
+#endif
     str_copy_len(s_history[s_hist_count % HIST_MAX], line, LINE_MAX);
     s_hist_count++;
 }
@@ -893,17 +1287,50 @@ static int cmd_history(int argc, char **argv)
 }
 
 static const command_t s_commands[] = {
+    { "basic", cmd_basic, "basic [FILE.bas] numeric BASIC" },
+
+#if M5OS_QUAKE
+    { "quake",quake_command,"quake [dma|smooth] [MAP] [--silent]  Quake; dmaview compares CPU/DMA" },
+#endif
+#if M5OS_DOOM
+    { "doom", doom_command, "doom [WAD-path] [--demo SECONDS] [--silent]" },
+#endif
     { "help",    cmd_help,    "list commands" },
+#if M5OS_BOARD_TAB5
+    { "home", cmd_home, "home            full-screen touch and keyboard launcher" },
+    { "mic", microphone_command, "mic test [SECONDS] bounded microphone input test" },
+    { "play", cmd_play, "play PATH       MP3 player (Q stops)" },
+    { "audio", audio_command, "audio test      low-volume speaker test" },
+    { "data", programs_command, "data [status|mount|init|unmount] persistent /data/bas, /data/scm" },
+    { "programs", programs_command, "alias for data" },
+
+    { "write", cmd_write, "write [FILE.txt] prose editor / Japanese input" },
+    { "scheme", cmd_scheme, "scheme [FILE.scm] workspace / editor / plot" },
+    { "fontbench", cmd_fontbench, "fontbench [12..48] compare BIZ UD rasterizers" },
+    { "calc", cmd_calc, "calc EXPR | deg | rad  numeric expressions" },
+    { "devices", cmd_devices, "board devices: detected, untested, or unsupported (read-only)" },
+    { "power",   cmd_power,   "battery voltage/current, estimated level and charger state (read-only)" },
+    { "sdroot", cmd_sdroot, "SD littlefs/COW root status, explicit format, atomic probe save" },
+    { "sd", shell_sd, "sd [status|probe|mount [ro|rw]|unmount] microSD" },
+    { "storage", cmd_storage, "root backing, persistence and microSD support (read-only)" },
+#endif
     { "history", cmd_history, "show command history (or use Up/Down arrows)" },
+    { "date", time_command, "UTC time: date [sync|set ISO8601Z]" },
+    { "rtc", rtc_command, "RTC read or explicit set ISO8601Z" },
+    { "i2c", cmd_i2c, "I2C transaction error counters (no probe)" },
+    { "health", health_command, "progress leases and watchdog state" },
+    { "crash", cmd_crash, "previous retained MeOS panic record" },
     { "ps",      cmd_ps,      "list tasks" },
     { "kill",    cmd_kill,    "kill PID        terminate one task (an app: its owner task)" },
     { "ls",      cmd_ls,      "ls [PATH]       list a directory (/dev lists devices)" },
     { "cat",     cmd_cat,     "cat FILE...     print files" },
+    { "crc32",   cmd_crc32,   "crc32 FILE      read-only file checksum, size and time" },
     { "echo",    cmd_echo,    "echo TEXT [> FILE | >> FILE]" },
-    { "mem",     cmd_mem,     "heap usage" },
+    { "mem",     cmd_mem,     "mem [trim]     heap usage / release idle caches" },
     { "uptime",  cmd_uptime,  "time since boot" },
     { "run",     cmd_run,     "run [APP]       start an application (no argument: list them)" },
     { "put",     cmd_put,     "put PATH        receive a file as base64 (see tools/m5ex_push.py)" },
+    { "putraw",  cmd_putraw,  "putraw PATH BYTES CRC32  bounded raw developer upload" },
     { "send",    cmd_send,    "send PID TEXT   send a message to a task" },
     { "recv",    cmd_recv,    "recv [MS]       receive messages (waits up to MS, default 1000)" },
     { "tap",     cmd_tap,     "tap X Y         simulate a touch on the screen" },
@@ -1209,6 +1636,9 @@ static void execute(char *line)
 void shell_task(void *arg)
 {
     (void)arg;
+#if M5OS_BOARD_TAB5
+    if(!s_history)s_history=kmalloc_psram(HIST_MAX*sizeof *s_history);
+#endif
     s_out = vfs_open("/dev/uart", VFS_O_WRITE);
     s_in  = vfs_open("/dev/uart", VFS_O_READ);
     if (s_out < 0 || s_in < 0) { kprintf("shell: cannot open /dev/uart\n"); return; }
@@ -1217,10 +1647,31 @@ void shell_task(void *arg)
 
     tailscale_boot_start();
 
+    SH_PRINTF("BOOT +%u ms shell-ready\n", (uint32_t)(hal_time_now_us() / 1000u));
     sh_puts("\nMeOS " M5OS_VERSION_STRING "\nBoard: " M5OS_BOARD_NAME "\nCPU: " M5OS_CPU_NAME "\nScheduler: MeOS\nFreeRTOS: disabled\n\n");
+    bool prompt_ready = false;
+#if M5OS_BOARD_TAB5
+    /* Keep serial recovery deterministic: host tools wait for this prompt and
+     * can send any byte during the grace period to suppress Home. */
+    prompt();
+    int32_t home_delay = 1500;
+    vfs_ioctl(s_in, UART_IOC_SET_RX_TIMEOUT, &home_delay);
+    uint8_t first;
+    int first_n = vfs_read(s_in, &first, 1);
+    vfs_ioctl(s_in, UART_IOC_SET_RX_TIMEOUT, &forever);
+    if (first_n == 1) {
+        kconsole_inject_n((const char *)&first, 1);
+        prompt_ready = true;
+    }
+    else if (first_n == 0) {
+        char *home_argv[] = { "home" };
+        cmd_home(1, home_argv);
+    }
+#endif
     char line[LINE_MAX];
     for (;;) {
-        prompt();
+        if (!prompt_ready) prompt();
+        prompt_ready = false;
         if (read_line(line) > 0) execute(line);
     }
 }

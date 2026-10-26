@@ -4,8 +4,8 @@
 #include <m5os/kprintf.h>
 #include <m5os/app.h>
 
-typedef struct { bool used; char path[VFS_PATH_MAX]; const vfs_fs_t *fs; void *fsdata; uint8_t len; } mount_t;
-typedef struct { bool used; const mount_t *m; void *file; uint32_t owner_app; } vfd_t;
+typedef struct { bool used; char path[VFS_PATH_MAX]; const vfs_fs_t *fs; void *fsdata; uint16_t len; } mount_t;
+typedef struct { bool used, pending; const mount_t *m; void *file; uint32_t owner_app; } vfd_t;
 
 static mount_t s_mounts[VFS_MOUNT_MAX];
 static vfd_t   s_fds[VFS_FD_MAX];
@@ -35,7 +35,7 @@ int vfs_normalize(const char *path, char *out)
             if (len == 0) { out[0] = '/'; out[1] = 0; len = 1; }
             continue;
         }
-        if (len + n + 1 >= VFS_PATH_MAX) return ERR_NAMETOOLONG;
+        if (n > VFS_NAME_MAX || len + n + 1 >= VFS_PATH_MAX) return ERR_NAMETOOLONG;
         if (len > 1) out[len++] = '/';
         for (size_t i = 0; i < n; i++) out[len++] = c[i];
         out[len] = 0;
@@ -91,7 +91,7 @@ int vfs_mount(const char *target, const vfs_fs_t *fs, void *fsdata)
         mount_t *m = &s_mounts[slot];
         size_t n = slen(norm);
         for (size_t i = 0; i <= n; i++) m->path[i] = norm[i];
-        m->len = (uint8_t)n; m->fs = fs; m->fsdata = fsdata; m->used = true;
+        m->len = (uint16_t)n; m->fs = fs; m->fsdata = fsdata; m->used = true;
     }
     arch_irq_restore(irq);
     return rc;
@@ -133,7 +133,7 @@ void vfs_print_mounts(void)
 
 static vfd_t *fd_get(int fd)
 {
-    if (fd < 0 || fd >= VFS_FD_MAX || !s_fds[fd].used) return NULL;
+    if (fd < 0 || fd >= VFS_FD_MAX || (!s_fds[fd].used || s_fds[fd].pending)) return NULL;
     return &s_fds[fd];
 }
 
@@ -146,7 +146,7 @@ int vfs_open(const char *path, uint32_t flags)
 
     int fd = ERR_BUSY;
     uint32_t irq = arch_irq_disable();                       /* reserve a slot */
-    for (int i = 0; i < VFS_FD_MAX; i++) if (!s_fds[i].used) { s_fds[i].used = true; s_fds[i].m = m; s_fds[i].file = NULL; s_fds[i].owner_app = task_current() && task_current()->app ? task_current()->app->app_id : 0; fd = i; break; }
+    for (int i = 0; i < VFS_FD_MAX; i++) if (!s_fds[i].used) { s_fds[i].used = true; s_fds[i].pending = false; s_fds[i].m = m; s_fds[i].file = NULL; s_fds[i].owner_app = task_current() && task_current()->app ? task_current()->app->app_id : 0; fd = i; break; }
     arch_irq_restore(irq);
     if (fd < 0) return fd;
 
@@ -264,7 +264,7 @@ int vfs_readdir(const char *path, int (*cb)(const vfs_info_t *, void *), void *c
         if (nested) continue;
         vfs_info_t info = { .type = FS_TYPE_DIR, .size = 0 };
         size_t j = 0;
-        while (name[j] && j < FS_NAME_MAX) { info.name[j] = name[j]; j++; }
+        while (name[j] && j < VFS_NAME_MAX) { info.name[j] = name[j]; j++; }
         info.name[j] = 0;
         count++;
         if (cb(&info, ctx)) stopped = true;
@@ -277,7 +277,15 @@ int vfs_close_owned(uint32_t app_id)
 {
     int n = 0;
     for (int i = 0; i < VFS_FD_MAX; i++) {
-        if (s_fds[i].used && s_fds[i].owner_app == app_id) { vfs_close(i); n++; }
+        if (s_fds[i].used && s_fds[i].owner_app == app_id) {
+            if (s_fds[i].pending) {
+                uint32_t irq = arch_irq_disable();
+                s_fds[i].used = false;
+                s_fds[i].pending = false;
+                arch_irq_restore(irq);
+            } else vfs_close(i);
+            n++;
+        }
     }
     return n;
 }
@@ -287,4 +295,42 @@ int vfs_count_owned(uint32_t app_id)
     int n = 0;
     for (int i = 0; i < VFS_FD_MAX; i++) if (s_fds[i].used && s_fds[i].owner_app == app_id) n++;
     return n;
+}
+
+
+int vfs_replace_file(const char *path,const void *data,size_t len,size_t *written)
+{
+    size_t ignored;
+    if (!written) written = &ignored;
+    *written = 0;
+    if ((!data && len) || len > 0x7fffffffu) return ERR_INVAL;
+    char norm[VFS_PATH_MAX];
+    int rc = vfs_normalize(path,norm);
+    if (rc != ERR_OK) return rc;
+    const char *rel;
+    /* A transient owned descriptor pins the mount while the callback runs.
+     * appd can reclaim it after task termination; ordinary fd operations cannot
+     * treat it as an opened file. Never hold interrupts masked across IO. */
+    uint32_t irq = arch_irq_disable();
+    const mount_t *m = find_mount(norm,&rel);
+    int pin = ERR_BUSY;
+    if (m && m->fs->replace) {
+        for (int i = 0; i < VFS_FD_MAX; i++) if (!s_fds[i].used) {
+            s_fds[i] = (vfd_t){ .used = true, .pending = true, .m = m,
+                .owner_app = task_current() && task_current()->app ? task_current()->app->app_id : 0 };
+            pin = i;
+            break;
+        }
+    }
+    arch_irq_restore(irq);
+    if (!m) return ERR_NOENT;
+    if (!m->fs->replace) return vfs_write_file(norm,data,len,written);
+    if (pin < 0) return pin;
+    rc = m->fs->replace(m->fsdata,rel,data,len,written);
+    if (rc > 0 || (rc == ERR_OK && *written != len)) rc = ERR_IO;
+    irq = arch_irq_disable();
+    s_fds[pin].pending = false;
+    s_fds[pin].used = false;
+    arch_irq_restore(irq);
+    return rc;
 }

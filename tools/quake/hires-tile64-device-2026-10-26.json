@@ -1,0 +1,183 @@
+{
+  "date": "2026-10-26",
+  "source_commit": "926ffec60c0d722be19c973faa1f486a4cbf17e5",
+  "firmware_sha256": "2eb0af3fcb758af918da9ab74b499ec9ffdc7f67b94f294918b8ec2c090efeac",
+  "resolution": [
+    512,
+    300
+  ],
+  "viewport": {
+    "x": 128,
+    "y": 60,
+    "width": 1024,
+    "height": 600
+  },
+  "cpu_mhz": 360,
+  "l2_cache_kib": 128,
+  "surface_cache_kib": 600,
+  "staging_columns": 64,
+  "tile_stack_bytes": 19200,
+  "stack_capacity_bytes": 49152,
+  "maximum_sampled_stack_bytes": 30896,
+  "all_sampled_guards_ok": true,
+  "timedemo_command": "timedemo demo1;toggleconsole",
+  "audio": "ES8388 24000Hz stereo -18dB",
+  "runs": [
+    {
+      "mode": "dma",
+      "frames": 969,
+      "seconds": 55.4,
+      "fps": 17.5
+    },
+    {
+      "mode": "dma",
+      "frames": 969,
+      "seconds": 55.4,
+      "fps": 17.5
+    },
+    {
+      "mode": "cpu",
+      "frames": 969,
+      "seconds": 60.8,
+      "fps": 15.9
+    },
+    {
+      "mode": "cpu",
+      "frames": 969,
+      "seconds": 60.8,
+      "fps": 15.9
+    }
+  ],
+  "visual_comparisons": [
+    "quake visual: dma static mismatches 0 first -1,-1 checksum a4258a41",
+    "quake visual: cpu static mismatches 0 first -1,-1 checksum a4258a41",
+    "quake visual: cpu moving mismatches 0 first -1,-1 checksum 6adf7f5d",
+    "quake visual: cpu static mismatches 0 first -1,-1 checksum a4258a41",
+    "quake visual: dma static mismatches 0 first -1,-1 checksum a4258a41",
+    "quake visual: dma moving mismatches 0 first -1,-1 checksum fd91e875",
+    "quake visual: dma static mismatches 0 first -1,-1 checksum a4258a41"
+  ],
+  "human_visual_acceptance": "User confirmed normal final 64-column display and controls after DMA E1M1 relaunch; 16-column display was also confirmed",
+  "normal_exit_audio": [
+    "audio: stopped, 6810 blocks, 0 underruns/errors",
+    "audio: stopped, 7074 blocks, 0 underruns/errors"
+  ],
+  "startup_load_ms": [
+    20332,
+    10099
+  ],
+  "notes": [
+    "App-only OTA slot 0 writes; factory/other-slot/SD preserved. No new backup, partition change or formatting.",
+    "A post-diagnostic app start failed from existing internal-heap fragmentation; reboot with early game start succeeded without reducing the 48 KiB stack.",
+    "No engine math, compiler, clock, cache-size or audio changes from the 512x300 baseline.",
+    "320x200 blit/DMA branches are unchanged; low/high host checks and both native builds pass.",
+    "Stage memory is internal task stack, never a DMA source. Persistent kernel source buffers/descriptors and shutdown ownership are unchanged.",
+    "No forced-kill/injected DMA fault qualification added by these tests.",
+    "All six transfer microbenchmark checksums match baseline; baseline boot-time IO inflates wall time, so this microbenchmark is not used for FPS speedup claims.",
+    "Human audible audio acceptance was not separately requested in this run; zero-error audio counters are distinct from listening."
+  ],
+  "transfer_interval_us_including_startup_and_load": {
+    "dma": {
+      "samples": 22,
+      "minimum": 3597,
+      "median": 17640.5,
+      "maximum": 18375
+    },
+    "cpu": {
+      "samples": 23,
+      "minimum": 4415,
+      "median": 22824,
+      "maximum": 24293
+    }
+  },
+  "transfer_microbenchmark": {
+    "baseline": [
+      {
+        "mode": "cpu",
+        "pattern": "static",
+        "wall_us_per_frame": 4730,
+        "own_us_per_frame": 2395,
+        "checksum": "ea1451c5"
+      },
+      {
+        "mode": "cpu",
+        "pattern": "full",
+        "wall_us_per_frame": 323727,
+        "own_us_per_frame": 146786,
+        "checksum": "f8de61c5"
+      },
+      {
+        "mode": "cpu",
+        "pattern": "odd-band",
+        "wall_us_per_frame": 35162,
+        "own_us_per_frame": 23952,
+        "checksum": "8d4e65c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "static",
+        "wall_us_per_frame": 3748,
+        "own_us_per_frame": 2603,
+        "checksum": "ea1451c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "full",
+        "wall_us_per_frame": 212390,
+        "own_us_per_frame": 136929,
+        "checksum": "f8de61c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "odd-band",
+        "wall_us_per_frame": 137992,
+        "own_us_per_frame": 133878,
+        "checksum": "8d4e65c5"
+      }
+    ],
+    "tile64": [
+      {
+        "mode": "cpu",
+        "pattern": "static",
+        "wall_us_per_frame": 2665,
+        "own_us_per_frame": 2556,
+        "checksum": "ea1451c5"
+      },
+      {
+        "mode": "cpu",
+        "pattern": "full",
+        "wall_us_per_frame": 27272,
+        "own_us_per_frame": 26275,
+        "checksum": "f8de61c5"
+      },
+      {
+        "mode": "cpu",
+        "pattern": "odd-band",
+        "wall_us_per_frame": 20418,
+        "own_us_per_frame": 19755,
+        "checksum": "8d4e65c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "static",
+        "wall_us_per_frame": 2619,
+        "own_us_per_frame": 2532,
+        "checksum": "ea1451c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "full",
+        "wall_us_per_frame": 19998,
+        "own_us_per_frame": 19316,
+        "checksum": "f8de61c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "odd-band",
+        "wall_us_per_frame": 17285,
+        "own_us_per_frame": 16682,
+        "checksum": "8d4e65c5"
+      }
+    ]
+  }
+}

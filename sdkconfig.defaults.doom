@@ -1,0 +1,5 @@
+CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY=y
+# Integrated BASIC/Scheme/editor/player + Doom must fit the existing app slot.
+# Keep explicit -O2 overrides for the engine, adapter and MP3 decoder; WASM retains -O3.
+CONFIG_COMPILER_OPTIMIZATION_DEBUG=n
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y

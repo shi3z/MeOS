@@ -22,7 +22,7 @@
 #define IDX_ROOT      (-2)                  /* lookup(): the path was "/" */
 #define IDX_NONE      (-1)                  /* lookup(): last component does not exist */
 
-typedef struct { bool used; uint8_t ent; uint32_t pos; uint32_t flags; } fd_t;
+typedef struct { bool used; int handle; uint8_t ent; uint32_t pos; uint32_t flags; } fd_t;
 
 static struct {
     bool           mounted;
@@ -38,6 +38,24 @@ static struct {
 } V;
 
 static mutex_t s_lock = MUTEX_INIT;
+static fs_tx_backend_t s_backend;
+static bool s_readonly;
+static int s_latched;
+static bool s_tx_inflight;
+static blockdev_t *s_mount_bd;
+static uint32_t s_mount_base;
+static int recover_locked(void);
+/* MeOS releases mutexes when a task is killed. The persistent inflight marker
+ * makes the next owner recover instead of observing that task's dirty metadata. */
+static void fs_lock(void)
+{
+    mutex_lock(&s_lock);
+    if (s_tx_inflight) {
+        (void)recover_locked();
+        s_tx_inflight = false;
+    }
+}
+static uint32_t s_next_handle = 1; /* never reset on mount/recovery */
 static uint8_t s_bounce[M5FS_BLOCK_SIZE] __attribute__((aligned(16)));   /* guarded by s_lock */
 
 /* ---------------------------------------------------------------- helpers */
@@ -47,18 +65,21 @@ static bool str_eq(const char *a, const char *b)
     while (*a && *a == *b) { a++; b++; }
     return *a == *b;
 }
-
 static void mem_copy(void *d, const void *s, size_t n) { uint8_t *dd = d; const uint8_t *ss = s; while (n--) *dd++ = *ss++; }
 static void mem_zero(void *d, size_t n)                 { uint8_t *dd = d; while (n--) *dd++ = 0; }
 static uint32_t min_u32(uint32_t a, uint32_t b)          { return a < b ? a : b; }
 
 static int dev_read(uint32_t rel_lba, uint32_t n, void *buf)
 {
-    return V.bd->read(V.bd, V.base + rel_lba, n, buf);
+    int rc = V.bd->read(V.bd, V.base + rel_lba, n, buf);
+    if (s_tx_inflight && rc < 0 && s_latched == ERR_OK) s_latched = rc;
+    return rc;
 }
 static int dev_write(uint32_t rel_lba, uint32_t n, const void *buf)
 {
-    return V.bd->write(V.bd, V.base + rel_lba, n, buf);
+    int rc = V.bd->write(V.bd, V.base + rel_lba, n, buf);
+    if (s_tx_inflight && rc < 0 && s_latched == ERR_OK) s_latched = rc;
+    return rc;
 }
 
 static bool bit_get(uint32_t b) { return (V.bitmap[b >> 3] >> (b & 7u)) & 1u; }
@@ -250,25 +271,26 @@ static int write_super(void)
 
 /* ------------------------------------------------------------ format/mount */
 
-int fs_format(blockdev_t *bd, uint32_t base_lba, uint32_t nblocks)
+static int format_locked(blockdev_t *bd, uint32_t base_lba, uint32_t nblocks)
 {
     if (!bd || bd->block_size != M5FS_BLOCK_SIZE || nblocks < M5FS_MIN_BLOCKS ||
-        base_lba + nblocks > bd->block_count) return ERR_INVAL;
+        base_lba > bd->block_count || nblocks > bd->block_count - base_lba) return ERR_INVAL;
 
-    mutex_lock(&s_lock);
+
+    if (V.mounted && bd == V.bd) return ERR_BUSY;
     int rc = ERR_OK;
     m5fs_super_t sb = { .version = M5FS_VERSION, .block_size = M5FS_BLOCK_SIZE, .total_blocks = nblocks };
     mem_copy(sb.magic, M5FS_MAGIC, 4);
     sb.bitmap_start  = 1;
-    sb.bitmap_blocks = (nblocks + BITS_PER_BLOCK - 1) / BITS_PER_BLOCK;
+    sb.bitmap_blocks = nblocks / BITS_PER_BLOCK + (nblocks % BITS_PER_BLOCK != 0);
     sb.dir_start     = sb.bitmap_start + sb.bitmap_blocks;
     sb.dir_blocks    = M5FS_DIR_BLOCKS;
     sb.data_start    = sb.dir_start + sb.dir_blocks;
     sb.dir_entries   = M5FS_DIR_ENTRIES;
-    if (sb.data_start >= nblocks) { mutex_unlock(&s_lock); return ERR_INVAL; }
+    if (sb.data_start >= nblocks) { return ERR_INVAL; }
 
     uint8_t *tmp = kmalloc(M5FS_BLOCK_SIZE * M5FS_DIR_BLOCKS);
-    if (!tmp) { mutex_unlock(&s_lock); return ERR_NOMEM; }
+    if (!tmp) { return ERR_NOMEM; }
 
     /* 1. invalidate any previous volume first (so a power cut mid-format leaves nothing mountable) */
     mem_zero(tmp, M5FS_BLOCK_SIZE);
@@ -307,7 +329,7 @@ int fs_format(blockdev_t *bd, uint32_t base_lba, uint32_t nblocks)
         rc = bd->write(bd, base_lba, 1, tmp);
     }
     kfree(tmp);
-    mutex_unlock(&s_lock);
+
     return rc;
 }
 
@@ -317,39 +339,39 @@ static void release_buffers(void)
     V.bitmap = NULL; V.bitmap_dirty = NULL; V.dir = NULL;
 }
 
-int fs_mount(blockdev_t *bd, uint32_t base_lba)
+static int mount_locked(blockdev_t *bd, uint32_t base_lba)
 {
     if (!bd || bd->block_size != M5FS_BLOCK_SIZE || base_lba >= bd->block_count) return ERR_INVAL;
-    mutex_lock(&s_lock);
-    if (V.mounted) { mutex_unlock(&s_lock); return ERR_BUSY; }
+
+    if (V.mounted) { return ERR_BUSY; }
 
     uint8_t blk[M5FS_BLOCK_SIZE];
     int rc = bd->read(bd, base_lba, 1, blk);
-    if (rc != ERR_OK) { mutex_unlock(&s_lock); return rc; }
+    if (rc != ERR_OK) { return rc; }
 
     m5fs_super_t sb;
     mem_copy(&sb, blk, sizeof sb);
-    uint32_t bm_blocks = (sb.total_blocks + BITS_PER_BLOCK - 1) / BITS_PER_BLOCK;
+    uint32_t bm_blocks = sb.total_blocks / BITS_PER_BLOCK + (sb.total_blocks % BITS_PER_BLOCK != 0);
     bool good = sb.magic[0] == 'M' && sb.magic[1] == '5' && sb.magic[2] == 'F' && sb.magic[3] == 'S' &&
                 sb.version == M5FS_VERSION && sb.block_size == M5FS_BLOCK_SIZE &&
                 sb.crc32 == crc32(&sb, __builtin_offsetof(m5fs_super_t, crc32)) &&
-                sb.total_blocks >= M5FS_MIN_BLOCKS && base_lba + sb.total_blocks <= bd->block_count &&
+                sb.total_blocks >= M5FS_MIN_BLOCKS && sb.total_blocks <= bd->block_count - base_lba &&
                 sb.bitmap_start == 1 && sb.bitmap_blocks == bm_blocks &&
                 sb.dir_start == 1 + bm_blocks && sb.dir_blocks == M5FS_DIR_BLOCKS &&
                 sb.data_start == sb.dir_start + sb.dir_blocks && sb.dir_entries == M5FS_DIR_ENTRIES &&
                 sb.data_start < sb.total_blocks;
-    if (!good) { mutex_unlock(&s_lock); return ERR_CORRUPT; }
+    if (!good) { return ERR_CORRUPT; }
 
     V.bd = bd; V.base = base_lba; V.sb = sb;
     V.bitmap = kmalloc_psram(bm_blocks * M5FS_BLOCK_SIZE);
     if (!V.bitmap) V.bitmap = kmalloc(bm_blocks * M5FS_BLOCK_SIZE);
     V.bitmap_dirty = kcalloc(bm_blocks, 1);
     V.dir = kmalloc(M5FS_DIR_BLOCKS * M5FS_BLOCK_SIZE);
-    if (!V.bitmap || !V.bitmap_dirty || !V.dir) { release_buffers(); mutex_unlock(&s_lock); return ERR_NOMEM; }
+    if (!V.bitmap || !V.bitmap_dirty || !V.dir) { release_buffers(); return ERR_NOMEM; }
 
     rc = dev_read(sb.bitmap_start, bm_blocks, V.bitmap);
     if (rc == ERR_OK) rc = dev_read(sb.dir_start, M5FS_DIR_BLOCKS, V.dir);
-    if (rc != ERR_OK) { release_buffers(); mutex_unlock(&s_lock); return rc; }
+    if (rc != ERR_OK) { release_buffers(); return rc; }
 
     /* sanity-check the directory so later code can trust extents and parents */
     for (uint32_t i = 0; i < M5FS_DIR_ENTRIES && good; i++) {
@@ -359,17 +381,19 @@ int fs_mount(blockdev_t *bd, uint32_t base_lba)
         if (e->parent != M5FS_ROOT && (e->parent >= M5FS_DIR_ENTRIES || V.dir[e->parent].type != M5FS_T_DIR)) good = false;
         for (int x = 0; x < M5FS_EXTENTS; x++) {
             if (e->extent[x].count &&
-                (e->extent[x].start < sb.data_start || e->extent[x].start + e->extent[x].count > sb.total_blocks)) good = false;
+                (e->extent[x].start < sb.data_start || e->extent[x].start >= sb.total_blocks ||
+                 e->extent[x].count > sb.total_blocks - e->extent[x].start)) good = false;
         }
         if (e->type == M5FS_T_FILE && (uint64_t)e->size > (uint64_t)file_blocks(e) * M5FS_BLOCK_SIZE) good = false;
     }
-    if (!good) { release_buffers(); mutex_unlock(&s_lock); return ERR_CORRUPT; }
+    if (!good) { release_buffers(); return ERR_CORRUPT; }
 
+    mem_zero(V.dir_dirty, sizeof V.dir_dirty);
     V.free_blocks = 0;                                   /* the bitmap is authoritative */
     for (uint32_t b = 0; b < sb.total_blocks; b++) if (!bit_get(b)) V.free_blocks++;
     for (int i = 0; i < FD_MAX; i++) V.fds[i].used = false;
     V.mounted = true;
-    mutex_unlock(&s_lock);
+
     return ERR_OK;
 }
 
@@ -380,35 +404,25 @@ static int sync_locked(void)
     return rc;
 }
 
-int fs_sync(void)
+static int unmount_locked(void)
 {
-    mutex_lock(&s_lock);
-    int rc = V.mounted ? sync_locked() : ERR_INVAL;
-    mutex_unlock(&s_lock);
-    return rc;
-}
-
-int fs_unmount(void)
-{
-    mutex_lock(&s_lock);
-    if (!V.mounted) { mutex_unlock(&s_lock); return ERR_INVAL; }
-    for (int i = 0; i < FD_MAX; i++) if (V.fds[i].used) { mutex_unlock(&s_lock); return ERR_BUSY; }
-    int rc = sync_locked();
+    if (!V.mounted) { return ERR_INVAL; }
+    for (int i = 0; i < FD_MAX; i++) if (V.fds[i].used) { return ERR_BUSY; }
+    int rc = (s_backend.begin || s_readonly) ? ERR_OK : sync_locked();
     release_buffers();
     V.mounted = false;
-    mutex_unlock(&s_lock);
+
     return rc;
 }
 
-int fs_statfs(fs_stat_t *out)
+static int statfs_locked(fs_stat_t *out)
 {
-    mutex_lock(&s_lock);
     int rc = ERR_INVAL;
     if (V.mounted && out) {
         out->block_size = M5FS_BLOCK_SIZE; out->total_blocks = V.sb.total_blocks; out->free_blocks = V.free_blocks;
         rc = ERR_OK;
     }
-    mutex_unlock(&s_lock);
+
     return rc;
 }
 
@@ -417,18 +431,22 @@ int fs_statfs(fs_stat_t *out)
 static int fd_check(int fd, uint32_t need_flag)
 {
     if (!V.mounted) return ERR_INVAL;
-    if (fd < 0 || fd >= FD_MAX || !V.fds[fd].used) return ERR_BADF;
-    if (need_flag && !(V.fds[fd].flags & need_flag)) return ERR_INVAL;
+    if (fd < 0 || !V.fds[fd % FD_MAX].used || V.fds[fd % FD_MAX].handle != fd) return ERR_BADF;
+    if (need_flag && !(V.fds[fd % FD_MAX].flags & need_flag)) return ERR_INVAL;
     return ERR_OK;
 }
 
-int fs_open(const char *path, uint32_t flags)
+static int open_locked(const char *path, uint32_t flags)
 {
     if (!(flags & (FS_O_READ | FS_O_WRITE))) return ERR_INVAL;
-    mutex_lock(&s_lock);
+
     int result;
     uint8_t parent; char leaf[FS_NAME_MAX + 1]; int idx;
     if (!V.mounted) { result = ERR_INVAL; goto out; }
+    int fd = -1;
+    for (int i = 0; i < FD_MAX; i++) if (!V.fds[i].used) { fd = i; break; }
+    if (fd < 0) { result = ERR_BUSY; goto out; }
+    if (s_next_handle > (0x7fffffffu - FD_MAX) / FD_MAX) { result = ERR_NOSPC; goto out; }
     result = lookup(path, &parent, leaf, &idx);
     if (result != ERR_OK) goto out;
     if (idx == IDX_ROOT) { result = ERR_ISDIR; goto out; }
@@ -445,35 +463,32 @@ int fs_open(const char *path, uint32_t flags)
         dir_mark(idx);
     }
 
-    int fd = -1;
-    for (int i = 0; i < FD_MAX; i++) if (!V.fds[i].used) { fd = i; break; }
-    if (fd < 0) { result = ERR_BUSY; goto out; }
-    V.fds[fd] = (fd_t){ .used = true, .ent = (uint8_t)idx, .pos = 0, .flags = flags };
-    result = fd;
+    int handle = (int)(s_next_handle++ * FD_MAX) + fd;
+    V.fds[fd] = (fd_t){ .used = true, .handle = handle, .ent = (uint8_t)idx, .pos = 0, .flags = flags };
+    result = handle;
 out:
-    mutex_unlock(&s_lock);
+
     return result;
 }
 
-int fs_close(int fd)
+static int close_locked(int fd)
 {
-    mutex_lock(&s_lock);
     int rc = fd_check(fd, 0);
     if (rc == ERR_OK) {
-        V.fds[fd].used = false;
-        rc = flush_meta();
+        V.fds[fd % FD_MAX].used = false;
+        rc = s_readonly ? ERR_OK : flush_meta();
     }
-    mutex_unlock(&s_lock);
+
     return rc;
 }
 
-int fs_read(int fd, void *buf, size_t len)
+static int read_locked(int fd, void *buf, size_t len)
 {
-    mutex_lock(&s_lock);
+    if ((!buf && len) || len > 0x7fffffffu) return ERR_INVAL;
     int rc = fd_check(fd, FS_O_READ);
-    if (rc != ERR_OK) { mutex_unlock(&s_lock); return rc; }
+    if (rc != ERR_OK) { return rc; }
 
-    fd_t *f = &V.fds[fd];
+    fd_t *f = &V.fds[fd % FD_MAX];
     const m5fs_dirent_t *e = &V.dir[f->ent];
     uint8_t *out = buf;
     uint32_t n = f->pos >= e->size ? 0 : min_u32((uint32_t)len, e->size - f->pos);
@@ -485,37 +500,41 @@ int fs_read(int fd, void *buf, size_t len)
         if (off == 0 && n - done >= M5FS_BLOCK_SIZE) {              /* whole blocks: straight into the caller's buffer */
             uint32_t blocks = min_u32((n - done) / M5FS_BLOCK_SIZE, run);
             rc = dev_read(lba, blocks, out + done);
-            done += blocks * M5FS_BLOCK_SIZE; f->pos += blocks * M5FS_BLOCK_SIZE;
+            if (rc == ERR_OK) {
+                done += blocks * M5FS_BLOCK_SIZE; f->pos += blocks * M5FS_BLOCK_SIZE;
+            }
         } else {                                                    /* partial block: via the bounce buffer */
             rc = dev_read(lba, 1, s_bounce);
             uint32_t chunk = min_u32(M5FS_BLOCK_SIZE - off, n - done);
-            if (rc == ERR_OK) mem_copy(out + done, s_bounce + off, chunk);
-            done += chunk; f->pos += chunk;
+            if (rc == ERR_OK) {
+                mem_copy(out + done, s_bounce + off, chunk);
+                done += chunk; f->pos += chunk;
+            }
         }
     }
-    mutex_unlock(&s_lock);
+
     return rc == ERR_OK ? (int)done : rc;
 }
 
-int fs_write(int fd, const void *buf, size_t len)
+static int write_locked(int fd, const void *buf, size_t len)
 {
-    mutex_lock(&s_lock);
+    if ((!buf && len) || len > 0x7fffffffu) return ERR_INVAL;
     int rc = fd_check(fd, FS_O_WRITE);
-    if (rc != ERR_OK) { mutex_unlock(&s_lock); return rc; }
+    if (rc != ERR_OK) { return rc; }
 
-    fd_t *f = &V.fds[fd];
+    fd_t *f = &V.fds[fd % FD_MAX];
     m5fs_dirent_t *e = &V.dir[f->ent];
     const uint8_t *in = buf;
     if (f->flags & FS_O_APPEND) f->pos = e->size;
-    if (len == 0) { mutex_unlock(&s_lock); return 0; }
-    if ((uint64_t)f->pos + len > 0x7FFFFFFFu) { mutex_unlock(&s_lock); return ERR_INVAL; }
+    if (len == 0) { return 0; }
+    if ((uint64_t)f->pos + len > 0x7FFFFFFFu) { return ERR_INVAL; }
 
     uint32_t end = f->pos + (uint32_t)len;
     uint32_t need = (end + M5FS_BLOCK_SIZE - 1) / M5FS_BLOCK_SIZE, have = file_blocks(e);
     if (need > have) { grow(e, need - have); dir_mark((int)(e - V.dir)); }   /* may fall short: we write what fits */
     uint32_t cap = file_blocks(e) * M5FS_BLOCK_SIZE;
     uint32_t n = f->pos >= cap ? 0 : min_u32((uint32_t)len, cap - f->pos);
-    if (n == 0) { mutex_unlock(&s_lock); return ERR_NOSPC; }
+    if (n == 0) { return ERR_NOSPC; }
 
     uint32_t done = 0;
     while (done < n && rc == ERR_OK) {
@@ -525,27 +544,28 @@ int fs_write(int fd, const void *buf, size_t len)
         if (off == 0 && n - done >= M5FS_BLOCK_SIZE) {
             uint32_t blocks = min_u32((n - done) / M5FS_BLOCK_SIZE, run);
             rc = dev_write(lba, blocks, in + done);
-            done += blocks * M5FS_BLOCK_SIZE; f->pos += blocks * M5FS_BLOCK_SIZE;
+            if (rc == ERR_OK) {
+                done += blocks * M5FS_BLOCK_SIZE; f->pos += blocks * M5FS_BLOCK_SIZE;
+            }
         } else {                                                    /* read-modify-write one block */
             uint32_t blk_start = (f->pos / M5FS_BLOCK_SIZE) * M5FS_BLOCK_SIZE;
             if (blk_start >= e->size) mem_zero(s_bounce, sizeof s_bounce);     /* fresh block: nothing to preserve */
             else rc = dev_read(lba, 1, s_bounce);
             uint32_t chunk = min_u32(M5FS_BLOCK_SIZE - off, n - done);
             if (rc == ERR_OK) { mem_copy(s_bounce + off, in + done, chunk); rc = dev_write(lba, 1, s_bounce); }
-            done += chunk; f->pos += chunk;
+            if (rc == ERR_OK) { done += chunk; f->pos += chunk; }
         }
-        if (f->pos > e->size) { e->size = f->pos; dir_mark((int)(e - V.dir)); }
+        if (rc == ERR_OK && f->pos > e->size) { e->size = f->pos; dir_mark((int)(e - V.dir)); }
     }
-    mutex_unlock(&s_lock);
+
     return rc == ERR_OK ? (int)done : rc;
 }
 
-int fs_seek(int fd, int32_t offset, int whence)
+static int seek_locked(int fd, int32_t offset, int whence)
 {
-    mutex_lock(&s_lock);
     int rc = fd_check(fd, 0);
     if (rc == ERR_OK) {
-        fd_t *f = &V.fds[fd];
+        fd_t *f = &V.fds[fd % FD_MAX];
         int64_t base = whence == FS_SEEK_SET ? 0 : whence == FS_SEEK_CUR ? (int64_t)f->pos : (int64_t)V.dir[f->ent].size;
         int64_t pos = base + offset;
         if ((whence != FS_SEEK_SET && whence != FS_SEEK_CUR && whence != FS_SEEK_END) || pos < 0 || pos > (int64_t)V.dir[f->ent].size) {
@@ -555,7 +575,7 @@ int fs_seek(int fd, int32_t offset, int whence)
             rc = (int)f->pos;
         }
     }
-    mutex_unlock(&s_lock);
+
     return rc;
 }
 
@@ -570,9 +590,10 @@ static void fill_info(fs_info_t *info, const m5fs_dirent_t *e)
     info->size = e->type == M5FS_T_DIR ? 0 : e->size;
 }
 
-int fs_stat(const char *path, fs_info_t *out)
+static int stat_locked(const char *path, fs_info_t *out)
 {
-    mutex_lock(&s_lock);
+    if (!out) return ERR_INVAL;
+
     int rc = V.mounted ? ERR_OK : ERR_INVAL;
     uint8_t parent; char leaf[FS_NAME_MAX + 1]; int idx;
     if (rc == ERR_OK) rc = lookup(path, &parent, leaf, &idx);
@@ -581,13 +602,12 @@ int fs_stat(const char *path, fs_info_t *out)
         else if (idx == IDX_NONE) rc = ERR_NOENT;
         else fill_info(out, &V.dir[idx]);
     }
-    mutex_unlock(&s_lock);
+
     return rc;
 }
 
-int fs_mkdir(const char *path)
+static int mkdir_locked(const char *path)
 {
-    mutex_lock(&s_lock);
     int rc = V.mounted ? ERR_OK : ERR_INVAL;
     uint8_t parent; char leaf[FS_NAME_MAX + 1]; int idx;
     if (rc == ERR_OK) rc = lookup(path, &parent, leaf, &idx);
@@ -598,13 +618,12 @@ int fs_mkdir(const char *path)
             rc = e < 0 ? e : flush_meta();
         }
     }
-    mutex_unlock(&s_lock);
+
     return rc;
 }
 
-int fs_delete(const char *path)
+static int delete_locked(const char *path)
 {
-    mutex_lock(&s_lock);
     int rc = V.mounted ? ERR_OK : ERR_INVAL;
     uint8_t parent; char leaf[FS_NAME_MAX + 1]; int idx;
     if (rc == ERR_OK) rc = lookup(path, &parent, leaf, &idx);
@@ -625,13 +644,14 @@ int fs_delete(const char *path)
         dir_mark(idx);
         rc = flush_meta();
     }
-    mutex_unlock(&s_lock);
+
     return rc;
 }
 
-int fs_list(const char *path, int (*cb)(const fs_info_t *, void *), void *ctx)
+static int list_locked(const char *path, int (*cb)(const fs_info_t *, void *), void *ctx)
 {
-    mutex_lock(&s_lock);               /* cb runs under the lock: it must not call fs_*() */
+    if (!cb) return ERR_INVAL;
+        /* cb runs under the lock: it must not call fs_*() */
     int rc = V.mounted ? ERR_OK : ERR_INVAL;
     uint8_t parent; char leaf[FS_NAME_MAX + 1]; int idx;
     if (rc == ERR_OK) rc = lookup(path, &parent, leaf, &idx);
@@ -652,6 +672,255 @@ int fs_list(const char *path, int (*cb)(const fs_info_t *, void *), void *ctx)
         }
         rc = count;
     }
+
+    return rc;
+}
+
+
+/* Public serialization and transaction boundary. The backend is configured only
+ * at mount. No application callback can publish an intermediate metadata state. */
+static void discard_locked(void)
+{
+    release_buffers();
+    mem_zero(&V, sizeof V);
+}
+static int recover_locked(void)
+{
+    blockdev_t *bd = s_mount_bd;
+    uint32_t base = s_mount_base;
+    discard_locked();
+    if (s_backend.recover(s_backend.ctx)) return ERR_IO;
+    return mount_locked(bd, base);
+}
+static int begin_locked(void)
+{
+    s_latched = ERR_OK;
+    if (s_readonly) return ERR_PERM;
+    if (!V.mounted) return ERR_NODEV;
+    if (s_backend.begin) {
+        s_tx_inflight = true;
+        if (s_backend.begin(s_backend.ctx)) {
+            (void)recover_locked();
+            s_tx_inflight = false;
+            return ERR_IO;
+        }
+    }
+    return ERR_OK;
+}
+static int finish_locked(int result)
+{
+    if (!s_backend.begin) return result;
+    if (s_latched < 0) result = s_latched;
+    if (result >= 0) {
+        int rc = sync_locked();
+        if (rc == ERR_OK && !s_backend.commit(s_backend.ctx)) {
+            s_tx_inflight = false;
+            return result;
+        }
+        result = rc < 0 ? rc : ERR_IO;
+    }
+    /* Uncertain commits are resolved by storage recovery; never reuse the
+     * mutated in-memory bitmap, directory, or file positions. */
+    int recovered = recover_locked();
+    s_tx_inflight = false;
+    return recovered < 0 ? ERR_IO : result;
+}
+static int latch(int result)
+{
+    if (result < 0 && s_latched == ERR_OK) s_latched = result;
+    return result;
+}
+static int tx_open(const char *p,uint32_t f) { return s_latched < 0 ? s_latched : latch(open_locked(p,f)); }
+static int tx_close(int fd) { return s_latched < 0 ? s_latched : latch(close_locked(fd)); }
+static int tx_read(int fd,void *b,size_t n) { return s_latched < 0 ? s_latched : latch(read_locked(fd,b,n)); }
+static int tx_write(int fd,const void *b,size_t n)
+{
+    if (s_latched < 0) return s_latched;
+    int rc = write_locked(fd,b,n);
+    if (rc >= 0 && (size_t)rc != n) s_latched = ERR_NOSPC;
+    return latch(rc);
+}
+static int tx_seek(int fd,int32_t o,int w) { return s_latched < 0 ? s_latched : latch(seek_locked(fd,o,w)); }
+static int tx_stat(const char *p,fs_info_t *o) { return s_latched < 0 ? s_latched : latch(stat_locked(p,o)); }
+static int tx_mkdir(const char *p) { return s_latched < 0 ? s_latched : latch(mkdir_locked(p)); }
+static int tx_delete(const char *p) { return s_latched < 0 ? s_latched : latch(delete_locked(p)); }
+static const fs_tx_ops_t tx_ops = {tx_open,tx_close,tx_read,tx_write,tx_seek,tx_stat,tx_mkdir,tx_delete};
+int fs_transaction(int (*callback)(const fs_tx_ops_t *,void *),void *ctx)
+{
+    if (!callback) return ERR_INVAL;
+    fs_lock();
+    int rc = s_backend.begin ? begin_locked() : ERR_NOSYS;
+    if (rc == ERR_OK) {
+        rc = callback(&tx_ops,ctx);
+        if (rc > 0) rc = ERR_INVAL;
+        rc = finish_locked(rc);
+    }
+    mutex_unlock(&s_lock);
+    return rc;
+}
+int fs_format(blockdev_t *bd,uint32_t base,uint32_t n)
+{
+    fs_lock();
+    int rc = format_locked(bd,base,n);
+    mutex_unlock(&s_lock);
+    return rc;
+}
+static int mount_public(blockdev_t *bd,uint32_t base,const fs_tx_backend_t *backend,bool ro)
+{
+    if (backend && (!backend->begin || !backend->commit || !backend->recover)) return ERR_INVAL;
+    fs_lock();
+    int rc = mount_locked(bd,base);
+    if (rc == ERR_OK) {
+        s_backend = backend ? *backend : (fs_tx_backend_t){0};
+        s_readonly = ro; s_mount_bd = bd; s_mount_base = base;
+    }
+    mutex_unlock(&s_lock);
+    return rc;
+}
+int fs_mount(blockdev_t *bd,uint32_t base) { return mount_public(bd,base,NULL,false); }
+int fs_mount_atomic(blockdev_t *bd,uint32_t base,const fs_tx_backend_t *backend)
+{
+    if (!backend) return ERR_INVAL;
+    return mount_public(bd,base,backend,false);
+}
+int fs_mount_readonly(blockdev_t *bd,uint32_t base) { return mount_public(bd,base,NULL,true); }
+int fs_discard(void)
+{
+    /* Explicit teardown never calls storage, including abandoned-owner recovery. */
+    mutex_lock(&s_lock);
+    discard_locked();
+    s_tx_inflight = false;
+    s_mount_bd = NULL;
+    s_backend = (fs_tx_backend_t){0}; s_readonly = false;
+    mutex_unlock(&s_lock);
+    return ERR_OK;
+}
+int fs_unmount(void)
+{
+    fs_lock();
+    int rc = unmount_locked();
+    if (!V.mounted) { s_backend = (fs_tx_backend_t){0}; s_readonly = false; }
+    mutex_unlock(&s_lock);
+    return rc;
+}
+int fs_sync(void)
+{
+    fs_lock();
+    int rc;
+    if (s_readonly) rc = V.mounted ? ERR_OK : ERR_NODEV;
+    else if (s_backend.begin) {
+        rc = begin_locked();
+        if (rc == ERR_OK) rc = finish_locked(ERR_OK);
+    } else rc = V.mounted ? sync_locked() : ERR_INVAL;
+    mutex_unlock(&s_lock);
+    return rc;
+}
+int fs_open(const char *p,uint32_t f)
+{
+    fs_lock();
+    bool modify = (f & FS_O_WRITE) != 0;
+    int rc = modify ? begin_locked() : ERR_OK;
+    if (rc == ERR_OK) {
+        rc = open_locked(p,f);
+        if (modify) rc = finish_locked(rc);
+    }
+    mutex_unlock(&s_lock);
+    return rc;
+}
+int fs_close(int fd)
+{
+    fs_lock();
+    int rc = (!s_readonly && s_backend.begin) ? begin_locked() : ERR_OK;
+    if (rc == ERR_OK) {
+        rc = close_locked(fd);
+        if (!s_readonly) rc = finish_locked(rc);
+    }
+    mutex_unlock(&s_lock);
+    return rc;
+}
+int fs_write(int fd,const void *b,size_t n)
+{
+    fs_lock();
+    int rc = begin_locked();
+    if (rc == ERR_OK) {
+        rc = write_locked(fd,b,n);
+        if (s_backend.begin && rc >= 0 && (size_t)rc != n) rc = ERR_NOSPC;
+        rc = finish_locked(rc);
+    }
+    mutex_unlock(&s_lock);
+    return rc;
+}
+int fs_mkdir(const char *p)
+{
+    fs_lock();
+    int rc = begin_locked();
+    if (rc == ERR_OK) rc = finish_locked(mkdir_locked(p));
+    mutex_unlock(&s_lock);
+    return rc;
+}
+int fs_delete(const char *p)
+{
+    fs_lock();
+    int rc = begin_locked();
+    if (rc == ERR_OK) rc = finish_locked(delete_locked(p));
+    mutex_unlock(&s_lock);
+    return rc;
+}
+int fs_read(int fd,void *b,size_t n)
+{
+    fs_lock(); int rc = read_locked(fd,b,n); mutex_unlock(&s_lock); return rc;
+}
+int fs_seek(int fd,int32_t o,int w)
+{
+    fs_lock(); int rc = seek_locked(fd,o,w); mutex_unlock(&s_lock); return rc;
+}
+int fs_stat(const char *p,fs_info_t *o)
+{
+    fs_lock(); int rc = stat_locked(p,o); mutex_unlock(&s_lock); return rc;
+}
+int fs_statfs(fs_stat_t *o)
+{
+    fs_lock(); int rc = statfs_locked(o); mutex_unlock(&s_lock); return rc;
+}
+int fs_list(const char *p,int (*cb)(const fs_info_t *,void *),void *ctx)
+{
+    fs_lock(); int rc = list_locked(p,cb,ctx); mutex_unlock(&s_lock); return rc;
+}
+
+
+int fs_replace_file(const char *path,const void *data,size_t len,size_t *written)
+{
+    if (written) *written = 0;
+    if ((!data && len) || len > 0x7fffffffu) return ERR_INVAL;
+    fs_lock();
+    bool atomic = s_backend.begin != NULL;
+    size_t done = 0;
+    int rc = ERR_OK;
+    if (V.mounted && !s_readonly && s_backend.reserve) {
+        uint32_t records = (uint32_t)(len / M5FS_BLOCK_SIZE + (len % M5FS_BLOCK_SIZE != 0))
+                         + V.sb.bitmap_blocks + M5FS_DIR_BLOCKS + 2;
+        if (s_backend.reserve(s_backend.ctx,records)) rc = ERR_NOSPC;
+    }
+    if (rc == ERR_OK) rc = begin_locked();
+    if (rc == ERR_OK) {
+        int fd = open_locked(path, FS_O_WRITE | FS_O_CREATE | FS_O_TRUNC);
+        rc = fd < 0 ? fd : ERR_OK;
+        if (fd >= 0) {
+            if (len) {
+                int n = write_locked(fd, data, len);
+                if (n > 0) done = (size_t)n;
+                rc = n < 0 ? n : ((size_t)n == len ? ERR_OK : ERR_NOSPC);
+            }
+            /* Failed atomic writes discard all volatile state in finish_locked;
+             * do not flush dirty metadata in a second attempt to close. */
+            if (rc == ERR_OK || !atomic) {
+                int close_rc = close_locked(fd);
+                if (rc == ERR_OK) rc = close_rc;
+            }
+        }
+        rc = finish_locked(rc);
+    }
+    if (written) *written = atomic ? (rc == ERR_OK ? len : 0) : done;
     mutex_unlock(&s_lock);
     return rc;
 }

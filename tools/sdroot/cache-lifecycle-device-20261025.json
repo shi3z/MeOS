@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-25",
+  "board": "M5Stack Tab5, ESP32-P4 revision 1.3",
+  "firmware": {
+    "commit": "65eaf0cdc9b37ec0b53f7f5088ae7b4338c49ef4",
+    "boot_version": "65eaf0c",
+    "app_bytes": 1770240,
+    "app_sha256": "14dce3fc8895f303a7da30d293002f838679eb854214c427944e98f9f74535fd",
+    "boot_slot": "ota_1 at 0x7f0000",
+    "persistent_sd_root": true,
+    "ram_disk_allocated": false,
+    "card_sectors": 30867456
+  },
+  "installation": {
+    "new_backup_taken": false,
+    "backup_omission_explicitly_authorized": true,
+    "written_regions": [
+      "MeOS bootloader at 0x2000",
+      "MeOS A/B partition table at 0x8000",
+      "ota_1 application at 0x7f0000",
+      "OTA selection data at 0x400000"
+    ],
+    "sd_reformatted": false
+  },
+  "lifecycle": {
+    "result": "PASS",
+    "harness": "tools/sdroot/cache_lifecycle_device.py",
+    "boot_contention": true,
+    "boot_command_pacing_ms": 50,
+    "ime_overlap_trims": 628,
+    "ime_dictionary_loaded_kib": 5228,
+    "ime_loader_stack_used_bytes": 3232,
+    "ime_loader_stack_size_bytes": 16384,
+    "ime_loader_guard": "OK",
+    "cycles_passed": 20,
+    "font_pixel_sizes": [20, 24, 28, 32],
+    "write_pixel_size_transitions": [24, 28, 24],
+    "write_layout_transitions": ["vertical", "horizontal", "vertical"],
+    "resident_sd_cache_kib": 1170,
+    "post_cycle_psram_free_min_kib": 21949,
+    "post_cycle_psram_free_max_kib": 21949,
+    "trimmed_baseline_psram_free_kib": 23135,
+    "trimmed_final_psram_free_kib": 23119,
+    "baseline_tolerance_kib": 32,
+    "font_load_min_ms": 598,
+    "font_load_max_ms": 608,
+    "first_draw_min_us": 395547,
+    "first_draw_max_us": 434453,
+    "warm_draw_min_us": 5512,
+    "warm_draw_max_us": 10790,
+    "serial_log_sha256": "19259b442e92a1e921c5cc4e2c561834b320c0c84d0a79d79300806912adbf94",
+    "serial_log_retained_privately": true
+  },
+  "long_write": {
+    "result": "PASS",
+    "document_bytes": 10872,
+    "distinct_cjk": 900,
+    "cold_ready_ms": 4245,
+    "logical_reads": 12979,
+    "logical_sectors": 21934,
+    "read_ahead_hits": 2293,
+    "read_ahead_misses": 73,
+    "sector_cache_hits": 8000,
+    "sector_cache_misses": 1732,
+    "sector_cache_slots": 2048,
+    "physical_reads": 2686,
+    "physical_sectors": 12911,
+    "temporary_file_removed": true
+  },
+  "qualification_limits": [
+    "Partial failed transfers were injected in the host adapter tests, not forced on the physical card.",
+    "No hot-removal, abrupt power-cut or network-saturation test was performed.",
+    "The 20-cycle run exercises repeated normal allocation, not forced physical PSRAM exhaustion."
+  ]
+}

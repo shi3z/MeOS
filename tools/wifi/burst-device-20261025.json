@@ -1,0 +1,296 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "device": "M5Stack Tab5, ESP32-P4 rev 1.3",
+  "firmware": {
+    "before": {
+      "source": "14ecd18368b6b37ef317397061584eee72e6fda9",
+      "app_sha256": "d335df9aab170cd44ebf18f5b95e09116a57dab866a54555fac077a8b76d836a"
+    },
+    "after": {
+      "source": "45033934aa8095965f3f45b22d06456e811bf7b1",
+      "app_sha256": "2254402fa3338933491f4c6b66d8d22783203553ccc9ba2948cade268a1b0a6a",
+      "app_bytes": 1772448,
+      "slot_offset": "0x7f0000",
+      "flash_hash_verified": true
+    }
+  },
+  "workload": {
+    "payload_bytes": 1400,
+    "burst_packets": 12,
+    "requested_average_pps": [
+      25,
+      100
+    ],
+    "reads_per_phase": 1,
+    "settle_seconds": 60,
+    "sd_asset_bytes": 18689235,
+    "sd_asset_crc32": "74e3b084"
+  },
+  "before": {
+    "report": {
+      "result": "FAIL",
+      "baseline": [
+        {
+          "seconds": 38.502,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 474
+        }
+      ],
+      "loads": [
+        {
+          "pps": 25,
+          "payload_bytes": 1400,
+          "burst_packets": 12,
+          "invalid_replies": 0,
+          "phases": {
+            "idle": {
+              "sent": 84,
+              "received": 55,
+              "loss_percent": 34.524,
+              "rtt_median_ms": 23.481,
+              "rtt_p95_ms": 38.844
+            },
+            "pak": {
+              "sent": 960,
+              "received": 511,
+              "loss_percent": 46.771,
+              "rtt_median_ms": 29.052,
+              "rtt_p95_ms": 55.389
+            },
+            "font": {
+              "sent": 72,
+              "received": 40,
+              "loss_percent": 44.444,
+              "rtt_median_ms": 25.413,
+              "rtt_p95_ms": 39.039
+            },
+            "write": {
+              "sent": 48,
+              "received": 24,
+              "loss_percent": 50,
+              "rtt_median_ms": 32.811,
+              "rtt_p95_ms": 74.279
+            }
+          },
+          "pak": [
+            {
+              "seconds": 38.541,
+              "bytes": 18689235,
+              "crc32": "74e3b084",
+              "kib_per_second": 473.6
+            }
+          ],
+          "font_receipt": "24 px: load=629 ms metric=147670 us first=441995 us warm=7085 us misses=52 hits=72 raster=432488 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+        },
+        {
+          "pps": 100,
+          "payload_bytes": 1400,
+          "burst_packets": 12,
+          "invalid_replies": 0,
+          "phases": {
+            "idle": {
+              "sent": 300,
+              "received": 194,
+              "loss_percent": 35.333,
+              "rtt_median_ms": 16.009,
+              "rtt_p95_ms": 26.879
+            },
+            "pak": {
+              "sent": 3888,
+              "received": 2059,
+              "loss_percent": 47.042,
+              "rtt_median_ms": 29.221,
+              "rtt_p95_ms": 47.926
+            },
+            "font": {
+              "sent": 324,
+              "received": 181,
+              "loss_percent": 44.136,
+              "rtt_median_ms": 26.066,
+              "rtt_p95_ms": 60.951
+            },
+            "write": {
+              "sent": 192,
+              "received": 107,
+              "loss_percent": 44.271,
+              "rtt_median_ms": 27.403,
+              "rtt_p95_ms": 119.624
+            }
+          },
+          "pak": [
+            {
+              "seconds": 40.021,
+              "bytes": 18689235,
+              "crc32": "74e3b084",
+              "kib_per_second": 456
+            }
+          ],
+          "font_receipt": "24 px: load=656 ms metric=151162 us first=465048 us warm=8348 us misses=52 hits=72 raster=455871 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+        }
+      ],
+      "settle_seconds": 60,
+      "firmware_boot_version": "14ecd18",
+      "trimmed_psram_before_kib": 23135,
+      "trimmed_psram_after_kib": 23119,
+      "error": "25 pps idle: 34.524% loss; 25 pps pak: 46.771% loss; 25 pps font: 44.444% loss; 25 pps write: 50.0% loss; 100 pps idle: 35.333% loss; 100 pps pak: 47.042% loss; 100 pps font: 44.136% loss; 100 pps write: 44.271% loss"
+    },
+    "serial_log_sha256": "83c8b4ac389a980d82d8273e754355e1c874036faa22ceec65441392f9f6a5a1"
+  },
+  "after": {
+    "report": {
+      "result": "PASS",
+      "baseline": [
+        {
+          "seconds": 38.432,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 474.9
+        }
+      ],
+      "loads": [
+        {
+          "pps": 25,
+          "payload_bytes": 1400,
+          "burst_packets": 12,
+          "invalid_replies": 0,
+          "phases": {
+            "idle": {
+              "sent": 84,
+              "received": 84,
+              "loss_percent": 0,
+              "rtt_median_ms": 21.267,
+              "rtt_p95_ms": 29.3
+            },
+            "pak": {
+              "sent": 960,
+              "received": 960,
+              "loss_percent": 0,
+              "rtt_median_ms": 34.164,
+              "rtt_p95_ms": 64.439
+            },
+            "font": {
+              "sent": 84,
+              "received": 84,
+              "loss_percent": 0,
+              "rtt_median_ms": 42.69,
+              "rtt_p95_ms": 121.738
+            },
+            "write": {
+              "sent": 48,
+              "received": 48,
+              "loss_percent": 0,
+              "rtt_median_ms": 16.199,
+              "rtt_p95_ms": 48.86
+            }
+          },
+          "device_diagnostics": {
+            "rx_frames": 1810,
+            "rx_partials": 179,
+            "rx_bad": 0,
+            "rx_max_pending": 18378,
+            "rx_reg_errors": 0,
+            "rx_io_errors": 0,
+            "rx_plan_errors": 0,
+            "tx_no_credit": 0,
+            "tx_io_errors": 0,
+            "icmp_requests": 1176,
+            "icmp_replies": 1176,
+            "icmp_failures": 0,
+            "time_poll_gap_us": 159904,
+            "time_poll_duration_us": 148140,
+            "time_bus_wait_us": 71610
+          },
+          "pak": [
+            {
+              "seconds": 39.042,
+              "bytes": 18689235,
+              "crc32": "74e3b084",
+              "kib_per_second": 467.5
+            }
+          ],
+          "font_receipt": "24 px: load=645 ms metric=143737 us first=447595 us warm=8018 us misses=52 hits=72 raster=438086 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+        },
+        {
+          "pps": 100,
+          "payload_bytes": 1400,
+          "burst_packets": 12,
+          "invalid_replies": 0,
+          "phases": {
+            "idle": {
+              "sent": 288,
+              "received": 288,
+              "loss_percent": 0,
+              "rtt_median_ms": 22.064,
+              "rtt_p95_ms": 31.364
+            },
+            "pak": {
+              "sent": 3888,
+              "received": 3888,
+              "loss_percent": 0,
+              "rtt_median_ms": 35.07,
+              "rtt_p95_ms": 65.035
+            },
+            "font": {
+              "sent": 324,
+              "received": 324,
+              "loss_percent": 0,
+              "rtt_median_ms": 29.292,
+              "rtt_p95_ms": 81.034
+            },
+            "write": {
+              "sent": 204,
+              "received": 204,
+              "loss_percent": 0,
+              "rtt_median_ms": 28.609,
+              "rtt_p95_ms": 131.423
+            }
+          },
+          "device_diagnostics": {
+            "rx_frames": 5326,
+            "rx_partials": 752,
+            "rx_bad": 0,
+            "rx_max_pending": 17847,
+            "rx_reg_errors": 0,
+            "rx_io_errors": 0,
+            "rx_plan_errors": 0,
+            "tx_no_credit": 0,
+            "tx_io_errors": 0,
+            "icmp_requests": 4704,
+            "icmp_replies": 4704,
+            "icmp_failures": 0,
+            "time_poll_gap_us": 260208,
+            "time_poll_duration_us": 249611,
+            "time_bus_wait_us": 68101
+          },
+          "pak": [
+            {
+              "seconds": 40.772,
+              "bytes": 18689235,
+              "crc32": "74e3b084",
+              "kib_per_second": 447.6
+            }
+          ],
+          "font_receipt": "24 px: load=671 ms metric=152927 us first=474922 us warm=7197 us misses=52 hits=72 raster=456990 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+        }
+      ],
+      "settle_seconds": 60,
+      "firmware_boot_version": "4503393",
+      "trimmed_psram_before_kib": 23135,
+      "trimmed_psram_after_kib": 23119
+    },
+    "serial_log_sha256": "4244156209d404a26d3348d972b0e5fd3c7fa40b73acecdbbd12a7e42096e1de"
+  },
+  "notes": [
+    "Same Tab5/card/AP and host harness. Old firmware lacks wifi stats; only the after run enables diagnostic reset/snapshot outside the timed traffic phases.",
+    "Before failed the unchanged 5% loss gate in all eight phases (34.524 to 50%). After passed with all 5880 sent echoes received, zero invalid payload/checksums, and 5880 device ICMP requests/replies with zero failures.",
+    "After retained partial frames 179 times at 25 pps and 752 times at 100 pps. Maximum pending windows were 18378 and 17847 bytes. Malformed headers, register/DMA/plan errors and TX credit errors were all zero.",
+    "All six full PAK CRC reads across before/after matched. Trimmed memory uses the unchanged 32 KiB tolerance; inspect raw sanitized values in each report.",
+    "Requested pps limits average group pacing, not the instantaneous 12-packet burst. Actual sent/received counts are retained.",
+    "The two firmware images include the same IME startup optimization. New firmware retains incomplete frames in the existing 8 KiB buffer and fixes remaining-window CMD53 addressing.",
+    "The host regression first failed with chunk-local parsing. ASan/UBSan passes all 1465 split positions, maximum frames, 100 irregular streams, padding exclusion, malformed headers and bounds.",
+    "No backup was taken as authorized; only the selected app slot was flashed. Tools issue no media-mutation commands, while normal background services may persist their state.",
+    "One card/AP and bounded LAN ICMP workloads are covered. Maximum bandwidth, arbitrary radio conditions, power cuts, hot removal and general transport-error recovery remain unqualified."
+  ]
+}

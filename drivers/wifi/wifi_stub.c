@@ -32,6 +32,8 @@ const char *wifi_state_name(wifi_state_t state)
 }
 
 bool wifi_init(void) { return false; }
+void wifi_get_diagnostics(wifi_diagnostics_t *out) { if (out) *out = (wifi_diagnostics_t){0}; }
+void wifi_reset_diagnostics(void) { }
 void wifi_boot_start(void) { }
 int  wifi_scan(wifi_ap_t *out_aps, int max_aps) { (void)out_aps; (void)max_aps; return -1; }
 bool wifi_connect(const char *ssid, const char *password, bool save) { (void)ssid; (void)password; (void)save; return false; }

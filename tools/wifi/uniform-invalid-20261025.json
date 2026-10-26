@@ -1,0 +1,153 @@
+{
+  "classification": "INVALID_MEASUREMENT",
+  "firmware": "45033934aa8095965f3f45b22d06456e811bf7b1",
+  "reason": "The 100 pps PAK read was reported as 10.397 host-monotonic seconds, but the serial device receipt says 38715 ms. The original report's 1755.5 KiB/s is not a valid throughput result. System sleep/wake was found in the local macOS power log; the original harness had no wall-clock comparison.",
+  "invalid_fields": [
+    "original_report.loads[1].pak[0].seconds",
+    "original_report.loads[1].pak[0].kib_per_second"
+  ],
+  "qualification_pass": false,
+  "original_report": {
+    "result": "FAIL",
+    "baseline": [
+      {
+        "seconds": 38.412,
+        "bytes": 18689235,
+        "crc32": "74e3b084",
+        "kib_per_second": 475.1
+      }
+    ],
+    "loads": [
+      {
+        "pps": 25,
+        "payload_bytes": 1400,
+        "burst_packets": 1,
+        "invalid_replies": 0,
+        "phases": {
+          "idle": {
+            "sent": 65,
+            "received": 65,
+            "loss_percent": 0,
+            "rtt_median_ms": 13.922,
+            "rtt_p95_ms": 24.979
+          },
+          "pak": {
+            "sent": 841,
+            "received": 839,
+            "loss_percent": 0.238,
+            "rtt_median_ms": 19.252,
+            "rtt_p95_ms": 31.078
+          },
+          "font": {
+            "sent": 70,
+            "received": 70,
+            "loss_percent": 0,
+            "rtt_median_ms": 18.59,
+            "rtt_p95_ms": 51.11
+          },
+          "write": {
+            "sent": 42,
+            "received": 42,
+            "loss_percent": 0,
+            "rtt_median_ms": 17.689,
+            "rtt_p95_ms": 47.588
+          }
+        },
+        "device_diagnostics": {
+          "rx_frames": 1570,
+          "rx_partials": 0,
+          "rx_bad": 0,
+          "rx_max_pending": 3362,
+          "rx_reg_errors": 0,
+          "rx_io_errors": 0,
+          "rx_plan_errors": 0,
+          "tx_no_credit": 0,
+          "tx_io_errors": 0,
+          "icmp_requests": 1018,
+          "icmp_replies": 1018,
+          "icmp_failures": 0,
+          "time_poll_gap_us": 190073,
+          "time_poll_duration_us": 175802,
+          "time_bus_wait_us": 67380
+        },
+        "pak": [
+          {
+            "seconds": 39.032,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 467.6
+          }
+        ],
+        "font_receipt": "24 px: load=637 ms metric=145741 us first=449176 us warm=7852 us misses=52 hits=72 raster=438018 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+      },
+      {
+        "pps": 100,
+        "payload_bytes": 1400,
+        "burst_packets": 1,
+        "invalid_replies": 0,
+        "phases": {
+          "idle": {
+            "sent": 228,
+            "received": 228,
+            "loss_percent": 0,
+            "rtt_median_ms": 24.033,
+            "rtt_p95_ms": 149.654
+          },
+          "pak": {
+            "sent": 821,
+            "received": 774,
+            "loss_percent": 5.725,
+            "rtt_median_ms": 18.506,
+            "rtt_p95_ms": 41.051
+          },
+          "font": {
+            "sent": 282,
+            "received": 282,
+            "loss_percent": 0,
+            "rtt_median_ms": 20.635,
+            "rtt_p95_ms": 63.374
+          },
+          "write": {
+            "sent": 160,
+            "received": 160,
+            "loss_percent": 0,
+            "rtt_median_ms": 19.783,
+            "rtt_p95_ms": 53.263
+          }
+        },
+        "device_diagnostics": {
+          "rx_frames": 2119,
+          "rx_partials": 14,
+          "rx_bad": 0,
+          "rx_max_pending": 15994,
+          "rx_reg_errors": 0,
+          "rx_io_errors": 0,
+          "rx_plan_errors": 0,
+          "tx_no_credit": 0,
+          "tx_io_errors": 0,
+          "icmp_requests": 1449,
+          "icmp_replies": 1449,
+          "icmp_failures": 0,
+          "time_poll_gap_us": 249911,
+          "time_poll_duration_us": 239546,
+          "time_bus_wait_us": 69083
+        },
+        "pak": [
+          {
+            "seconds": 10.397,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 1755.5
+          }
+        ],
+        "font_receipt": "24 px: load=681 ms metric=157166 us first=475560 us warm=7064 us misses=52 hits=72 raster=463052 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+      }
+    ],
+    "settle_seconds": 60,
+    "firmware_boot_version": "4503393",
+    "trimmed_psram_before_kib": 23135,
+    "trimmed_psram_after_kib": 23119,
+    "error": "100 pps pak: 5.725% loss"
+  },
+  "serial_log_sha256": "b263f884a459d54b1c42dc5beacc8087066e5064bc64b1b27ce711608d44fbb7"
+}

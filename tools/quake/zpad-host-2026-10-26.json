@@ -1,0 +1,128 @@
+{
+  "date": "2026-10-26",
+  "source_commit": "173068faad99136d2f9533eeaf793dad83ebb222",
+  "qualification": "Host and native builds only. No device access, flashing or FPS claim; hardware qualification explicitly deferred.",
+  "default_padding_pixels": 0,
+  "candidate_extra_psram_bytes": {
+    "32": 19200,
+    "64": 38400
+  },
+  "visible_color_stride_unchanged": true,
+  "runs": [
+    {
+      "resolution": "512x300",
+      "requested_zpad": 0,
+      "steps": 1200,
+      "presentations": 1210,
+      "gameplay_frames": 1181,
+      "render_fnv1a64": "bfc101a42954ef9a",
+      "logical_depth_fnv1a64": "45a556bc1aa2751f",
+      "depth_frames": 1181,
+      "z_pitch_pixels": 512,
+      "padding_guard_checks": 1210,
+      "frame20_sha256": "1d628a0abd6ee31e11620efa3c91d6358a6b62026cbc7cfd75eaf82c521b7ac9",
+      "cache_report": "HEADLESS cache: hit=64528 rebuild=26966 alloc=6019 evict=5889 wrap=44 thrash=0 pixels=137996288 bytes=26947824 dynamic=20749 texture=212 lightstyle=8"
+    },
+    {
+      "resolution": "512x300",
+      "requested_zpad": 32,
+      "steps": 1200,
+      "presentations": 1210,
+      "gameplay_frames": 1181,
+      "render_fnv1a64": "bfc101a42954ef9a",
+      "logical_depth_fnv1a64": "45a556bc1aa2751f",
+      "depth_frames": 1181,
+      "z_pitch_pixels": 544,
+      "padding_guard_checks": 1210,
+      "frame20_sha256": "1d628a0abd6ee31e11620efa3c91d6358a6b62026cbc7cfd75eaf82c521b7ac9",
+      "cache_report": "HEADLESS cache: hit=64528 rebuild=26966 alloc=6019 evict=5889 wrap=44 thrash=0 pixels=137996288 bytes=26947824 dynamic=20749 texture=212 lightstyle=8"
+    },
+    {
+      "resolution": "512x300",
+      "requested_zpad": 64,
+      "steps": 1200,
+      "presentations": 1210,
+      "gameplay_frames": 1181,
+      "render_fnv1a64": "bfc101a42954ef9a",
+      "logical_depth_fnv1a64": "45a556bc1aa2751f",
+      "depth_frames": 1181,
+      "z_pitch_pixels": 576,
+      "padding_guard_checks": 1210,
+      "frame20_sha256": "1d628a0abd6ee31e11620efa3c91d6358a6b62026cbc7cfd75eaf82c521b7ac9",
+      "cache_report": "HEADLESS cache: hit=64528 rebuild=26966 alloc=6019 evict=5889 wrap=44 thrash=0 pixels=137996288 bytes=26947824 dynamic=20749 texture=212 lightstyle=8"
+    },
+    {
+      "resolution": "320x200",
+      "requested_zpad": 0,
+      "steps": 1200,
+      "presentations": 1210,
+      "gameplay_frames": 1187,
+      "render_fnv1a64": "c1974398c2375764",
+      "logical_depth_fnv1a64": "6ac75e9b928728fb",
+      "depth_frames": 1187,
+      "z_pitch_pixels": 320,
+      "padding_guard_checks": 1210,
+      "frame20_sha256": "88b7f83db7da86e371452ed78ddefd1788701f5c356f6380cb30dd5296a6c06a",
+      "cache_report": "HEADLESS cache: hit=55826 rebuild=22470 alloc=4167 evict=3868 wrap=19 thrash=0 pixels=70269092 bytes=12107172 dynamic=18100 texture=215 lightstyle=11"
+    },
+    {
+      "resolution": "320x200",
+      "requested_zpad": 64,
+      "steps": 1200,
+      "presentations": 1210,
+      "gameplay_frames": 1187,
+      "render_fnv1a64": "c1974398c2375764",
+      "logical_depth_fnv1a64": "6ac75e9b928728fb",
+      "depth_frames": 1187,
+      "z_pitch_pixels": 320,
+      "padding_guard_checks": 1210,
+      "frame20_sha256": "88b7f83db7da86e371452ed78ddefd1788701f5c356f6380cb30dd5296a6c06a",
+      "cache_report": "HEADLESS cache: hit=55826 rebuild=22470 alloc=4167 evict=3868 wrap=19 thrash=0 pixels=70269092 bytes=12107172 dynamic=18100 texture=215 lightstyle=11"
+    }
+  ],
+  "firmware": {
+    "build-quake-512x300": {
+      "bytes": 2018064,
+      "sha256": "2df9ed7c56998f704d68893b6df618b7d86ee267a3c3cfcef5304aa6784e81d1"
+    },
+    "build-quake-512x300-zpad32": {
+      "bytes": 2018128,
+      "sha256": "7c50a4dd18310bcebf10490466bb50ed2719363dd63744e3ce88f7bd95718f45"
+    },
+    "build-quake-512x300-profile-zpad64": {
+      "bytes": 2019184,
+      "sha256": "9f21aace6aa69d81cd5c90a65f8c1ec6410789be4bddf23008b6ae2a6ee4abc2"
+    }
+  },
+  "clock_cache_config": {
+    "CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ": "360",
+    "CONFIG_CACHE_L2_CACHE_SIZE": "0x20000",
+    "CONFIG_CACHE_L2_CACHE_LINE_SIZE": "128",
+    "CONFIG_SPIRAM_SPEED": "200"
+  },
+  "default_machine_text": {
+    "reference_source": "1f893c3",
+    "D_ViewChanged": "486 bytes identical to previous unpadded profile build",
+    "VID_Init": "278 bytes identical to previous unpadded profile build",
+    "scope": "Unlinked .text section bytes; not a full linked-image equivalence claim."
+  },
+  "checks": [
+    "Quake ASan/UBSan host suite, including delayed DMA production-driver checks",
+    "Five ASan real-engine 1200-step runs with logical depth hashes and zero-then-canary padding guards",
+    "Native default, zpad32 and profile+zpad64 builds",
+    "Matching engine/adapter compile definitions verified",
+    "Both candidate engine stack checks",
+    "Unsupported build arguments rejected before build",
+    "Doom host suite",
+    "Clean-source simulator"
+  ],
+  "notes": [
+    "Hypothesis: alter power-of-two depth row pitch to investigate cache conflicts. This is not a measured hardware optimization.",
+    "All compiled scalar depth consumers use d_zwidth or zspantable; the disabled #if 0 recursive line path is outside the supported renderer.",
+    "Low-resolution stride stays 320 even when the host harness defines nonzero padding, for compatibility testing. The native build script rejects nonzero padding at low resolution.",
+    "No floating-point math, depth values, visible resolution, color stride, DMA, cache budget, surface-cache policy, allocator or SMP changes.",
+    "Extra depth storage uses the existing private PSRAM allocation path, not the internal heap.",
+    "Real-device FPS, bandwidth/cache behavior, audio/control/relaunch and visible acceptance remain unqualified. Keep default zero until controlled physical A/B tests.",
+    "Guard invocation counts for unpadded cases validate the stride; initial-zero/canary checks apply to actual padded columns only."
+  ]
+}

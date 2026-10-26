@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-25",
+  "base_commit": "42518b3",
+  "qualification": "host ASan and native build only, no device flash",
+  "host_steps": 1200,
+  "host_completed_frames": 1200,
+  "presentations_including_loading": 1210,
+  "data_read_bytes": 3415795,
+  "cache_default_kib_unchanged": 600,
+  "host_cache_sweep": [
+    {
+      "surface_cache_kib": 600,
+      "counters": {
+        "hit": 55826,
+        "rebuild": 22470,
+        "alloc": 4167,
+        "evict": 3868,
+        "wrap": 19,
+        "thrash": 0,
+        "pixels": 70269092,
+        "bytes": 12107172,
+        "dynamic": 18100,
+        "texture": 215,
+        "lightstyle": 11
+      },
+      "gameplay_fnv1a64": "c1974398c2375764",
+      "hashed_gameplay_frames": 1187,
+      "frame20_sha256": "88b7f83db7da86e371452ed78ddefd1788701f5c356f6380cb30dd5296a6c06a"
+    },
+    {
+      "surface_cache_kib": 1024,
+      "counters": {
+        "hit": 56614,
+        "rebuild": 21682,
+        "alloc": 3073,
+        "evict": 2678,
+        "wrap": 8,
+        "thrash": 0,
+        "pixels": 68236248,
+        "bytes": 8835672,
+        "dynamic": 18392,
+        "texture": 222,
+        "lightstyle": 18
+      },
+      "gameplay_fnv1a64": "c1974398c2375764",
+      "hashed_gameplay_frames": 1187,
+      "frame20_sha256": "88b7f83db7da86e371452ed78ddefd1788701f5c356f6380cb30dd5296a6c06a"
+    },
+    {
+      "surface_cache_kib": 2048,
+      "counters": {
+        "hit": 57108,
+        "rebuild": 21188,
+        "alloc": 2438,
+        "evict": 1733,
+        "wrap": 3,
+        "thrash": 0,
+        "pixels": 67145984,
+        "bytes": 7209840,
+        "dynamic": 18530,
+        "texture": 223,
+        "lightstyle": 20
+      },
+      "gameplay_fnv1a64": "c1974398c2375764",
+      "hashed_gameplay_frames": 1187,
+      "frame20_sha256": "88b7f83db7da86e371452ed78ddefd1788701f5c356f6380cb30dd5296a6c06a"
+    }
+  ],
+  "original_double_clamp_reference_gameplay_fnv1a64": "c1974398c2375764",
+  "near_clamp_random_bit_patterns_tested": 1000000,
+  "near_clamp_adjacent_values_tested": 128,
+  "r_draw_software_double_relocations": {
+    "before": {
+      "__extendsfdf2": 4,
+      "__ltdf2": 4,
+      "__gtdf2": 1
+    },
+    "after": {
+      "__extendsfdf2": 1,
+      "__ltdf2": 1,
+      "__gtdf2": 1
+    }
+  },
+  "firmware_bytes": 4037664,
+  "firmware_sha256": "0d6e775a9fa4ccb71a6c0534bd21eae4e3bb2972f75593816edf030e020350bf",
+  "notes": [
+    "Existing reciprocal expressions already compile to fdiv.s and were not changed.",
+    "Near-clip clamp output matches original float storage; backface and surface ordering comparisons are unchanged.",
+    "Cache figures include startup/warmup, on the same demo with sound disabled; they are not device CPU timings or a live combat benchmark.",
+    "Invalidation reasons apply only to existing entries and can overlap. Evicted entries appear as allocations on next use.",
+    "Gameplay frame hash excludes startup console text (which contains the selected cache size).",
+    "No native cache increase, internal RAM move, SD access, audio changes or firmware publication."
+  ],
+  "host_adapter_math_audio_profile_tests": "PASS",
+  "clean_source_simulator": "PASS: Scheme, replay, Japanese save, six-app handoff",
+  "near_clamp_explicit_special_values_tested": 9
+}

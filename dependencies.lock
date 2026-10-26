@@ -1,0 +1,20 @@
+dependencies:
+  espressif/freetype:
+    component_hash: aa9f7657a69b2b1c1f49044017fc424081d4e0fe6e97834cb43883548d44e3ca
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.1'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 2.14.3~1
+  idf:
+    source:
+      type: idf
+    version: 5.4.4
+direct_dependencies:
+- espressif/freetype
+manifest_hash: a9262de59d484593aa712a834d0cb3adb17b6387ed454330aaab28dd07da9d87
+target: esp32p4
+version: 2.0.0

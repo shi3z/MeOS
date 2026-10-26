@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-25",
+  "source_base": "acb9d7c",
+  "source_state": "column-copy and damage-scan changes in this commit",
+  "firmware_sha256": "21ef30b6a24f43a16e2b33cf5170456cd104efb9dac4ab9998774ca6497b39da",
+  "firmware_bytes": 1616608,
+  "board": "Tab5 ESP32-P4 v1.3 ST7121 360 MHz, native SDMMC",
+  "slot": "ota_0 0x410000, factory and ota_1 unchanged",
+  "benchmark": "timedemo demo1;toggleconsole",
+  "conditions": [
+    "Same shareware demo1, 969 frames, effect sound enabled, CPU backend, 600 KiB surface cache.",
+    "App started immediately after shell-ready on reset to reserve the existing 48 KiB contiguous internal stack.",
+    "Two full-view runs per image. Console closed for comparable runs; initial console-visible baseline run excluded.",
+    "Host timings, background activity, random particle state and one-decimal console rounding limit precision; no statistical confidence claim."
+  ],
+  "variants": [
+    {
+      "variant": "baseline",
+      "runs": [
+        {
+          "frames": 969,
+          "seconds": 39.4,
+          "fps": 24.6
+        },
+        {
+          "frames": 969,
+          "seconds": 39.4,
+          "fps": 24.6
+        }
+      ],
+      "excluded_runs": [
+        {
+          "frames": 969,
+          "seconds": 35.2,
+          "fps": 27.5,
+          "reason": "Console remained open; excluded from full-view comparison"
+        }
+      ],
+      "sampled_max_stack_bytes": 16768,
+      "all_stack_guards_ok": true,
+      "normal_exit_audio": {
+        "dma_blocks": 13717,
+        "errors": 0,
+        "output_frames": 7023104,
+        "nonzero_frames": 2732974
+      }
+    },
+    {
+      "variant": "peeled_columns_and_word_scan",
+      "runs": [
+        {
+          "frames": 969,
+          "seconds": 39.0,
+          "fps": 24.8
+        },
+        {
+          "frames": 969,
+          "seconds": 39.0,
+          "fps": 24.8
+        }
+      ],
+      "excluded_runs": [],
+      "sampled_max_stack_bytes": 16688,
+      "all_stack_guards_ok": true,
+      "normal_exit_audio": {
+        "dma_blocks": 9970,
+        "errors": 0,
+        "output_frames": 5104640,
+        "nonzero_frames": 1870430
+      }
+    },
+    {
+      "variant": "plus_triplet_broadcast",
+      "runs": [
+        {
+          "frames": 969,
+          "seconds": 38.8,
+          "fps": 25.0
+        },
+        {
+          "frames": 969,
+          "seconds": 38.8,
+          "fps": 25.0
+        }
+      ],
+      "excluded_runs": [],
+      "sampled_max_stack_bytes": 16704,
+      "all_stack_guards_ok": true,
+      "normal_exit_audio": {
+        "dma_blocks": 8203,
+        "errors": 0,
+        "output_frames": 4199936,
+        "nonzero_frames": 1860087
+      }
+    }
+  ],
+  "relative_reported_fps_gain_percent": 1.63,
+  "constant_30_fps_achieved": false,
+  "host_checks": {
+    "quake_adapter_math_audio_profile": "PASS",
+    "column_copy": "single and triplet, all 16 halfword alignment pairs, all lengths 0..720, guards match memcpy",
+    "viewport": "100 independent generic RGB reference comparisons, aligned word scan and unaligned fallback, palette, odd-start motion, no-change and rails",
+    "doom_host_and_wad_free_build": "PASS",
+    "quake_native_build": "PASS",
+    "clean_source_simulator": "PASS"
+  },
+  "notes": [
+    "Congruent 2-byte offsets peel one pixel; incompatible alignments retain memcpy.",
+    "Four-pixel comparisons use alias-safe aligned words on little-endian targets; unaligned input retains byte scan.",
+    "Nearest-neighbor sampling, source dimensions, viewport, palette and 48 KiB stack request unchanged.",
+    "Late-start failure was observed with largest internal free block 47 KiB; no stack reduction was made. The app-start failure now prints its return code.",
+    "No SD format/data upload, root partition or OTA selection change. Original Quake app image and earlier full-flash backup retained privately.",
+    "Final state: CPU e1m1 relaunched and ready for user operation."
+  ]
+}

@@ -135,9 +135,10 @@ bool fs_selftest(void)
     CHECK(fs_stat("/home/hello.txt", &info) == ERR_OK && info.size == sizeof msg - 1 + 4);
 
     /* --- persistence: unmount, mount, re-read ----------------------------- */
-    CHECK(fs_open("/home/big.bin", FS_O_READ) >= 0);                  /* leaves an fd open */
+    fd = fs_open("/home/big.bin", FS_O_READ);
+    CHECK(fd >= 0);                  /* leaves an fd open */
     CHECK(fs_unmount() == ERR_BUSY);                                  /* ... so unmount must refuse */
-    fs_close(0);
+    CHECK(fs_close(fd) == ERR_OK);
     CHECK(fs_unmount() == ERR_OK);
     CHECK(fs_mount(rd, 0) == ERR_OK);
     CHECK(fs_stat("/home/user", &info) == ERR_OK && info.type == FS_TYPE_DIR);
@@ -163,8 +164,8 @@ bool fs_selftest(void)
     fd = fs_open("/pad", FS_O_WRITE | FS_O_CREATE);                   /* fill the rest of the disk */
     CHECK(fd >= 0);
     static uint8_t chunk[4096];
-    int wr, pad_total = 0;
-    while ((wr = fs_write(fd, chunk, sizeof chunk)) > 0) pad_total += wr;
+    int wr;
+    while ((wr = fs_write(fd, chunk, sizeof chunk)) > 0) {}
     CHECK(wr == ERR_NOSPC && free_blocks() == 0);
     fs_close(fd);
     for (int i = 0; i < SMALL_FILES; i += 2) {                        /* punch 2-block holes */

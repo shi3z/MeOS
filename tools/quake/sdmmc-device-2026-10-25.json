@@ -1,0 +1,2452 @@
+{
+  "date": "2026-10-25",
+  "source_commit": "f2c8d0eea187b9c4cb37d982c19aba8185848436",
+  "firmware_sha256": "dab74bf3819ed4efd38547e19e3400f2c597fdf0586360774e0906cafb555448",
+  "firmware_bytes": 1613920,
+  "board": "Tab5 ESP32-P4 v1.3 ST7121/ST712x, 360 MHz",
+  "boot_slot": "ota_0 at 0x410000",
+  "prior_boot_slot": "ota_1 preserved; factory recovery preserved",
+  "backup": "private full 16 MiB flash backup completed before inactive-slot installation",
+  "storage": "Existing native SDMMC /assets/quake/id1/pak0.pak; no format or data upload",
+  "map": "e1m1 / The Slipgate Complex, shareware",
+  "audio_enabled": true,
+  "cache_kib": 600,
+  "load_to_signon_ms": [
+    24732,
+    15942,
+    15847
+  ],
+  "normal_exits": [
+    {
+      "backend": "CPU",
+      "game_frames": 2143,
+      "dma_blocks": 3140,
+      "dma_errors": 0,
+      "output_frames": 1607680,
+      "nonzero_frames": 698684
+    },
+    {
+      "backend": "PPA",
+      "game_frames": 1506,
+      "dma_blocks": 3015,
+      "dma_errors": 0,
+      "output_frames": 1543680,
+      "nonzero_frames": 628160
+    }
+  ],
+  "offscreen_ppa_passes": 2,
+  "stack_guards": "all reported OK",
+  "heap_observations": {
+    "internal_after_cpu_and_ppa_kib": 92,
+    "internal_peak_kib": 180,
+    "internal_failure_counter": 1,
+    "internal_failure_counter_grew_on_second_launch": false,
+    "psram_failure_counter": 0,
+    "psram_after_cpu_kib": 5421,
+    "psram_after_ppa_kib": 5876,
+    "note": "PPA retains roughly 455 KiB reusable kernel buffers. Internal allocation counter increased once during the first session; origin untraced, fallback allocations are counted too. No app/audio failure observed; do not treat as zero allocation failures."
+  },
+  "measurement_notes": [
+    "Idle CPU start view about 46 FPS; serial forward/left-turn/fire produced intervals down to 25.1 FPS. Not constant 30 FPS.",
+    "PPA start view about 29 FPS; the same-duration input sequence is not frame-identical or a controlled A/B benchmark.",
+    "Low-detail wall views over 60 CPU FPS are not combat-performance qualification.",
+    "First-launch loading overlapped other system activity; later 15.8-15.9 second loads are warm successive launches.",
+    "Steady gameplay intervals read zero bytes from SD; moving CPU copy/flush reaches about 17-18 ms/frame.",
+    "New source integrates SDMMC, font, root, OTA and editor changes; do not attribute the difference versus old builds solely to near-clamp optimization.",
+    "Serial recovery used the shell startup grace period to suppress automatic Home.",
+    "Final state is a third CPU e1m1 launch for user operation."
+  ],
+  "samples": [
+    {
+      "backend": "no-extra-wait",
+      "fps": 4.2,
+      "lcd_hz": 65.4,
+      "host_us": 235493,
+      "draw_us": 4910,
+      "copy_us": 4764,
+      "flush_us": 130,
+      "input_us": 368,
+      "wait_us": 400,
+      "other_us": 230214,
+      "phases_us": {
+        "commands": 182158,
+        "server": 2760,
+        "client": 50685,
+        "render": 20071,
+        "audio": 240
+      },
+      "completed_frames": 92,
+      "io": {
+        "bytes": 4823068,
+        "open_calls": 5,
+        "open_us": 164310,
+        "read_calls": 1257,
+        "read_us": 23205640,
+        "seek_calls": 161,
+        "seek_us": 300741
+      },
+      "cache": {
+        "hit": 10276,
+        "rebuild": 297,
+        "alloc": 131,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 388900,
+        "bytes": 191380
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 166
+      },
+      "includes_loading": true
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.2,
+      "lcd_hz": 65.1,
+      "host_us": 21616,
+      "draw_us": 1823,
+      "copy_us": 1768,
+      "flush_us": 37,
+      "input_us": 420,
+      "wait_us": 1,
+      "other_us": 19372,
+      "phases_us": {
+        "commands": 676,
+        "server": 2695,
+        "client": 463,
+        "render": 17506,
+        "audio": 227
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11718,
+        "rebuild": 182,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 219072,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 182
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.1,
+      "lcd_hz": 65.4,
+      "host_us": 21670,
+      "draw_us": 1856,
+      "copy_us": 1795,
+      "flush_us": 37,
+      "input_us": 403,
+      "wait_us": 1,
+      "other_us": 19410,
+      "phases_us": {
+        "commands": 650,
+        "server": 2666,
+        "client": 461,
+        "render": 17608,
+        "audio": 230
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11705,
+        "rebuild": 195,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 234720,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 195
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.2,
+      "lcd_hz": 65.2,
+      "host_us": 21603,
+      "draw_us": 1818,
+      "copy_us": 1766,
+      "flush_us": 35,
+      "input_us": 416,
+      "wait_us": 1,
+      "other_us": 19367,
+      "phases_us": {
+        "commands": 656,
+        "server": 2700,
+        "client": 469,
+        "render": 17495,
+        "audio": 234
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11731,
+        "rebuild": 169,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 203424,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 169
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.1,
+      "lcd_hz": 65.5,
+      "host_us": 21645,
+      "draw_us": 1833,
+      "copy_us": 1768,
+      "flush_us": 46,
+      "input_us": 387,
+      "wait_us": 1,
+      "other_us": 19423,
+      "phases_us": {
+        "commands": 635,
+        "server": 2736,
+        "client": 472,
+        "render": 17505,
+        "audio": 242
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11718,
+        "rebuild": 182,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 219072,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 182
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 36.9,
+      "lcd_hz": 65.4,
+      "host_us": 27035,
+      "draw_us": 6506,
+      "copy_us": 6344,
+      "flush_us": 146,
+      "input_us": 391,
+      "wait_us": 1,
+      "other_us": 20137,
+      "phases_us": {
+        "commands": 638,
+        "server": 2805,
+        "client": 453,
+        "render": 22840,
+        "audio": 251
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11994,
+        "rebuild": 398,
+        "alloc": 149,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 513120,
+        "bytes": 195888
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 249
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 25.1,
+      "lcd_hz": 65.4,
+      "host_us": 39722,
+      "draw_us": 17849,
+      "copy_us": 17417,
+      "flush_us": 416,
+      "input_us": 388,
+      "wait_us": 1,
+      "other_us": 21484,
+      "phases_us": {
+        "commands": 644,
+        "server": 3151,
+        "client": 509,
+        "render": 34986,
+        "audio": 385
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 7611,
+        "rebuild": 1174,
+        "alloc": 316,
+        "evict": 232,
+        "wrap": 1,
+        "thrash": 0,
+        "pixels": 5015488,
+        "bytes": 552960
+      },
+      "cache_reasons": {
+        "dynamic": 608,
+        "texture": 0,
+        "lightstyle": 336
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 25.7,
+      "lcd_hz": 65.4,
+      "host_us": 38817,
+      "draw_us": 17841,
+      "copy_us": 17418,
+      "flush_us": 408,
+      "input_us": 399,
+      "wait_us": 1,
+      "other_us": 20575,
+      "phases_us": {
+        "commands": 636,
+        "server": 3077,
+        "client": 515,
+        "render": 34146,
+        "audio": 397
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 4629,
+        "rebuild": 1114,
+        "alloc": 11,
+        "evict": 12,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 5764000,
+        "bytes": 12528
+      },
+      "cache_reasons": {
+        "dynamic": 893,
+        "texture": 0,
+        "lightstyle": 307
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 39.8,
+      "lcd_hz": 65.3,
+      "host_us": 25095,
+      "draw_us": 7686,
+      "copy_us": 7491,
+      "flush_us": 180,
+      "input_us": 406,
+      "wait_us": 1,
+      "other_us": 17003,
+      "phases_us": {
+        "commands": 654,
+        "server": 2874,
+        "client": 487,
+        "render": 20728,
+        "audio": 306
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 3685,
+        "rebuild": 390,
+        "alloc": 1,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 2517952,
+        "bytes": 2608
+      },
+      "cache_reasons": {
+        "dynamic": 293,
+        "texture": 0,
+        "lightstyle": 102
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.1,
+      "lcd_hz": 65.3,
+      "host_us": 16347,
+      "draw_us": 1625,
+      "copy_us": 1608,
+      "flush_us": 0,
+      "input_us": 410,
+      "wait_us": 0,
+      "other_us": 14311,
+      "phases_us": {
+        "commands": 653,
+        "server": 2700,
+        "client": 479,
+        "render": 12197,
+        "audio": 273
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2078,
+        "rebuild": 22,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 450560,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 22
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.1,
+      "lcd_hz": 65.4,
+      "host_us": 16327,
+      "draw_us": 1628,
+      "copy_us": 1611,
+      "flush_us": 0,
+      "input_us": 390,
+      "wait_us": 0,
+      "other_us": 14308,
+      "phases_us": {
+        "commands": 640,
+        "server": 2716,
+        "client": 482,
+        "render": 12174,
+        "audio": 267
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2082,
+        "rebuild": 18,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 368640,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 18
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.0,
+      "lcd_hz": 65.2,
+      "host_us": 16375,
+      "draw_us": 1619,
+      "copy_us": 1602,
+      "flush_us": 0,
+      "input_us": 417,
+      "wait_us": 0,
+      "other_us": 14339,
+      "phases_us": {
+        "commands": 686,
+        "server": 2734,
+        "client": 474,
+        "render": 12179,
+        "audio": 256
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2078,
+        "rebuild": 22,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 450560,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 22
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.1,
+      "lcd_hz": 65.3,
+      "host_us": 16345,
+      "draw_us": 1574,
+      "copy_us": 1557,
+      "flush_us": 0,
+      "input_us": 393,
+      "wait_us": 0,
+      "other_us": 14377,
+      "phases_us": {
+        "commands": 653,
+        "server": 2732,
+        "client": 484,
+        "render": 12164,
+        "audio": 259
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2078,
+        "rebuild": 22,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 450560,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 22
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.1,
+      "lcd_hz": 65.3,
+      "host_us": 16348,
+      "draw_us": 1627,
+      "copy_us": 1612,
+      "flush_us": 0,
+      "input_us": 405,
+      "wait_us": 0,
+      "other_us": 14314,
+      "phases_us": {
+        "commands": 653,
+        "server": 2709,
+        "client": 476,
+        "render": 12199,
+        "audio": 264
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2080,
+        "rebuild": 20,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 409600,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 20
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.2,
+      "lcd_hz": 64.9,
+      "host_us": 16304,
+      "draw_us": 1584,
+      "copy_us": 1568,
+      "flush_us": 0,
+      "input_us": 402,
+      "wait_us": 0,
+      "other_us": 14317,
+      "phases_us": {
+        "commands": 656,
+        "server": 2707,
+        "client": 489,
+        "render": 12140,
+        "audio": 259
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2078,
+        "rebuild": 22,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 450560,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 22
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.4,
+      "lcd_hz": 65.0,
+      "host_us": 16266,
+      "draw_us": 1619,
+      "copy_us": 1603,
+      "flush_us": 0,
+      "input_us": 412,
+      "wait_us": 0,
+      "other_us": 14234,
+      "phases_us": {
+        "commands": 655,
+        "server": 2690,
+        "client": 505,
+        "render": 12104,
+        "audio": 266
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2080,
+        "rebuild": 20,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 409600,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 20
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.2,
+      "lcd_hz": 65.5,
+      "host_us": 16307,
+      "draw_us": 1610,
+      "copy_us": 1594,
+      "flush_us": 0,
+      "input_us": 400,
+      "wait_us": 0,
+      "other_us": 14296,
+      "phases_us": {
+        "commands": 650,
+        "server": 2716,
+        "client": 478,
+        "render": 12147,
+        "audio": 271
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2080,
+        "rebuild": 20,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 409600,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 20
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.1,
+      "lcd_hz": 65.4,
+      "host_us": 16340,
+      "draw_us": 1620,
+      "copy_us": 1604,
+      "flush_us": 0,
+      "input_us": 390,
+      "wait_us": 0,
+      "other_us": 14329,
+      "phases_us": {
+        "commands": 639,
+        "server": 2713,
+        "client": 505,
+        "render": 12161,
+        "audio": 276
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2078,
+        "rebuild": 22,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 450560,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 22
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 60.9,
+      "lcd_hz": 65.8,
+      "host_us": 16379,
+      "draw_us": 1612,
+      "copy_us": 1597,
+      "flush_us": 0,
+      "input_us": 400,
+      "wait_us": 0,
+      "other_us": 14365,
+      "phases_us": {
+        "commands": 644,
+        "server": 2685,
+        "client": 508,
+        "render": 12217,
+        "audio": 280
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2078,
+        "rebuild": 22,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 450560,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 22
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.2,
+      "lcd_hz": 65.5,
+      "host_us": 16304,
+      "draw_us": 1577,
+      "copy_us": 1561,
+      "flush_us": 0,
+      "input_us": 384,
+      "wait_us": 0,
+      "other_us": 14342,
+      "phases_us": {
+        "commands": 639,
+        "server": 2720,
+        "client": 499,
+        "render": 12108,
+        "audio": 293
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2082,
+        "rebuild": 18,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 368640,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 18
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 61.0,
+      "lcd_hz": 65.3,
+      "host_us": 16364,
+      "draw_us": 1625,
+      "copy_us": 1609,
+      "flush_us": 0,
+      "input_us": 402,
+      "wait_us": 0,
+      "other_us": 14337,
+      "phases_us": {
+        "commands": 653,
+        "server": 2717,
+        "client": 492,
+        "render": 12192,
+        "audio": 265
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2076,
+        "rebuild": 24,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 491520,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 24
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 5.6,
+      "lcd_hz": 65.4,
+      "host_us": 175860,
+      "draw_us": 10433,
+      "copy_us": 10412,
+      "flush_us": 0,
+      "input_us": 365,
+      "wait_us": 157,
+      "other_us": 165061,
+      "phases_us": {
+        "commands": 106672,
+        "server": 3501,
+        "client": 51138,
+        "render": 29487,
+        "audio": 308
+      },
+      "completed_frames": 92,
+      "io": {
+        "bytes": 4823068,
+        "open_calls": 5,
+        "open_us": 74747,
+        "read_calls": 1257,
+        "read_us": 14970950,
+        "seek_calls": 161,
+        "seek_us": 3969
+      },
+      "cache": {
+        "hit": 10188,
+        "rebuild": 388,
+        "alloc": 131,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 497220,
+        "bytes": 191380
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 257
+      },
+      "includes_loading": true
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 29.2,
+      "lcd_hz": 65.4,
+      "host_us": 34225,
+      "draw_us": 9689,
+      "copy_us": 9668,
+      "flush_us": 0,
+      "input_us": 395,
+      "wait_us": 1,
+      "other_us": 24140,
+      "phases_us": {
+        "commands": 644,
+        "server": 3481,
+        "client": 585,
+        "render": 29150,
+        "audio": 312
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11614,
+        "rebuild": 286,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 344256,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 286
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 29.1,
+      "lcd_hz": 65.3,
+      "host_us": 34253,
+      "draw_us": 9753,
+      "copy_us": 9732,
+      "flush_us": 0,
+      "input_us": 397,
+      "wait_us": 1,
+      "other_us": 24102,
+      "phases_us": {
+        "commands": 633,
+        "server": 3472,
+        "client": 606,
+        "render": 29181,
+        "audio": 312
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11627,
+        "rebuild": 273,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 328608,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 273
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 29.1,
+      "lcd_hz": 65.5,
+      "host_us": 34296,
+      "draw_us": 9708,
+      "copy_us": 9687,
+      "flush_us": 0,
+      "input_us": 403,
+      "wait_us": 1,
+      "other_us": 24185,
+      "phases_us": {
+        "commands": 644,
+        "server": 3546,
+        "client": 606,
+        "render": 29143,
+        "audio": 308
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11614,
+        "rebuild": 286,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 344256,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 286
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 29.1,
+      "lcd_hz": 65.3,
+      "host_us": 34271,
+      "draw_us": 9718,
+      "copy_us": 9697,
+      "flush_us": 0,
+      "input_us": 387,
+      "wait_us": 1,
+      "other_us": 24165,
+      "phases_us": {
+        "commands": 623,
+        "server": 3534,
+        "client": 620,
+        "render": 29123,
+        "audio": 316
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11614,
+        "rebuild": 286,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 344256,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 286
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 29.1,
+      "lcd_hz": 65.2,
+      "host_us": 34312,
+      "draw_us": 9704,
+      "copy_us": 9683,
+      "flush_us": 0,
+      "input_us": 382,
+      "wait_us": 1,
+      "other_us": 24225,
+      "phases_us": {
+        "commands": 628,
+        "server": 3545,
+        "client": 612,
+        "render": 29162,
+        "audio": 317
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11601,
+        "rebuild": 299,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 359904,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 299
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 27.8,
+      "lcd_hz": 65.6,
+      "host_us": 35911,
+      "draw_us": 9815,
+      "copy_us": 9795,
+      "flush_us": 0,
+      "input_us": 389,
+      "wait_us": 1,
+      "other_us": 25706,
+      "phases_us": {
+        "commands": 643,
+        "server": 3554,
+        "client": 611,
+        "render": 30707,
+        "audio": 350
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 10037,
+        "rebuild": 1035,
+        "alloc": 425,
+        "evict": 204,
+        "wrap": 1,
+        "thrash": 0,
+        "pixels": 3289808,
+        "bytes": 700128
+      },
+      "cache_reasons": {
+        "dynamic": 298,
+        "texture": 0,
+        "lightstyle": 326
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 28.4,
+      "lcd_hz": 65.4,
+      "host_us": 35112,
+      "draw_us": 9845,
+      "copy_us": 9824,
+      "flush_us": 0,
+      "input_us": 385,
+      "wait_us": 1,
+      "other_us": 24882,
+      "phases_us": {
+        "commands": 616,
+        "server": 3599,
+        "client": 678,
+        "render": 29784,
+        "audio": 381
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 4789,
+        "rebuild": 1107,
+        "alloc": 75,
+        "evict": 86,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 5851536,
+        "bytes": 101472
+      },
+      "cache_reasons": {
+        "dynamic": 788,
+        "texture": 0,
+        "lightstyle": 304
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 28.3,
+      "lcd_hz": 65.5,
+      "host_us": 35246,
+      "draw_us": 9815,
+      "copy_us": 9795,
+      "flush_us": 0,
+      "input_us": 401,
+      "wait_us": 1,
+      "other_us": 25028,
+      "phases_us": {
+        "commands": 634,
+        "server": 3624,
+        "client": 666,
+        "render": 29908,
+        "audio": 366
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 6002,
+        "rebuild": 1015,
+        "alloc": 15,
+        "evict": 7,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 5530528,
+        "bytes": 17328
+      },
+      "cache_reasons": {
+        "dynamic": 770,
+        "texture": 0,
+        "lightstyle": 272
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 33.2,
+      "lcd_hz": 65.4,
+      "host_us": 30074,
+      "draw_us": 11462,
+      "copy_us": 11441,
+      "flush_us": 0,
+      "input_us": 448,
+      "wait_us": 0,
+      "other_us": 18162,
+      "phases_us": {
+        "commands": 695,
+        "server": 3468,
+        "client": 598,
+        "render": 24791,
+        "audio": 455
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2080,
+        "rebuild": 20,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 204800,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 20
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 33.1,
+      "lcd_hz": 65.3,
+      "host_us": 30138,
+      "draw_us": 11640,
+      "copy_us": 11618,
+      "flush_us": 0,
+      "input_us": 406,
+      "wait_us": 0,
+      "other_us": 18092,
+      "phases_us": {
+        "commands": 645,
+        "server": 3437,
+        "client": 609,
+        "render": 24953,
+        "audio": 437
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2082,
+        "rebuild": 18,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 184320,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 18
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 33.2,
+      "lcd_hz": 65.4,
+      "host_us": 30061,
+      "draw_us": 11463,
+      "copy_us": 11442,
+      "flush_us": 0,
+      "input_us": 436,
+      "wait_us": 0,
+      "other_us": 18161,
+      "phases_us": {
+        "commands": 693,
+        "server": 3495,
+        "client": 606,
+        "render": 24750,
+        "audio": 446
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2080,
+        "rebuild": 20,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 204800,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 20
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 33.1,
+      "lcd_hz": 65.5,
+      "host_us": 30148,
+      "draw_us": 11596,
+      "copy_us": 11568,
+      "flush_us": 0,
+      "input_us": 392,
+      "wait_us": 0,
+      "other_us": 18159,
+      "phases_us": {
+        "commands": 641,
+        "server": 3534,
+        "client": 616,
+        "render": 24870,
+        "audio": 421
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2081,
+        "rebuild": 19,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 194560,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 19
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 33.1,
+      "lcd_hz": 65.6,
+      "host_us": 30150,
+      "draw_us": 11615,
+      "copy_us": 11593,
+      "flush_us": 0,
+      "input_us": 391,
+      "wait_us": 0,
+      "other_us": 18143,
+      "phases_us": {
+        "commands": 621,
+        "server": 3567,
+        "client": 614,
+        "render": 24871,
+        "audio": 409
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2080,
+        "rebuild": 20,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 204800,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 20
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "ppa-smooth",
+      "fps": 33.1,
+      "lcd_hz": 65.3,
+      "host_us": 30122,
+      "draw_us": 11586,
+      "copy_us": 11565,
+      "flush_us": 0,
+      "input_us": 426,
+      "wait_us": 0,
+      "other_us": 18109,
+      "phases_us": {
+        "commands": 656,
+        "server": 3421,
+        "client": 623,
+        "render": 24933,
+        "audio": 441
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 2080,
+        "rebuild": 20,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 204800,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 20
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 6.0,
+      "lcd_hz": 65.4,
+      "host_us": 165603,
+      "draw_us": 4598,
+      "copy_us": 4453,
+      "flush_us": 128,
+      "input_us": 370,
+      "wait_us": 342,
+      "other_us": 160635,
+      "phases_us": {
+        "commands": 106325,
+        "server": 2774,
+        "client": 50586,
+        "render": 20005,
+        "audio": 263
+      },
+      "completed_frames": 92,
+      "io": {
+        "bytes": 4823068,
+        "open_calls": 5,
+        "open_us": 72009,
+        "read_calls": 1257,
+        "read_us": 14962691,
+        "seek_calls": 161,
+        "seek_us": 4014
+      },
+      "cache": {
+        "hit": 10302,
+        "rebuild": 289,
+        "alloc": 120,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 364424,
+        "bytes": 166760
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 169
+      },
+      "includes_loading": true
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.1,
+      "lcd_hz": 65.1,
+      "host_us": 21638,
+      "draw_us": 1832,
+      "copy_us": 1763,
+      "flush_us": 51,
+      "input_us": 410,
+      "wait_us": 1,
+      "other_us": 19395,
+      "phases_us": {
+        "commands": 653,
+        "server": 2707,
+        "client": 456,
+        "render": 17528,
+        "audio": 244
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11718,
+        "rebuild": 182,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 219072,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 182
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.0,
+      "lcd_hz": 65.4,
+      "host_us": 21676,
+      "draw_us": 1850,
+      "copy_us": 1794,
+      "flush_us": 38,
+      "input_us": 408,
+      "wait_us": 1,
+      "other_us": 19417,
+      "phases_us": {
+        "commands": 661,
+        "server": 2681,
+        "client": 451,
+        "render": 17593,
+        "audio": 240
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11705,
+        "rebuild": 195,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 234720,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 195
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.2,
+      "lcd_hz": 65.2,
+      "host_us": 21597,
+      "draw_us": 1828,
+      "copy_us": 1774,
+      "flush_us": 37,
+      "input_us": 386,
+      "wait_us": 1,
+      "other_us": 19382,
+      "phases_us": {
+        "commands": 646,
+        "server": 2689,
+        "client": 459,
+        "render": 17511,
+        "audio": 243
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11731,
+        "rebuild": 169,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 203424,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 169
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.1,
+      "lcd_hz": 65.4,
+      "host_us": 21674,
+      "draw_us": 1816,
+      "copy_us": 1760,
+      "flush_us": 38,
+      "input_us": 416,
+      "wait_us": 1,
+      "other_us": 19442,
+      "phases_us": {
+        "commands": 657,
+        "server": 2666,
+        "client": 466,
+        "render": 17595,
+        "audio": 241
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11718,
+        "rebuild": 182,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 219072,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 182
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.0,
+      "lcd_hz": 65.3,
+      "host_us": 21697,
+      "draw_us": 1853,
+      "copy_us": 1801,
+      "flush_us": 35,
+      "input_us": 411,
+      "wait_us": 1,
+      "other_us": 19432,
+      "phases_us": {
+        "commands": 657,
+        "server": 2763,
+        "client": 496,
+        "render": 17487,
+        "audio": 238
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11718,
+        "rebuild": 182,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 219072,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 182
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.0,
+      "lcd_hz": 65.4,
+      "host_us": 21686,
+      "draw_us": 1846,
+      "copy_us": 1789,
+      "flush_us": 39,
+      "input_us": 400,
+      "wait_us": 1,
+      "other_us": 19439,
+      "phases_us": {
+        "commands": 665,
+        "server": 2741,
+        "client": 458,
+        "render": 17520,
+        "audio": 250
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11705,
+        "rebuild": 195,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 234720,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 195
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.0,
+      "lcd_hz": 65.4,
+      "host_us": 21683,
+      "draw_us": 1799,
+      "copy_us": 1748,
+      "flush_us": 34,
+      "input_us": 422,
+      "wait_us": 1,
+      "other_us": 19461,
+      "phases_us": {
+        "commands": 668,
+        "server": 2702,
+        "client": 478,
+        "render": 17544,
+        "audio": 241
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11731,
+        "rebuild": 169,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 203424,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 169
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.1,
+      "lcd_hz": 65.4,
+      "host_us": 21669,
+      "draw_us": 1806,
+      "copy_us": 1753,
+      "flush_us": 35,
+      "input_us": 416,
+      "wait_us": 1,
+      "other_us": 19447,
+      "phases_us": {
+        "commands": 664,
+        "server": 2726,
+        "client": 455,
+        "render": 17542,
+        "audio": 233
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11731,
+        "rebuild": 169,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 203424,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 169
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.1,
+      "lcd_hz": 65.4,
+      "host_us": 21665,
+      "draw_us": 1846,
+      "copy_us": 1791,
+      "flush_us": 38,
+      "input_us": 395,
+      "wait_us": 1,
+      "other_us": 19423,
+      "phases_us": {
+        "commands": 648,
+        "server": 2687,
+        "client": 456,
+        "render": 17556,
+        "audio": 262
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11705,
+        "rebuild": 195,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 234720,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 195
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.1,
+      "lcd_hz": 65.4,
+      "host_us": 21664,
+      "draw_us": 1813,
+      "copy_us": 1755,
+      "flush_us": 38,
+      "input_us": 398,
+      "wait_us": 1,
+      "other_us": 19453,
+      "phases_us": {
+        "commands": 642,
+        "server": 2677,
+        "client": 466,
+        "render": 17568,
+        "audio": 254
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11718,
+        "rebuild": 182,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 219072,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 182
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.2,
+      "lcd_hz": 65.6,
+      "host_us": 21617,
+      "draw_us": 1817,
+      "copy_us": 1764,
+      "flush_us": 35,
+      "input_us": 408,
+      "wait_us": 1,
+      "other_us": 19391,
+      "phases_us": {
+        "commands": 664,
+        "server": 2676,
+        "client": 458,
+        "render": 17530,
+        "audio": 240
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11731,
+        "rebuild": 169,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 203424,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 169
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.1,
+      "lcd_hz": 65.5,
+      "host_us": 21646,
+      "draw_us": 1874,
+      "copy_us": 1815,
+      "flush_us": 41,
+      "input_us": 420,
+      "wait_us": 1,
+      "other_us": 19351,
+      "phases_us": {
+        "commands": 670,
+        "server": 2671,
+        "client": 464,
+        "render": 17552,
+        "audio": 233
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11705,
+        "rebuild": 195,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 234720,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 195
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.3,
+      "lcd_hz": 65.3,
+      "host_us": 21561,
+      "draw_us": 1834,
+      "copy_us": 1779,
+      "flush_us": 37,
+      "input_us": 409,
+      "wait_us": 1,
+      "other_us": 19317,
+      "phases_us": {
+        "commands": 657,
+        "server": 2693,
+        "client": 452,
+        "render": 17468,
+        "audio": 235
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11731,
+        "rebuild": 169,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 203424,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 169
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.1,
+      "lcd_hz": 65.5,
+      "host_us": 21637,
+      "draw_us": 1822,
+      "copy_us": 1767,
+      "flush_us": 37,
+      "input_us": 430,
+      "wait_us": 1,
+      "other_us": 19384,
+      "phases_us": {
+        "commands": 680,
+        "server": 2687,
+        "client": 472,
+        "render": 17518,
+        "audio": 231
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11718,
+        "rebuild": 182,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 219072,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 182
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.3,
+      "lcd_hz": 65.3,
+      "host_us": 21575,
+      "draw_us": 1826,
+      "copy_us": 1774,
+      "flush_us": 34,
+      "input_us": 400,
+      "wait_us": 1,
+      "other_us": 19348,
+      "phases_us": {
+        "commands": 657,
+        "server": 2677,
+        "client": 461,
+        "render": 17490,
+        "audio": 240
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11731,
+        "rebuild": 169,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 203424,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 169
+      },
+      "includes_loading": false
+    },
+    {
+      "backend": "no-extra-wait",
+      "fps": 46.2,
+      "lcd_hz": 65.6,
+      "host_us": 21619,
+      "draw_us": 1804,
+      "copy_us": 1751,
+      "flush_us": 35,
+      "input_us": 396,
+      "wait_us": 1,
+      "other_us": 19417,
+      "phases_us": {
+        "commands": 640,
+        "server": 2709,
+        "client": 473,
+        "render": 17509,
+        "audio": 239
+      },
+      "completed_frames": 100,
+      "io": {
+        "bytes": 0,
+        "open_calls": 0,
+        "open_us": 0,
+        "read_calls": 0,
+        "read_us": 0,
+        "seek_calls": 0,
+        "seek_us": 0
+      },
+      "cache": {
+        "hit": 11718,
+        "rebuild": 182,
+        "alloc": 0,
+        "evict": 0,
+        "wrap": 0,
+        "thrash": 0,
+        "pixels": 219072,
+        "bytes": 0
+      },
+      "cache_reasons": {
+        "dynamic": 0,
+        "texture": 0,
+        "lightstyle": 182
+      },
+      "includes_loading": false
+    }
+  ],
+  "host_checks": {
+    "quake": "PASS",
+    "sdroot": "PASS",
+    "clean_source_simulator": "PASS, including Home, inline IME and six-app handoff"
+  },
+  "serial_monitor_released": true
+}

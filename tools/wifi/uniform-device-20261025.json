@@ -1,0 +1,182 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "device": "M5Stack Tab5, ESP32-P4 rev 1.3",
+  "firmware": {
+    "source": "45033934aa8095965f3f45b22d06456e811bf7b1",
+    "app_sha256": "2254402fa3338933491f4c6b66d8d22783203553ccc9ba2948cade268a1b0a6a"
+  },
+  "harness_source": "2d0226e12e5c6f183c265a9af4754b51a47bf5ca",
+  "host_idle_sleep_prevented": "caffeinate -i for this test process only, verified by macOS power assertion",
+  "report": {
+    "result": "PASS",
+    "baseline": [
+      {
+        "seconds": 38.59,
+        "host_seconds": 38.682,
+        "wall_seconds": 38.683,
+        "device_ms": 38590,
+        "bytes": 18689235,
+        "crc32": "74e3b084",
+        "kib_per_second": 473
+      }
+    ],
+    "loads": [
+      {
+        "pps": 25,
+        "payload_bytes": 1400,
+        "burst_packets": 1,
+        "invalid_replies": 0,
+        "phases": {
+          "idle": {
+            "sent": 52,
+            "received": 52,
+            "loss_percent": 0,
+            "rtt_median_ms": 23.947,
+            "rtt_p95_ms": 48.712
+          },
+          "pak": {
+            "sent": 839,
+            "received": 839,
+            "loss_percent": 0,
+            "rtt_median_ms": 22.167,
+            "rtt_p95_ms": 44.412
+          },
+          "font": {
+            "sent": 76,
+            "received": 76,
+            "loss_percent": 0,
+            "rtt_median_ms": 18.781,
+            "rtt_p95_ms": 52.79
+          },
+          "write": {
+            "sent": 45,
+            "received": 45,
+            "loss_percent": 0,
+            "rtt_median_ms": 18.559,
+            "rtt_p95_ms": 52.269
+          }
+        },
+        "device_diagnostics": {
+          "rx_frames": 1577,
+          "rx_partials": 0,
+          "rx_bad": 0,
+          "rx_max_pending": 5069,
+          "rx_reg_errors": 0,
+          "rx_io_errors": 0,
+          "rx_plan_errors": 0,
+          "tx_no_credit": 0,
+          "tx_io_errors": 0,
+          "icmp_requests": 1012,
+          "icmp_replies": 1012,
+          "icmp_failures": 0,
+          "time_poll_gap_us": 160091,
+          "time_poll_duration_us": 148712,
+          "time_bus_wait_us": 68030
+        },
+        "pak": [
+          {
+            "seconds": 38.938,
+            "host_seconds": 39.04,
+            "wall_seconds": 39.041,
+            "device_ms": 38938,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 468.7
+          }
+        ],
+        "font_receipt": "24 px: load=631 ms metric=147179 us first=448400 us warm=7626 us misses=52 hits=72 raster=438360 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+      },
+      {
+        "pps": 100,
+        "payload_bytes": 1400,
+        "burst_packets": 1,
+        "invalid_replies": 0,
+        "phases": {
+          "idle": {
+            "sent": 263,
+            "received": 263,
+            "loss_percent": 0,
+            "rtt_median_ms": 16.193,
+            "rtt_p95_ms": 25.085
+          },
+          "pak": {
+            "sent": 3568,
+            "received": 3568,
+            "loss_percent": 0,
+            "rtt_median_ms": 18.53,
+            "rtt_p95_ms": 33.606
+          },
+          "font": {
+            "sent": 304,
+            "received": 304,
+            "loss_percent": 0,
+            "rtt_median_ms": 21.166,
+            "rtt_p95_ms": 48.691
+          },
+          "write": {
+            "sent": 186,
+            "received": 186,
+            "loss_percent": 0,
+            "rtt_median_ms": 19.114,
+            "rtt_p95_ms": 120.106
+          }
+        },
+        "device_diagnostics": {
+          "rx_frames": 4894,
+          "rx_partials": 4,
+          "rx_bad": 0,
+          "rx_max_pending": 13931,
+          "rx_reg_errors": 0,
+          "rx_io_errors": 0,
+          "rx_plan_errors": 0,
+          "tx_no_credit": 0,
+          "tx_io_errors": 0,
+          "icmp_requests": 4321,
+          "icmp_replies": 4321,
+          "icmp_failures": 0,
+          "time_poll_gap_us": 310613,
+          "time_poll_duration_us": 299780,
+          "time_bus_wait_us": 67557
+        },
+        "pak": [
+          {
+            "seconds": 40.752,
+            "host_seconds": 40.849,
+            "wall_seconds": 40.85,
+            "device_ms": 40752,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 447.9
+          }
+        ],
+        "font_receipt": "24 px: load=687 ms metric=157744 us first=475815 us warm=9869 us misses=52 hits=72 raster=461495 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+      }
+    ],
+    "settle_seconds": 60,
+    "firmware_boot_version": "4503393",
+    "host_clock": {
+      "monotonic_seconds": 224.065,
+      "wall_seconds": 224.066
+    },
+    "last_read_timing": {
+      "seconds": 40.752,
+      "host_seconds": 40.849,
+      "wall_seconds": 40.85,
+      "device_ms": 40752,
+      "bytes": 18689235,
+      "crc32": "74e3b084",
+      "kib_per_second": 447.9
+    },
+    "trimmed_psram_before_kib": 23135,
+    "trimmed_psram_after_kib": 23119
+  },
+  "serial_log_sha256": "dc273fda0e50a30ca717ebbcfaeedb0d85794499d2b44708b51e0cd266c654aa",
+  "notes": [
+    "Uniform single-packet groups at requested 25/100 pps, with actual counts retained. All 5333 sent echoes were received; independent device ICMP requests/replies also total 5333.",
+    "Wall/monotonic guards passed for the whole trial and each CRC operation. Device CRC time is used for seconds/throughput; host and wall time remain separately recorded.",
+    "The 100 pps phase retained fragments four times and saw 13931 bytes pending, exercising reassembly even with single-packet pacing. Malformed headers, register/DMA/plan errors, TX credit errors, invalid echoes and failed replies were zero.",
+    "All three 18689235-byte PAK CRC reads matched 74e3b084. The prior suspended-host measurement remains separately preserved as invalid, rather than counted as a pass.",
+    "No additional flash after the tested 4503393 image. No media-mutation commands, power cuts, hot removal or forced transport faults were issued. Raw serial logs stay private."
+  ]
+}

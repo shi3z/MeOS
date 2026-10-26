@@ -1,0 +1,12 @@
+{
+  "esp_idf": {
+    "version": "v5.4.4",
+    "repository": "https://github.com/espressif/esp-idf",
+    "commit": "296b6eab9445fd720e71aecab961e2d3fbca9944"
+  },
+  "compiler_release": "esp-14.2.0_20260121",
+  "doomgeneric": {
+    "repository": "https://github.com/ozkl/doomgeneric",
+    "commit": "e257a09527062bfb986b6e5e0780839b6cbd5b71"
+  }
+}

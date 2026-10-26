@@ -1,0 +1,34 @@
+name: MeOS App Simulator
+on:
+  pull_request:
+    paths: ['fs/vfs/write_file.c', 'tools/sim/**', 'user/write/**', 'drivers/lcd/bizud*', 'tools/fonts/**', 'tools/scheme/**', 'user/scheme/**', 'user/tui/**', 'drivers/ime/**', 'drivers/lcd/font*', 'drivers/lcd/fbcon.h', 'drivers/usbkbd/hid_keys.*', 'kernel/include/**', 'kernel/lib/number.c', '.github/workflows/simulator.yml']
+  push:
+    paths: ['fs/vfs/write_file.c', 'tools/sim/**', 'user/write/**', 'drivers/lcd/bizud*', 'tools/fonts/**', 'tools/scheme/**', 'user/scheme/**', 'user/tui/**', 'drivers/ime/**', 'drivers/lcd/font*', 'drivers/lcd/fbcon.h', 'drivers/usbkbd/hid_keys.*', 'kernel/include/**', 'kernel/lib/number.c', '.github/workflows/simulator.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-and-replay:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      CC: clang
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Install SDL2 (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang libsdl2-dev
+      - name: Install SDL2 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install sdl2
+      - name: Verify unchanged font metrics and pixels
+        run: python3 tools/fonts/check_bizud.py
+      - name: Build and test a fresh source-only clone
+        run: sh tools/sim/check-clean.sh

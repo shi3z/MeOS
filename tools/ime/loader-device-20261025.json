@@ -1,0 +1,396 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "device": "M5Stack Tab5, ESP32-P4 rev 1.3",
+  "dictionary_bytes": 5354161,
+  "results": {
+    "dictionary_startup": "PASS",
+    "postboot_network_repeatability": "FAIL",
+    "controlled_dictionary_wifi_overlap": "NOT_ESTABLISHED"
+  },
+  "firmware": {
+    "before": {
+      "source": "373285bfdfc038fd84dc0da4601f1f469e1a2ab4",
+      "app_sha256": "4248f552c313ff4c0ade5b600234ddeb57b8311f36d6e97a2527550097f9e90c"
+    },
+    "after": {
+      "source": "14ecd18368b6b37ef317397061584eee72e6fda9",
+      "app_sha256": "d335df9aab170cd44ebf18f5b95e09116a57dab866a54555fac077a8b76d836a",
+      "app_bytes": 1770992,
+      "slot_offset": "0x7f0000",
+      "flash_hash_verified": true
+    }
+  },
+  "before": {
+    "report": {
+      "result": "PASS",
+      "probe_ms": 500,
+      "cycles": [
+        {
+          "cycle": 1,
+          "firmware": "373285b",
+          "shell_ready_device_ms": 3590,
+          "dictionary_ready_host_ms": 19353.3,
+          "dictionary_kib": 5228,
+          "loader_stack_used": 3344,
+          "loader_stack_bytes": 16384,
+          "probe_count": 31,
+          "probe_median_ms": 5.5,
+          "probe_p95_ms": 10.2,
+          "probe_max_ms": 13
+        },
+        {
+          "cycle": 2,
+          "firmware": "373285b",
+          "shell_ready_device_ms": 3422,
+          "dictionary_ready_host_ms": 19175.5,
+          "dictionary_kib": 5228,
+          "loader_stack_used": 3344,
+          "loader_stack_bytes": 16384,
+          "probe_count": 31,
+          "probe_median_ms": 5.7,
+          "probe_p95_ms": 10.1,
+          "probe_max_ms": 10.6
+        },
+        {
+          "cycle": 3,
+          "firmware": "373285b",
+          "shell_ready_device_ms": 3529,
+          "dictionary_ready_host_ms": 19261.2,
+          "dictionary_kib": 5228,
+          "loader_stack_used": 3344,
+          "loader_stack_bytes": 16384,
+          "probe_count": 31,
+          "probe_median_ms": 5.3,
+          "probe_p95_ms": 8.6,
+          "probe_max_ms": 10.2
+        }
+      ],
+      "serial_log_sha256": "a51d4912095eb1e2e4a2fa0da9b061247e322fbac444047de34ec6ced5431b10"
+    },
+    "serial_log_sha256": "a51d4912095eb1e2e4a2fa0da9b061247e322fbac444047de34ec6ced5431b10"
+  },
+  "after": {
+    "report": {
+      "result": "PASS",
+      "probe_ms": 500,
+      "cycles": [
+        {
+          "cycle": 1,
+          "firmware": "14ecd18",
+          "shell_ready_device_ms": 3540,
+          "dictionary_ready_host_ms": 13173.7,
+          "dictionary_kib": 5228,
+          "loader_stack_used": 3360,
+          "loader_stack_bytes": 16384,
+          "probe_count": 19,
+          "probe_median_ms": 6.8,
+          "probe_p95_ms": 12.8,
+          "probe_max_ms": 12.8,
+          "dictionary_io": {
+            "bytes": 5354161,
+            "ms": 8959,
+            "naps": 81
+          }
+        },
+        {
+          "cycle": 2,
+          "firmware": "14ecd18",
+          "shell_ready_device_ms": 3645,
+          "dictionary_ready_host_ms": 13286.6,
+          "dictionary_kib": 5228,
+          "loader_stack_used": 3360,
+          "loader_stack_bytes": 16384,
+          "probe_count": 19,
+          "probe_median_ms": 6.7,
+          "probe_p95_ms": 11.5,
+          "probe_max_ms": 11.5,
+          "dictionary_io": {
+            "bytes": 5354161,
+            "ms": 8871,
+            "naps": 81
+          }
+        },
+        {
+          "cycle": 3,
+          "firmware": "14ecd18",
+          "shell_ready_device_ms": 3646,
+          "dictionary_ready_host_ms": 13275.4,
+          "dictionary_kib": 5228,
+          "loader_stack_used": 3360,
+          "loader_stack_bytes": 16384,
+          "probe_count": 19,
+          "probe_median_ms": 5.7,
+          "probe_p95_ms": 12.3,
+          "probe_max_ms": 12.3,
+          "dictionary_io": {
+            "bytes": 5354161,
+            "ms": 9090,
+            "naps": 81
+          }
+        }
+      ],
+      "serial_log_sha256": "924ab1c34ee06e0ca0ae90688a437879643ac37318dba88e2393c073ce628aa3"
+    },
+    "serial_log_sha256": "924ab1c34ee06e0ca0ae90688a437879643ac37318dba88e2393c073ce628aa3"
+  },
+  "postboot_initial": {
+    "report": {
+      "result": "FAIL",
+      "baseline": [
+        {
+          "seconds": 38.302,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 476.5
+        }
+      ],
+      "loads": [
+        {
+          "pps": 100,
+          "payload_bytes": 1400,
+          "invalid_replies": 0,
+          "phases": {
+            "idle": {
+              "sent": 265,
+              "received": 265,
+              "loss_percent": 0,
+              "rtt_median_ms": 14.321,
+              "rtt_p95_ms": 24.576
+            },
+            "pak": {
+              "sent": 4029,
+              "received": 4026,
+              "loss_percent": 0.074,
+              "rtt_median_ms": 19.225,
+              "rtt_p95_ms": 35.167
+            },
+            "font": {
+              "sent": 316,
+              "received": 316,
+              "loss_percent": 0,
+              "rtt_median_ms": 20.499,
+              "rtt_p95_ms": 46.529
+            },
+            "write": {
+              "sent": 188,
+              "received": 186,
+              "loss_percent": 1.064,
+              "rtt_median_ms": 20.333,
+              "rtt_p95_ms": 97.578
+            }
+          },
+          "pak": [
+            {
+              "seconds": 45.592,
+              "bytes": 18689235,
+              "crc32": "74e3b084",
+              "kib_per_second": 400.3
+            }
+          ],
+          "font_receipt": "24 px: load=690 ms metric=155786 us first=472974 us warm=8530 us misses=52 hits=72 raster=463515 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+        }
+      ],
+      "firmware_boot_version": "14ecd18",
+      "trimmed_psram_before_kib": 22618,
+      "trimmed_psram_after_kib": 23119,
+      "error": "PSRAM cleanup drift after concurrent I/O"
+    },
+    "serial_log_sha256": "648247dedc68fe24ca6e3cc5a8f3080c101c590e1a2e452d77e5857c78df0324"
+  },
+  "postboot_reopened_serial": {
+    "report": {
+      "result": "FAIL",
+      "baseline": [
+        {
+          "seconds": 38.267,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 476.9
+        }
+      ],
+      "loads": [
+        {
+          "pps": 100,
+          "payload_bytes": 1400,
+          "invalid_replies": 0,
+          "phases": {
+            "idle": {
+              "sent": 262,
+              "received": 251,
+              "loss_percent": 4.198,
+              "rtt_median_ms": 17.825,
+              "rtt_p95_ms": 91.133
+            },
+            "pak": {
+              "sent": 3561,
+              "received": 3373,
+              "loss_percent": 5.279,
+              "rtt_median_ms": 21.316,
+              "rtt_p95_ms": 101.672
+            },
+            "font": {
+              "sent": 304,
+              "received": 304,
+              "loss_percent": 0,
+              "rtt_median_ms": 21.901,
+              "rtt_p95_ms": 52.008
+            },
+            "write": {
+              "sent": 180,
+              "received": 177,
+              "loss_percent": 1.667,
+              "rtt_median_ms": 20.045,
+              "rtt_p95_ms": 89.503
+            }
+          },
+          "pak": [
+            {
+              "seconds": 40.593,
+              "bytes": 18689235,
+              "crc32": "74e3b084",
+              "kib_per_second": 449.6
+            }
+          ],
+          "font_receipt": "24 px: load=682 ms metric=157547 us first=470421 us warm=10107 us misses=52 hits=72 raster=457867 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+        }
+      ],
+      "firmware_boot_version": "14ecd18",
+      "trimmed_psram_before_kib": 22620,
+      "trimmed_psram_after_kib": 23119,
+      "error": "PSRAM cleanup drift after concurrent I/O"
+    },
+    "serial_log_sha256": "2609d027809f3370097d53a9d89b480d39c5b4baa409003f85f2da9481f96078"
+  },
+  "postboot_held_open": {
+    "report": {
+      "result": "FAIL",
+      "baseline": [
+        {
+          "seconds": 38.433,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 474.9
+        }
+      ],
+      "loads": [
+        {
+          "pps": 25,
+          "payload_bytes": 1400,
+          "invalid_replies": 0,
+          "phases": {
+            "idle": {
+              "sent": 72,
+              "received": 72,
+              "loss_percent": 0,
+              "rtt_median_ms": 18.972,
+              "rtt_p95_ms": 83.41
+            },
+            "pak": {
+              "sent": 899,
+              "received": 899,
+              "loss_percent": 0,
+              "rtt_median_ms": 22.177,
+              "rtt_p95_ms": 95.646
+            },
+            "font": {
+              "sent": 75,
+              "received": 65,
+              "loss_percent": 13.333,
+              "rtt_median_ms": 37.135,
+              "rtt_p95_ms": 397.543
+            },
+            "write": {
+              "sent": 45,
+              "received": 45,
+              "loss_percent": 0,
+              "rtt_median_ms": 20.985,
+              "rtt_p95_ms": 167.508
+            }
+          },
+          "pak": [
+            {
+              "seconds": 38.881,
+              "bytes": 18689235,
+              "crc32": "74e3b084",
+              "kib_per_second": 469.4
+            }
+          ],
+          "font_receipt": "24 px: load=628 ms metric=150362 us first=440537 us warm=11911 us misses=52 hits=72 raster=430143 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+        },
+        {
+          "pps": 100,
+          "payload_bytes": 1400,
+          "invalid_replies": 0,
+          "phases": {
+            "idle": {
+              "sent": 263,
+              "received": 263,
+              "loss_percent": 0,
+              "rtt_median_ms": 14.696,
+              "rtt_p95_ms": 23.302
+            },
+            "pak": {
+              "sent": 3577,
+              "received": 3577,
+              "loss_percent": 0,
+              "rtt_median_ms": 18.097,
+              "rtt_p95_ms": 31.095
+            },
+            "font": {
+              "sent": 306,
+              "received": 306,
+              "loss_percent": 0,
+              "rtt_median_ms": 19.988,
+              "rtt_p95_ms": 48.262
+            },
+            "write": {
+              "sent": 180,
+              "received": 175,
+              "loss_percent": 2.778,
+              "rtt_median_ms": 19.227,
+              "rtt_p95_ms": 57.729
+            }
+          },
+          "pak": [
+            {
+              "seconds": 40.736,
+              "bytes": 18689235,
+              "crc32": "74e3b084",
+              "kib_per_second": 448
+            }
+          ],
+          "font_receipt": "24 px: load=678 ms metric=157856 us first=474438 us warm=8814 us misses=52 hits=72 raster=461717 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+        }
+      ],
+      "settle_seconds": 60,
+      "firmware_boot_version": "14ecd18",
+      "trimmed_psram_before_kib": 23135,
+      "trimmed_psram_after_kib": 23119,
+      "error": "25 pps font: 13.333% loss"
+    },
+    "serial_log_sha256": "f6e449a5ef4df589ba40b719a222dcb3fb7e0d0efb6e7646553ffc642622847c"
+  },
+  "boot_overlap_attempt": {
+    "report": {
+      "result": "FAIL",
+      "probe_ms": 500,
+      "requested_pps": 100,
+      "cycles": [],
+      "error": "no verified Wi-Fi/dictionary overlap",
+      "serial_log_sha256": "1d1473904f1238a422d4fa0bdc47052863c880e5fe75fafe3473d6ddf7331118"
+    },
+    "serial_log_sha256": "1d1473904f1238a422d4fa0bdc47052863c880e5fe75fafe3473d6ddf7331118"
+  },
+  "notes": [
+    "Quiet startup comparison: three EN resets per firmware, echo probes every 500 ms. Host readiness includes serial delivery and probe-interval quantization; BOOT and dictionary I/O times are device measurements.",
+    "Dictionary ready host median improved from 19261.2 to 13275.4 ms (31.08%). The shell was already usable earlier; its startup did not improve.",
+    "The initial and reopened-serial coexistence attempts each reset the device. Their memory samples spanned Tailscale startup: free PSRAM increased 501 and 499 KiB. Source inspection shows temporary control-connection and 512 KiB response allocations; no per-allocation hardware trace was captured.",
+    "Holding serial open during a 60-second settle brought trimmed memory samples within 16 KiB (23135 to 23119 KiB free), passing the unchanged 32 KiB tolerance. That run still failed the unchanged 5% loss limit because the 25 pps font phase lost 10 of 75 echoes. Its 100 pps idle/PAK/font phases had zero loss and Write lost 5 of 180.",
+    "All seven postboot 18689235-byte PAK CRC reads matched 74e3b084. No invalid echo payload/checksum was observed. Failed runs are retained and are not claimed as qualification passes.",
+    "The SD loader had exited before the postboot coexistence workloads. The source of network loss variability remains unassigned; no regression attribution to the IME change has been established.",
+    "The boot overlap attempt finished loading the dictionary before connected IPv4 was reported, so it did not establish dictionary/Wi-Fi overlap.",
+    "The tools issue no media-mutation command, but normal background services may persist their own state. No backup was taken this turn as authorized. Only the selected app slot was flashed.",
+    "Power loss, hot removal, controlled simultaneous writes and maximum network throughput remain unqualified. Raw serial transcripts are private; reports contain their SHA-256 digests."
+  ]
+}

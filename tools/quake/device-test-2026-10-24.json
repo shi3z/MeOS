@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-24",
+  "board": "M5Stack Tab5",
+  "chip": "ESP32-P4",
+  "cpu_mhz": 360,
+  "sdk": "ESP-IDF v5.4.4",
+  "source_base": "d595323e7f95caa1097aecbbb31d601665986c65",
+  "source_dirty": true,
+  "card": {
+    "sectors": 30867456,
+    "capacity_mib": 15072,
+    "family": "SDHC/SDXC reported by driver",
+    "mount": "read-only"
+  },
+  "pak": {
+    "bytes": 18689235,
+    "crc32_readback": "74e3b084",
+    "sha256": "35a9c55e5e5a284a159ad2a62e0e8def23d829561fe2f54eb402dbc0a9a946af"
+  },
+  "qualification_image_sha256": "b2d2d9bda8f23bae36dc73d19f7edc74007c66674e5b1cdf17c63eeb8284e9b1",
+  "final_fire_ok_image_sha256": "18ce9119efd6c15a784fce190e23320fb90d3ff02a157dc563485ae758ac50d0",
+  "normal_launch_quit_cycles": 3,
+  "reclaimed_bytes_each": 13517504,
+  "used_after_quit_kib": {
+    "internal": 112,
+    "psram": 8869
+  },
+  "free_after_quit_kib": {
+    "internal": 79,
+    "psram": 18562
+  },
+  "largest_psram_after_quit_kib": [
+    13138,
+    12621,
+    12621
+  ],
+  "post_load_presentations_per_second_observed": [
+    11.8,
+    17.4
+  ],
+  "stack_sample": {
+    "used": 15344,
+    "size": 49152,
+    "guard": "OK"
+  },
+  "passed": [
+    "native demo rendering",
+    "new game / local loopback server",
+    "serial forward movement",
+    "serial fire: ammo 25 to 24",
+    "normal quit/relaunch",
+    "read-only unmount/remount",
+    "F action selects menus in final image"
+  ],
+  "not_qualified": [
+    "physical finger hit targets",
+    "camera verification of LCD",
+    "forced task termination",
+    "long campaign / all maps",
+    "audio"
+  ],
+  "formatted": false,
+  "game_assets_committed": false,
+  "binary_release_published": false
+}

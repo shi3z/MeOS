@@ -1,0 +1,49 @@
+name: Quake optional checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - run: sh tools/quake/host_test.sh
+  firmware:
+    name: firmware (${{ matrix.resolution }}${{ matrix.detail == '1' && ', profile' || '' }}${{ matrix.zpad != '0' && format(', zpad{0}', matrix.zpad) || '' }}${{ matrix.quiet == '1' && ', quiet' || '' }})
+    strategy:
+      matrix:
+        include:
+          - {resolution: '320x200', detail: '0', zpad: '0'}
+          - {resolution: '512x300', detail: '0', zpad: '0'}
+          - {resolution: '512x300', detail: '1', zpad: '0'}
+          - {resolution: '512x300', detail: '0', zpad: '32'}
+          - {resolution: '512x300', detail: '1', zpad: '64'}
+          - {resolution: '512x300', detail: '0', zpad: '0', quiet: '1'}
+    env:
+      M5OS_QUAKE_RESOLUTION: ${{ matrix.resolution }}
+      M5OS_QUAKE_DETAIL_PROFILE: ${{ matrix.detail }}
+      M5OS_QUAKE_ZPAD: ${{ matrix.zpad }}
+      M5OS_AUDIO_QUIET: ${{ matrix.quiet || '0' }}
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v5.4.4
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - shell: bash
+        run: |
+          . /opt/esp/idf/export.sh
+          sh tools/quake/build.sh build
+          case "$M5OS_QUAKE_RESOLUTION" in
+            512x300) BUILD=build-quake-512x300 ;;
+            *) BUILD=build-quake ;;
+          esac
+          if [ "$M5OS_QUAKE_DETAIL_PROFILE" = 1 ]; then BUILD="$BUILD-profile"; fi
+          if [ "$M5OS_QUAKE_ZPAD" != 0 ]; then BUILD="$BUILD-zpad$M5OS_QUAKE_ZPAD"; fi
+          if [ "$M5OS_AUDIO_QUIET" = 1 ]; then BUILD="$BUILD-quiet"; fi
+          python3 tools/quake/check_stack.py "$BUILD"
+      # No PAK files, hardware flash, release upload or game-data redistribution.

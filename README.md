@@ -1,5 +1,9 @@
 # MeOS
 
+The `masanork` integration combines the language/editor, simulator, media and optional
+native-engine work with a persistent Tab5 SD root. See [integration provenance](tools/integration/README.md)
+and [SD layout and qualification](docs/sd-root-device.md).
+
 An educational and experimental lightweight operating system built from scratch for M5Stack devices (**M5Stack CoreS3**, **M5Cardputer**, and **M5Stack Tab5**).
 MeOS implements its own **preemptive/cooperative scheduler, task management, timer, IPC message queues, memory allocator, VFS, custom filesystem (M5FS), dynamic binary loader (M5EX), GUI/TUI window system, camera driver, SDIO Wi-Fi stack, and SSH-2 client**—without ever starting FreeRTOS.
 
@@ -17,7 +21,7 @@ MeOS implements its own **preemptive/cooperative scheduler, task management, tim
 | 5 | Device abstraction (`device_open/read/write/ioctl`), blocking mutex, `uart`/`display`/`buttons` | ✅ Verified on hardware |
 | 6 | M5FS custom filesystem + SD block device | ✅ M5FS verified on hardware over RAM disk |
 | 7 | VFS (`/dev` = devfs, `/` = M5FS), mount table | ✅ Verified on hardware (`VFSTEST ALL PASS`) |
-| 8 | Interactive Shell (`help history ps kill ls cat echo mem uptime run` + cursor-key history & line editing) | ✅ Verified on hardware |
+| 8 | Interactive Shell (`help history ps kill ls cat crc32 echo mem uptime run` + cursor-key history & line editing) | ✅ Verified on hardware |
 | 9 | App lifecycle (`app_start/stop/list`, permissions, automatic resource reclamation) | ✅ Verified on hardware (`APPTEST ALL PASS`) |
 | 10 | App loader (`M5EX` relocatable binary format, dynamic loading over serial/FS) | ✅ Verified on hardware (`M5EXTEST ALL PASS` + host push & run) |
 | 11 | IPC (fixed-size per-task mailboxes, blocking/timeout send & receive) | ✅ Verified on hardware (`MSGTEST ALL PASS`) |
@@ -37,7 +41,7 @@ MeOS implements its own **preemptive/cooperative scheduler, task management, tim
 | **SoC** | ESP32-S3 (Xtensa LX7) + 8 MB PSRAM, 16 MB Flash | ESP32-S3FN8: 8 MB Flash, **no PSRAM** | **ESP32-P4 (Dual-core RISC-V @ 400 MHz)** + 32 MB PSRAM, 16 MB Flash + **ESP32-C6** co-processor |
 | **Display** | ILI9342C 320×240 (SPI, via AXP2101/AW9523) | ST7789 135×240 in landscape (240×135) | ST7121 / ILI9881C 720×1280 MIPI-DSI in landscape (**1280×720**) |
 | **Input** | Capacitive touch (FT6336U) | **Built-in Keyboard** (74HC138 matrix / TCA8418 I2C) | **Tab5 Keyboard** (I2C HID `0x6D`) or USB-A HID boot keyboard |
-| **UI Mode** | Touch GUI (Window Manager + Launcher) | Full-screen console (`fbcon`) + TUI apps (`dqwin`) | High-res console (`fbcon` 80×45) + TUI apps (`files`, `edit`, `camera`, `wifi`, `ssh`) |
+| **UI Mode** | Touch GUI (Window Manager + Launcher) | Full-screen console (`fbcon`) + TUI apps (`dqwin`) | Touch/keyboard Home launcher + high-res console (`fbcon` 80×45) + TUI apps |
 | **Camera** | — | — | **SC202CS** 1600×1200 MIPI-CSI + Hardware ISP + Auto-Gain/White-Balance |
 | **Wi-Fi / Net** | — | — | **ESP32-C6** over SDIO Slot 1 (DHCPv4/ARP/ICMP/DNS/TCP + **SSH-2 Client**) |
 | **Build Command** | `tools/build.sh cores3` | `tools/build.sh cardputer` | `tools/build.sh tab5` |
@@ -161,11 +165,27 @@ Key hardware subsystems supported on M5Stack Tab5:
 * **I/O Expanders (`hal/esp32p4/board_tab5.c`)**: Dual PI4IOE5V6408 I2C expanders (`0x43` / `0x44`) controlling LCD/touch reset, speaker enable, camera reset, USB 5V host power, and ESP32-C6 Wi-Fi power.
 * **Keyboard (`drivers/tab5kbd`, `drivers/usbkbd`)**: Polls the official M5Stack Tab5 I2C Keyboard (`0x6D` on Ext.Port1 G0/G1) in HID mode, with automatic fallback to USB-A HID boot keyboards over the DWC2 host controller.
 
+### Tab5 Home launcher
+
+After the shell announces its first prompt, Tab5 waits 1.5 seconds for a serial
+management command. With no input it opens the full-screen `home` launcher.
+Choose a large two-column tile by touch or arrows and Enter; Q/Esc opens the
+command shell. Run `home` at any later shell prompt to return. Write, Scheme,
+Files, Camera, Web, Wi-Fi, SSH, Tailscale, installed WebAssembly apps and BASIC
+are always available; Doom and Quake appear only in builds that enable them.
+Sending a command as soon as the first serial prompt appears suppresses automatic
+Home startup, so recovery and test scripts retain a deterministic shell path.
+Write opens as a 24px BIZ UD vertical Japanese page (Ctrl-T toggles horizontal).
+Write and Scheme share the font atlas in an idle PSRAM cache, making the
+second editor launch immediate instead of rereading the font from microSD.
+Opening a non-editor tile releases the cache; `mem` reports it and `mem trim`
+reclaims it explicitly.
+
 ---
 
 ## TUI Window System (`dqwin`), Filer (`files`), and Text Editor (`edit`)
 
-Keyboard-equipped boards (**M5Cardputer** and **M5Stack Tab5**) feature a Dragon Quest-inspired retro TUI window toolkit (`user/tui/dqwin.c`) with thick white rounded borders on a black background and a `▶` selection cursor. Layout uses character cells (`8×8` glyph × `M5OS_FBCON_SCALE`), scaling cleanly from 40 columns on Cardputer to 80×22 on Tab5, and works simultaneously on both the built-in LCD+keyboard and serial terminals.
+Keyboard-equipped boards (**M5Cardputer** and **M5Stack Tab5**) feature a Dragon Quest-inspired retro TUI window toolkit (`user/tui/dqwin.c`) with thick white rounded borders on a black background and a `▶` selection cursor. Layout uses character cells (`8×8` glyph × `M5OS_FBCON_SCALE`), scaling cleanly from 40 columns on Cardputer to 80×45 on Tab5, and works simultaneously on both the built-in LCD+keyboard and serial terminals.
 
 ### Full-Screen Filer (`files [DIR]`)
 Implemented in `user/filer/filer.c` (inspired by VZ Editor's filer). Run `files` from the shell or launch `run files`.
@@ -289,18 +309,236 @@ Every keyboard key goes through `drivers/ime` before it reaches the console, so 
 * **Conversion** (`conv.c`) cuts the reading into phrases by dynamic programming: a dictionary word, plain or conjugating
   (SKK okuri-ari entries, checked against the conjugation form the okurigana spells), followed by particles / endings
   that stay kana. Choices are remembered for the session (`ime_dict_learn`).
-* **Screen**: console programs get an overlay at the text cursor (`fbcon_overlay_*`); programs that own the display
-  (`fbcon_pause`: filer, ssh, web) get the same UI as a two-line bar at the bottom, restored afterwards.
-* **Dictionary**: a small one is built in (`tools/ime/mini.skk`). For real use put an SKK dictionary in flash once:
-  `tools/ime_flash_dict.sh -p /dev/cu.usbmodemXXXX` (downloads SKK-JISYO.L, GPL-2.0+, and writes it to the `imedict` partition
-  at `0x400000`; it is loaded into PSRAM in the background after boot). `partitions_tab5.csv` now gives the app 3.9 MB.
+* **Screen**: console programs get an overlay at the text cursor (`fbcon_overlay_*`). Write and Scheme consume an
+  immutable IME view and insert BIZ UD preedit into their horizontal or vertical layout, reflowing following text; other full-screen
+  programs (`fbcon_pause`: filer, ssh, web) use a two-line bar at the bottom, restored afterwards.
+* **Dictionary**: a small one is built in (`tools/ime/mini.skk`). For real use put an SKK dictionary on the SD card:
+  `tools/ime_flash_dict.sh -p /dev/cu.usbmodemXXXX` (downloads SKK-JISYO.L, GPL-2.0+, and uploads
+  `/assets/ime-dict.bin`; it is loaded into PSRAM in the background after the persistent root has mounted).
+  A missing/removed SD card simply leaves the built-in dictionary active.
 * **Tests** run on the host: `tools/ime/host_test.sh [dict.bin]`.
+
+## Tab5 Device, Power and Storage Diagnostics
+
+* `devices` lists the registered devices and board capabilities, separating detected/initialized,
+  untested, unsupported and communication-error states. An unsupported device is not necessarily absent.
+  It does not initialize the camera, scan Wi-Fi, or probe unsupported peripherals.
+* `power` reads the INA226 at system-I2C address `0x41` and the charger expander without changing their
+  configuration. It reports the verified manufacturer/die identity, rail voltage, signed battery current
+  (`+` into the battery, `-` out), a coarse voltage-only 2S level estimate and the charge-permission setting.
+  The estimate is suppressed outside a plausible pack voltage; a battery-free board can still report
+  nonzero voltage/current, so these readings do not prove a battery is installed. USB-C versus external
+  DC is shown as unknown. Charge permission and raw `CHG_STAT` are not treated as proof of actual charging
+  or external power. The monitor must already be in continuous shunt+bus conversion mode; a missing,
+  mismatched, unreadable or differently configured monitor produces an explicit unavailable result.
+* `storage` identifies the current root backing and its persistence. Tab5 first tries a valid littlefs/COW SD root and allocates no 8 MiB RAM disk when it succeeds;
+  the RAM disk remains a rescue fallback for absent or unusable media. With a non-root card, `sd mount` mounts FAT12/16/32 read/write at `/sd`, with UTF-8 VFAT long names.
+  Native SDMMC slot 0 (4-bit, 20 MHz, up to 64 KiB per DMA command) is the default and shares the controller safely with Wi-Fi on slot 1; `M5OS_SD_SPI=1` retains the slower diagnostic SPI transport. Sequential `/assets` reads additionally use bounded 64 KiB read-ahead plus a 1 MiB small-sector cache in PSRAM; allocation failure falls back to direct I/O without preventing the root mount. `mem trim` releases this optional cache, and the next asset read makes one bounded attempt to recreate it. exFAT and FAT formatting are not supported. The separate flash-backed WASM app store survives reboot.
+* `play "/sd/path/track.mp3"` opens the Tab5 streaming MP3 player; the filer also opens MP3 files.
+  Space pauses, +/- adjusts volume, Q/Esc stops. See [player notes](tools/player/README.md) for limits
+  and the remaining physical-device validation.
+
+All bit-banged I2C transfers share a task mutex, including read-modify-write operations. Board startup
+before the scheduler remains supported. Fixed-system-bus helpers keep touch/camera/power access separate
+from the bus selection used by the Tab5 Keyboard accessory. These APIs are not callable from an ISR.
+
+Host regressions: `sh tools/hardware/host_test.sh` and `sh tools/touch/host_test.sh`.
+The hardware tests cover INA226 identity, signed scaling, estimation bounds, unavailable/error paths,
+and existing I2C API locking/routing on Tab5, CoreS3 and Cardputer. Battery-free Tab5 measurements and
+coexistence with touch/keyboard polling have been checked; charging/discharging with an installed pack,
+external-DC source detection and physical regression on the other boards remain unqualified.
 
 ## Known Limitations / TODO
 
 * Single-core execution (`CPU1` is not started).
 * Task stacks default to 4 KB (`kmalloc_internal`) without hardware stack guard pages (heavy tasks like `shell`, `wifid`, and `app` use 6–8 KB stacks via `task_create_stack`).
 * Do not use floating-point / PIE coprocessors across tasks on ESP32-S3 (lazy FPU context saving is not implemented).
-* Strict priority scheduling without mutex priority inheritance.
+* Strict priority scheduling with mutex priority inheritance; inheritance does not resolve deadlock cycles.
 * Japanese input: `edit` still moves its cursor per byte (it inserts UTF-8 but cannot step over a multi-byte character); choices are not saved across reboots; only the Tab5 builds the IME.
-* Touch input on Tab5 (GT911 / ST7123) and RISC-V M5EX SDK build toolchain are planned for future updates.
+* Tab5 console touch auto-detects GT911 (`0x14`, ILI9881C units) or ST712x (`0x55`, ST7121/ST7123 units).
+  The ST712x protocol uses big-endian coordinates and per-slot valid bits; the GT911 ready/acknowledge
+  protocol is retained. Both use the system I2C bus even with a Tab5 Keyboard on Ext.Port1.
+  Use `osk on` / `osk off`, `osk debug`, and `osk map 0`–`3` to inspect and calibrate the console keyboard.
+  The default portrait-to-landscape mapping is `(1279 - raw_y, raw_x)`; landscape-configured controllers use map 0.
+  This does not add touch navigation to full-screen apps or implement the unsupported ST7123 LCD initialization.
+  Driver regression tests (mock I2C, GT911 and ST712x): `sh tools/touch/host_test.sh`.
+* RISC-V M5EX SDK build toolchain is planned for a future update.
+
+## Kernel foundation diagnostics
+
+`ps` reports painted-stack usage estimates and guards. `crash` shows a validated
+previous MeOS panic when internal noinit RAM survived the reset; IDF exception
+register dumps remain separate. Boot logs include a firmware commit ID and reset
+reason. Panic output bypasses the normal console mutex and does not scan stacks.
+
+`i2c` shows transaction success/NACK/timeout/invalid counters without probing.
+Legacy boolean APIs remain supported; extended system-bus APIs return per-call
+status. SCL stretching timeouts fail the transfer, including STOP failures.
+
+`date` shows UTC derived from a manual or RTC anchor plus monotonic elapsed time.
+`date set YYYY-MM-DDTHH:MM:SSZ` changes the runtime anchor only; `date sync` reads
+the RTC. `rtc` reads the RX8130CE and `rtc set YYYY-MM-DDTHH:MM:SSZ` explicitly
+writes it. No automatic RTC writes, charging configuration, timezone or NTP sync
+is added. Invalid BCD/calendar/weekday, stopped/test mode and VLF are rejected.
+Partial calendar writes leave the RTC stopped/tainted until a successful set.
+Supported calendar range: 2000 through 2099.
+
+App cleanup is ordered and sealed during boot. DMA/workers stop before handles
+and memory are reclaimed. Failed hooks quarantine owner memory for retry.
+Mutex donation follows wait chains and is withdrawn on handoff/termination;
+normal task exit also releases held locks.
+
+`health` shows explicit progress leases. The app cleanup service renews a lease;
+sleeping tasks do not need to subscribe. A supervisor feeds the hardware watchdog
+only when scheduled task context and scheduler ticks progress. Hardware arming
+is OFF by default. An experimental Tab5 build can opt in with
+`M5OS_WATCHDOG=1 sh tools/build.sh tab5 reconfigure build`; it reserves MWDT0,
+uses a 2-second hardware reset timeout, and panics on expired progress leases.
+Do not enable this on an unqualified device expecting proven recovery behavior.
+The P4-specific implementation is not reused for S3; opting in on another board
+is a configure error. A total scheduler/interrupt stall may reset without a new
+MeOS panic record.
+
+Run `sh tools/host_checks.sh` for host regressions. GitHub Actions runs GCC/Clang
+host checks and ESP-IDF 5.4.4 Tab5 builds with watchdog disabled/enabled, retaining
+firmware, ELF, map and configuration artifacts. CI success is not physical
+RTC, reset retention, audio handoff or watchdog timeout qualification.
+
+### microSD write support
+
+`sd mount` now permits creation, overwrite/truncation, append, directory creation
+and deletion under `/sd`, including UTF-8 VFAT names. `sd mount ro` retains
+read-only operation. There is no format command and no automatic mount or retry.
+Close all files/apps and run `sd unmount` before removing the card.
+
+The SPI driver uses CMD24 with CRC16, checks the data response, waits for
+programming completion and verifies CMD13 status. File writes synchronize both
+data and metadata before reporting success. Media I/O errors latch the mount
+unavailable until explicit unmount/remount. FAT is not journaled; interrupted
+writes can damage files or the filesystem. Host failure tests do not qualify
+physical write reliability or power-loss recovery.
+
+`sh tools/sd/host_test.sh` covers read-only regression, CMD24/status/timeouts,
+FAT12/16/32 create/append/truncate/delete/remount, permissions, open-file locking,
+disk full, and failed/torn writes. Fixtures are generated memory-backed images.
+
+### microSD throughput benchmark
+
+`sd bench` measures 128 x 1KiB VFAT files and an 8MiB sequential file.
+`sd bench FILES SMALL_BYTES LARGE_MiB` selects a workload. Data is read back and
+verified, then test files are removed. Only a newly created MEOSBENCH directory
+is used. See [tools/sd/BENCHMARK.md](tools/sd/BENCHMARK.md) for limits and device
+log capture. These are end-to-end, write-through VFS measurements on SPI.
+
+### Integrated applications
+
+Application details, validation and limitations:
+
+- [Shared numeric functions and calculator](tools/common/README.md)
+- [BASIC](user/basic/README.md)
+- [Scheme and writing editor](user/scheme/README.md)
+- [Application simulator](tools/sim/README.md)
+- [Doom](tools/doom/RELEASING.md)
+
+### Optional persistent data store (`/data`, Tab5)
+
+An opt-in hierarchical VFS store supports language sources without changing the default
+partition table or boot path. The optional `programs` data partition is exactly
+1 MiB at 0xC00000 (subtype 0x42), inside the unallocated tail after `ota_1`.
+The configuration preparer refuses overlaps and retains all existing entries:
+
+```sh
+python3 tools/basic/prepare_programs_config.py sdkconfig.tab5   build-programs/sdkconfig --table-out build-programs/partitions.csv
+```
+
+Build with that separate sdkconfig and build directory. Preparing or building
+this configuration does not flash it or initialize the store. Device deployment
+must happen in an agreed hardware time slot. With the matching table deployed,
+these commands are run from the MeOS shell:
+
+```text
+data status
+data init
+basic
+10 PRINT "persistent source"
+SAVE /data/bas/demo.bas
+BYE
+```
+
+`data init` first attempts a read-only mount; only an entirely erased region
+is initialized. It never erases unknown or damaged data. `data status` does
+not probe or write flash. On later boots, explicitly run `data mount`, then
+`basic /data/bas/demo.bas`. No automatic mount or migration is added. Existing
+`/home` persists when booted from the littlefs/COW SD root; otherwise it is RAM-backed.
+On VFAT cards, `/sd` supports explicit read/write or read-only mounts. LOAD/SAVE and both BASIC
+EDIT and shell `edit` use `/data` through the same VFS interfaces.
+
+The ROM adapter checks the live partition table, exact label/type/offset/size,
+flags, available chip size and overlaps before allowing access. It uses bounded,
+aligned internal buffers around ROM flash calls; it does not call FreeRTOS-backed
+ESP-IDF VFS/flash services. Host adapter tests verify that unrelated flash sentinel
+bytes remain unchanged.
+
+`/data/bas` and `/data/scm` are available immediately after mounting. Use
+`mkdir /data/lua` to add another language directory, or create nested directories.
+Scheme sources can be kept at `/data/scm/example.scm`; BASIC sources at
+`/data/bas/example.bas`. `programs` remains an alias for the `data` command, and
+the physical partition label remains `programs` so existing tables still match.
+
+The store has 16 slots shared by files and custom directories; the built-in
+`bas` and `scm` directories consume no slots. Relative paths are at most 87 bytes,
+with ASCII components up to 23 bytes, and files hold up to 20,352 data bytes
+(enough for BASIC's maximum source). Legacy flat files remain at `/data/NAME`
+without automatic relocation. Legacy records, including their larger payloads,
+remain readable; writing uses the new path-aware record format. Old firmware
+cannot read new records, so downgrading after writes is unsupported. An oversized
+legacy file must be reduced before updating without truncation. A legacy root
+file named `bas` or `scm` takes precedence over the corresponding default directory.
+A single writer is permitted at a time;
+readers see snapshots. Each file has two 20 KiB banks. A new version is written
+and read back in the inactive bank; its commit marker is written last. Successful
+close commits the buffered file. Rejected writes/seeks abort that handle on close,
+preserving the old file. Each update erases five inactive sectors; actual latency
+and flash endurance are not qualified yet. Deletion uses a committed tombstone.
+
+An interrupted save is recovered by remounting: either the prior full version or
+the new full version is selected using generation and CRC checks. An uncertain
+I/O result freezes further store access until files are closed and the store is
+unmounted/remounted; retrying writes against stale metadata is refused. A valid
+backup can recover one damaged bank. Committed corruption without a valid copy
+is an error; CRC is an integrity check, not authentication. Initial provisioning
+interruption can leave an uninitialized/corrupt format header requiring deliberate
+external recovery; no destructive repair or format command is supplied.
+
+Host tests cover small and maximum-size update fault points (including partial
+and completed-but-reported-failed writes), new-file creation, deletion, remount,
+quotas, generation bounds, CRC failure, permissions, writer conflicts, seek/append,
+BASIC SAVE/LOAD, configuration preparation and ROM-access boundaries. These are
+simulated flash/remount tests, not a physical reboot or power-cut qualification.
+The earlier flat-store version was built separately in normal and Doom-enabled
+configurations. Those results do not qualify this integrated revision.
+Real flash initialization, reboot persistence and hardware power-loss recovery
+remain unqualified. Neither board firmware nor its partition table was written
+as part of this implementation.
+
+
+### Tab5 persistent SD root
+
+`sdroot` reports whether the current root is the SD-backed M5FS view. A prepared
+littlefs card contains an immutable sparse base plus two alternating COW logs;
+boot uses the latest complete generation. The kernel/bootloader remain in Flash.
+There is no automatic format. `sdroot format EXPECTED_SECTORS` explicitly replaces
+the card filesystem, refuses an active SD root or mounted FAT filesystem, and
+requires the exact geometry reported by the device. Reboot afterward to use it.
+`sdroot save TEXT` is an atomic qualification probe at `/home/sd-boot.txt`.
+
+An active SD-root card cannot simultaneously be probed/mounted as VFAT. The outer
+littlefs namespace is not yet exposed for general asset import; normal VFAT cards
+retain the existing explicit `/sd` path. See the SD guide for trial device evidence,
+recovery backup, memory results and remaining physical power-cut qualification.
+
+
+BASIC SAVE, Scheme save-buffer, `write` and `edit` now commit a whole document
+in one transaction on the SD-backed M5FS root. On failure their buffers remain
+available for retry. Legacy filesystems keep their existing save semantics.
+See [atomic editor saves](docs/atomic-editor-save.md) for exact guarantees and tests.

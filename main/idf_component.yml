@@ -1,0 +1,5 @@
+dependencies:
+  espressif/freetype:
+    version: "^2.14.3"
+    rules:
+      - if: "target in [esp32p4]"

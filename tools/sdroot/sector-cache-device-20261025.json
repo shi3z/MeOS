@@ -1,0 +1,2185 @@
+{
+  "date": "2026-10-25",
+  "result": "PASS",
+  "qualification_scope": "settled CRC/network/graphics and post-IME lifecycle; initial unsettled lifecycle FAIL retained below",
+  "board": "M5Stack Tab5, ESP32-P4 revision 1.3",
+  "configuration": {
+    "sdkconfig_sha256": "2aaa7f1e3484ca57df92e655093a677af58e392832f033d2cf418421ed03654f",
+    "identical_before_and_after": true,
+    "cpu_mhz": 360,
+    "psram_mhz": 200,
+    "sd_transport": "native SDMMC, 4-bit at 20000 kHz",
+    "card_sectors": 30867456,
+    "persistent_sd_root": true,
+    "asset_cache_bytes": 1198080,
+    "asset_cache_bytes_unchanged": true,
+    "host_idle_sleep_prevented": "caffeinate -i for each device harness"
+  },
+  "firmware": {
+    "before": {
+      "commit": "1358fd6192d9b26de9e1bf7c086f984242d49017",
+      "boot_version": "1358fd6",
+      "app_bytes": 1773936,
+      "app_sha256": "488e88b9ac0e7b4cf53ffed5231bb44a8460af88460b9bc220f5988e07af466a"
+    },
+    "after": {
+      "commit": "0f2c4198dbf9d47fd1e4ec821daed61f3ef1707f",
+      "boot_version": "0f2c419",
+      "app_bytes": 1773952,
+      "app_sha256": "c22a112705ed242fd648ffad2438393560bd9f104e00f4b931a0b8e35043ff89"
+    },
+    "boot_slot": "ota_1 at 0x7f0000"
+  },
+  "summary": {
+    "crc_reads": 14,
+    "crc32": "74e3b084",
+    "crc_payload_bytes": 18689235,
+    "quiet_crc_before_seconds": [
+      38.846,
+      38.775
+    ],
+    "quiet_crc_after_seconds": [
+      11.463,
+      11.414
+    ],
+    "quiet_crc_before_mean_seconds": 38.8105,
+    "quiet_crc_after_mean_seconds": 11.4385,
+    "quiet_crc_speed_ratio": 3.393,
+    "quiet_single_sector_reads_before": 28886,
+    "quiet_single_sector_reads_after": 306,
+    "quiet_single_sector_read_reduction_percent": 98.9407,
+    "quiet_total_native_read_calls_before": 29180,
+    "quiet_total_native_read_calls_after": 600,
+    "quiet_128_sector_read_calls_before_and_after": 286,
+    "all_observed_icmp_replies_received": true,
+    "native_sd_errors": 0,
+    "wifi_transport_errors": 0,
+    "invalid_icmp_replies": 0,
+    "trimmed_psram_drop_kib": 16,
+    "write_performance_qualified": false,
+    "boot_speed_qualified": false,
+    "tail_latency_improvement_qualified": false
+  },
+  "trials": [
+    {
+      "label": "before-uniform",
+      "harness_commit": "0f2c4198dbf9d47fd1e4ec821daed61f3ef1707f",
+      "harness_arguments": [
+        "--reset",
+        "--settle-seconds",
+        "60",
+        "--pps",
+        "25",
+        "100",
+        "--reads",
+        "2",
+        "--diagnostics",
+        "--sd-diagnostics"
+      ],
+      "report_sha256": "b11345df6f267c7c44d8cb84de534f77eb3bbc9858917d17552ab931e6da3f9b",
+      "serial_log_sha256": "12a08b74a6b54e2d6948bd1d16f6b5eac242065e83736f79f454dd30f15c3c09",
+      "report": {
+        "result": "PASS",
+        "baseline": [
+          {
+            "seconds": 38.846,
+            "host_seconds": 38.879,
+            "wall_seconds": 38.879,
+            "device_ms": 38846,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 469.8,
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 28886,
+                  "blocks": 28886,
+                  "errors": 0,
+                  "wait_ms": 288,
+                  "prepare_ms": 871,
+                  "dma_ms": 25977,
+                  "finish_ms": 728,
+                  "hold_ms": 27625,
+                  "max_wait_us": 10403,
+                  "max_prepare_us": 857,
+                  "max_dma_us": 11166,
+                  "max_finish_us": 845,
+                  "max_hold_us": 11236,
+                  "max_polls": 1117
+                },
+                "8": {
+                  "calls": 8,
+                  "blocks": 62,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 8,
+                  "finish_ms": 1,
+                  "hold_ms": 9,
+                  "max_wait_us": 58,
+                  "max_prepare_us": 30,
+                  "max_dma_us": 1066,
+                  "max_finish_us": 194,
+                  "max_hold_us": 1248,
+                  "max_polls": 901
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 286,
+                  "blocks": 36608,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 10,
+                  "dma_ms": 2241,
+                  "finish_ms": 884,
+                  "hold_ms": 3137,
+                  "max_wait_us": 223,
+                  "max_prepare_us": 55,
+                  "max_dma_us": 16740,
+                  "max_finish_us": 3916,
+                  "max_hold_us": 19901,
+                  "max_polls": 6968
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            }
+          },
+          {
+            "seconds": 38.775,
+            "host_seconds": 38.842,
+            "wall_seconds": 38.842,
+            "device_ms": 38775,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 470.7,
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 28886,
+                  "blocks": 28886,
+                  "errors": 0,
+                  "wait_ms": 288,
+                  "prepare_ms": 883,
+                  "dma_ms": 25883,
+                  "finish_ms": 728,
+                  "hold_ms": 27543,
+                  "max_wait_us": 10495,
+                  "max_prepare_us": 855,
+                  "max_dma_us": 11836,
+                  "max_finish_us": 880,
+                  "max_hold_us": 11904,
+                  "max_polls": 1099
+                },
+                "8": {
+                  "calls": 8,
+                  "blocks": 62,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 18,
+                  "finish_ms": 1,
+                  "hold_ms": 19,
+                  "max_wait_us": 1,
+                  "max_prepare_us": 30,
+                  "max_dma_us": 11266,
+                  "max_finish_us": 202,
+                  "max_hold_us": 11504,
+                  "max_polls": 892
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 286,
+                  "blocks": 36608,
+                  "errors": 0,
+                  "wait_ms": 1,
+                  "prepare_ms": 10,
+                  "dma_ms": 2232,
+                  "finish_ms": 887,
+                  "hold_ms": 3131,
+                  "max_wait_us": 288,
+                  "max_prepare_us": 56,
+                  "max_dma_us": 8416,
+                  "max_finish_us": 3944,
+                  "max_hold_us": 12106,
+                  "max_polls": 6985
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            }
+          }
+        ],
+        "loads": [
+          {
+            "pps": 25,
+            "payload_bytes": 1400,
+            "burst_packets": 1,
+            "invalid_replies": 0,
+            "phases": {
+              "idle": {
+                "sent": 66,
+                "received": 66,
+                "loss_percent": 0,
+                "rtt_median_ms": 15.36,
+                "rtt_p95_ms": 24.929
+              },
+              "pak": {
+                "sent": 1707,
+                "received": 1707,
+                "loss_percent": 0,
+                "rtt_median_ms": 19.781,
+                "rtt_p95_ms": 32.568
+              },
+              "font": {
+                "sent": 73,
+                "received": 73,
+                "loss_percent": 0,
+                "rtt_median_ms": 23.063,
+                "rtt_p95_ms": 50.37
+              },
+              "write": {
+                "sent": 44,
+                "received": 44,
+                "loss_percent": 0,
+                "rtt_median_ms": 20.833,
+                "rtt_p95_ms": 41.314
+              }
+            },
+            "device_diagnostics": {
+              "rx_frames": 2879,
+              "rx_partials": 0,
+              "rx_bad": 0,
+              "rx_max_pending": 3952,
+              "rx_reg_errors": 0,
+              "rx_io_errors": 0,
+              "rx_plan_errors": 0,
+              "tx_no_credit": 0,
+              "tx_io_errors": 0,
+              "icmp_requests": 1890,
+              "icmp_replies": 1890,
+              "icmp_failures": 0,
+              "time_poll_gap_us": 160237,
+              "time_poll_duration_us": 144939,
+              "time_bus_wait_us": 75857
+            },
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 59657,
+                  "blocks": 59657,
+                  "errors": 0,
+                  "wait_ms": 2268,
+                  "prepare_ms": 1819,
+                  "dma_ms": 53192,
+                  "finish_ms": 1512,
+                  "hold_ms": 56623,
+                  "max_wait_us": 68033,
+                  "max_prepare_us": 875,
+                  "max_dma_us": 11245,
+                  "max_finish_us": 10062,
+                  "max_hold_us": 11320,
+                  "max_polls": 1091
+                },
+                "8": {
+                  "calls": 78,
+                  "blocks": 509,
+                  "errors": 0,
+                  "wait_ms": 34,
+                  "prepare_ms": 3,
+                  "dma_ms": 95,
+                  "finish_ms": 10,
+                  "hold_ms": 109,
+                  "max_wait_us": 9050,
+                  "max_prepare_us": 636,
+                  "max_dma_us": 10151,
+                  "max_finish_us": 720,
+                  "max_hold_us": 10381,
+                  "max_polls": 1224
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 681,
+                  "blocks": 87168,
+                  "errors": 0,
+                  "wait_ms": 27,
+                  "prepare_ms": 24,
+                  "dma_ms": 5306,
+                  "finish_ms": 2213,
+                  "hold_ms": 7547,
+                  "max_wait_us": 9190,
+                  "max_prepare_us": 295,
+                  "max_dma_us": 8320,
+                  "max_finish_us": 5427,
+                  "max_hold_us": 13762,
+                  "max_polls": 7024
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            },
+            "pak": [
+              {
+                "seconds": 39.056,
+                "host_seconds": 39.091,
+                "wall_seconds": 39.091,
+                "device_ms": 39056,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 467.3
+              },
+              {
+                "seconds": 38.915,
+                "host_seconds": 38.972,
+                "wall_seconds": 38.973,
+                "device_ms": 38915,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 469
+              }
+            ],
+            "font_receipt": "24 px: load=644 ms metric=147476 us first=450858 us warm=7384 us misses=52 hits=72 raster=440792 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+          },
+          {
+            "pps": 100,
+            "payload_bytes": 1400,
+            "burst_packets": 1,
+            "invalid_replies": 0,
+            "phases": {
+              "idle": {
+                "sent": 259,
+                "received": 259,
+                "loss_percent": 0,
+                "rtt_median_ms": 14.675,
+                "rtt_p95_ms": 24.298
+              },
+              "pak": {
+                "sent": 7128,
+                "received": 7128,
+                "loss_percent": 0,
+                "rtt_median_ms": 19.183,
+                "rtt_p95_ms": 34.48
+              },
+              "font": {
+                "sent": 303,
+                "received": 303,
+                "loss_percent": 0,
+                "rtt_median_ms": 20.014,
+                "rtt_p95_ms": 42.581
+              },
+              "write": {
+                "sent": 184,
+                "received": 184,
+                "loss_percent": 0,
+                "rtt_median_ms": 21.839,
+                "rtt_p95_ms": 126.864
+              }
+            },
+            "device_diagnostics": {
+              "rx_frames": 8857,
+              "rx_partials": 5,
+              "rx_bad": 0,
+              "rx_max_pending": 13034,
+              "rx_reg_errors": 0,
+              "rx_io_errors": 0,
+              "rx_plan_errors": 0,
+              "tx_no_credit": 0,
+              "tx_io_errors": 0,
+              "icmp_requests": 7874,
+              "icmp_replies": 7874,
+              "icmp_failures": 0,
+              "time_poll_gap_us": 330405,
+              "time_poll_duration_us": 313447,
+              "time_bus_wait_us": 60074
+            },
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 59657,
+                  "blocks": 59657,
+                  "errors": 0,
+                  "wait_ms": 6863,
+                  "prepare_ms": 1793,
+                  "dma_ms": 52984,
+                  "finish_ms": 1492,
+                  "hold_ms": 56367,
+                  "max_wait_us": 59264,
+                  "max_prepare_us": 908,
+                  "max_dma_us": 11118,
+                  "max_finish_us": 847,
+                  "max_hold_us": 11184,
+                  "max_polls": 1103
+                },
+                "8": {
+                  "calls": 78,
+                  "blocks": 509,
+                  "errors": 0,
+                  "wait_ms": 55,
+                  "prepare_ms": 2,
+                  "dma_ms": 98,
+                  "finish_ms": 10,
+                  "hold_ms": 111,
+                  "max_wait_us": 9588,
+                  "max_prepare_us": 57,
+                  "max_dma_us": 11622,
+                  "max_finish_us": 205,
+                  "max_hold_us": 11864,
+                  "max_polls": 1222
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 681,
+                  "blocks": 87168,
+                  "errors": 0,
+                  "wait_ms": 86,
+                  "prepare_ms": 25,
+                  "dma_ms": 5310,
+                  "finish_ms": 2214,
+                  "hold_ms": 7552,
+                  "max_wait_us": 9627,
+                  "max_prepare_us": 824,
+                  "max_dma_us": 8434,
+                  "max_finish_us": 13672,
+                  "max_hold_us": 21756,
+                  "max_polls": 7005
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            },
+            "pak": [
+              {
+                "seconds": 40.895,
+                "host_seconds": 41.002,
+                "wall_seconds": 41.002,
+                "device_ms": 40895,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 446.3
+              },
+              {
+                "seconds": 40.973,
+                "host_seconds": 41.065,
+                "wall_seconds": 41.066,
+                "device_ms": 40973,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 445.4
+              }
+            ],
+            "font_receipt": "24 px: load=684 ms metric=159307 us first=479152 us warm=8887 us misses=52 hits=72 raster=464914 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+          }
+        ],
+        "settle_seconds": 60,
+        "firmware_boot_version": "1358fd6",
+        "host_clock": {
+          "monotonic_seconds": 343.398,
+          "wall_seconds": 343.403
+        },
+        "last_read_timing": {
+          "seconds": 40.973,
+          "host_seconds": 41.065,
+          "wall_seconds": 41.066,
+          "device_ms": 40973,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 445.4
+        },
+        "trimmed_psram_before_kib": 23135,
+        "trimmed_psram_after_kib": 23119
+      }
+    },
+    {
+      "label": "after-uniform",
+      "harness_commit": "0f2c4198dbf9d47fd1e4ec821daed61f3ef1707f",
+      "harness_arguments": [
+        "--reset",
+        "--settle-seconds",
+        "60",
+        "--pps",
+        "25",
+        "100",
+        "--reads",
+        "2",
+        "--diagnostics",
+        "--sd-diagnostics"
+      ],
+      "report_sha256": "95f6626c49301ac49e74741c4bf882fdd057ca27c140baa39a91ac59d9ad0b0a",
+      "serial_log_sha256": "ea7af6fb9cfbd1a8fa7adef9f00c76a39b422679fe54be7f677937b0cf085f85",
+      "report": {
+        "result": "PASS",
+        "baseline": [
+          {
+            "seconds": 11.463,
+            "host_seconds": 11.514,
+            "wall_seconds": 11.514,
+            "device_ms": 11463,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 1592.2,
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 306,
+                  "blocks": 306,
+                  "errors": 0,
+                  "wait_ms": 33,
+                  "prepare_ms": 11,
+                  "dma_ms": 219,
+                  "finish_ms": 10,
+                  "hold_ms": 242,
+                  "max_wait_us": 9514,
+                  "max_prepare_us": 58,
+                  "max_dma_us": 1269,
+                  "max_finish_us": 567,
+                  "max_hold_us": 1361,
+                  "max_polls": 1067
+                },
+                "8": {
+                  "calls": 8,
+                  "blocks": 62,
+                  "errors": 0,
+                  "wait_ms": 4,
+                  "prepare_ms": 0,
+                  "dma_ms": 8,
+                  "finish_ms": 1,
+                  "hold_ms": 10,
+                  "max_wait_us": 4091,
+                  "max_prepare_us": 30,
+                  "max_dma_us": 1333,
+                  "max_finish_us": 192,
+                  "max_hold_us": 1502,
+                  "max_polls": 899
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 286,
+                  "blocks": 36608,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 13,
+                  "dma_ms": 2232,
+                  "finish_ms": 882,
+                  "hold_ms": 3129,
+                  "max_wait_us": 6,
+                  "max_prepare_us": 59,
+                  "max_dma_us": 15131,
+                  "max_finish_us": 3895,
+                  "max_hold_us": 17939,
+                  "max_polls": 6638
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            }
+          },
+          {
+            "seconds": 11.414,
+            "host_seconds": 11.523,
+            "wall_seconds": 11.523,
+            "device_ms": 11414,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 1599,
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 306,
+                  "blocks": 306,
+                  "errors": 0,
+                  "wait_ms": 53,
+                  "prepare_ms": 11,
+                  "dma_ms": 229,
+                  "finish_ms": 10,
+                  "hold_ms": 252,
+                  "max_wait_us": 10410,
+                  "max_prepare_us": 576,
+                  "max_dma_us": 10422,
+                  "max_finish_us": 578,
+                  "max_hold_us": 10492,
+                  "max_polls": 1025
+                },
+                "8": {
+                  "calls": 8,
+                  "blocks": 62,
+                  "errors": 0,
+                  "wait_ms": 10,
+                  "prepare_ms": 0,
+                  "dma_ms": 8,
+                  "finish_ms": 11,
+                  "hold_ms": 20,
+                  "max_wait_us": 9927,
+                  "max_prepare_us": 50,
+                  "max_dma_us": 1055,
+                  "max_finish_us": 10704,
+                  "max_hold_us": 11775,
+                  "max_polls": 891
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 286,
+                  "blocks": 36608,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 13,
+                  "dma_ms": 2219,
+                  "finish_ms": 885,
+                  "hold_ms": 3119,
+                  "max_wait_us": 6,
+                  "max_prepare_us": 59,
+                  "max_dma_us": 8226,
+                  "max_finish_us": 3914,
+                  "max_hold_us": 11712,
+                  "max_polls": 6657
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            }
+          }
+        ],
+        "loads": [
+          {
+            "pps": 25,
+            "payload_bytes": 1400,
+            "burst_packets": 1,
+            "invalid_replies": 0,
+            "phases": {
+              "idle": {
+                "sent": 69,
+                "received": 69,
+                "loss_percent": 0,
+                "rtt_median_ms": 15.3,
+                "rtt_p95_ms": 24.166
+              },
+              "pak": {
+                "sent": 526,
+                "received": 526,
+                "loss_percent": 0,
+                "rtt_median_ms": 17.309,
+                "rtt_p95_ms": 32.442
+              },
+              "font": {
+                "sent": 56,
+                "received": 56,
+                "loss_percent": 0,
+                "rtt_median_ms": 20.154,
+                "rtt_p95_ms": 62.959
+              },
+              "write": {
+                "sent": 32,
+                "received": 32,
+                "loss_percent": 0,
+                "rtt_median_ms": 20.318,
+                "rtt_p95_ms": 167.571
+              }
+            },
+            "device_diagnostics": {
+              "rx_frames": 1029,
+              "rx_partials": 0,
+              "rx_bad": 0,
+              "rx_max_pending": 4362,
+              "rx_reg_errors": 0,
+              "rx_io_errors": 0,
+              "rx_plan_errors": 0,
+              "tx_no_credit": 0,
+              "tx_io_errors": 0,
+              "icmp_requests": 683,
+              "icmp_replies": 683,
+              "icmp_failures": 0,
+              "time_poll_gap_us": 210284,
+              "time_poll_duration_us": 192654,
+              "time_bus_wait_us": 88206
+            },
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 830,
+                  "blocks": 830,
+                  "errors": 0,
+                  "wait_ms": 198,
+                  "prepare_ms": 31,
+                  "dma_ms": 638,
+                  "finish_ms": 25,
+                  "hold_ms": 697,
+                  "max_wait_us": 10836,
+                  "max_prepare_us": 990,
+                  "max_dma_us": 10683,
+                  "max_finish_us": 566,
+                  "max_hold_us": 10755,
+                  "max_polls": 1045
+                },
+                "8": {
+                  "calls": 78,
+                  "blocks": 509,
+                  "errors": 0,
+                  "wait_ms": 48,
+                  "prepare_ms": 3,
+                  "dma_ms": 82,
+                  "finish_ms": 20,
+                  "hold_ms": 106,
+                  "max_wait_us": 10638,
+                  "max_prepare_us": 63,
+                  "max_dma_us": 2019,
+                  "max_finish_us": 10195,
+                  "max_hold_us": 11307,
+                  "max_polls": 1236
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 681,
+                  "blocks": 87168,
+                  "errors": 0,
+                  "wait_ms": 99,
+                  "prepare_ms": 36,
+                  "dma_ms": 5316,
+                  "finish_ms": 2239,
+                  "hold_ms": 7596,
+                  "max_wait_us": 65665,
+                  "max_prepare_us": 3277,
+                  "max_dma_us": 17866,
+                  "max_finish_us": 13435,
+                  "max_hold_us": 21575,
+                  "max_polls": 6995
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            },
+            "pak": [
+              {
+                "seconds": 11.309,
+                "host_seconds": 11.413,
+                "wall_seconds": 11.413,
+                "device_ms": 11309,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 1613.9
+              },
+              {
+                "seconds": 11.325,
+                "host_seconds": 11.433,
+                "wall_seconds": 11.433,
+                "device_ms": 11325,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 1611.6
+              }
+            ],
+            "font_receipt": "24 px: load=245 ms metric=63649 us first=318374 us warm=7436 us misses=52 hits=72 raster=309096 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+          },
+          {
+            "pps": 100,
+            "payload_bytes": 1400,
+            "burst_packets": 1,
+            "invalid_replies": 0,
+            "phases": {
+              "idle": {
+                "sent": 262,
+                "received": 262,
+                "loss_percent": 0,
+                "rtt_median_ms": 15.035,
+                "rtt_p95_ms": 24.603
+              },
+              "pak": {
+                "sent": 1893,
+                "received": 1893,
+                "loss_percent": 0,
+                "rtt_median_ms": 15.765,
+                "rtt_p95_ms": 32.704
+              },
+              "font": {
+                "sent": 221,
+                "received": 221,
+                "loss_percent": 0,
+                "rtt_median_ms": 23.197,
+                "rtt_p95_ms": 73.494
+              },
+              "write": {
+                "sent": 130,
+                "received": 130,
+                "loss_percent": 0,
+                "rtt_median_ms": 19.847,
+                "rtt_p95_ms": 122.277
+              }
+            },
+            "device_diagnostics": {
+              "rx_frames": 2883,
+              "rx_partials": 5,
+              "rx_bad": 0,
+              "rx_max_pending": 14795,
+              "rx_reg_errors": 0,
+              "rx_io_errors": 0,
+              "rx_plan_errors": 0,
+              "tx_no_credit": 0,
+              "tx_io_errors": 0,
+              "icmp_requests": 2506,
+              "icmp_replies": 2506,
+              "icmp_failures": 0,
+              "time_poll_gap_us": 209832,
+              "time_poll_duration_us": 199035,
+              "time_bus_wait_us": 68854
+            },
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 830,
+                  "blocks": 830,
+                  "errors": 0,
+                  "wait_ms": 289,
+                  "prepare_ms": 30,
+                  "dma_ms": 636,
+                  "finish_ms": 24,
+                  "hold_ms": 694,
+                  "max_wait_us": 10616,
+                  "max_prepare_us": 61,
+                  "max_dma_us": 11376,
+                  "max_finish_us": 47,
+                  "max_hold_us": 11446,
+                  "max_polls": 1051
+                },
+                "8": {
+                  "calls": 78,
+                  "blocks": 509,
+                  "errors": 0,
+                  "wait_ms": 123,
+                  "prepare_ms": 3,
+                  "dma_ms": 91,
+                  "finish_ms": 10,
+                  "hold_ms": 105,
+                  "max_wait_us": 67946,
+                  "max_prepare_us": 63,
+                  "max_dma_us": 10804,
+                  "max_finish_us": 205,
+                  "max_hold_us": 11042,
+                  "max_polls": 1248
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 681,
+                  "blocks": 87168,
+                  "errors": 0,
+                  "wait_ms": 39,
+                  "prepare_ms": 31,
+                  "dma_ms": 5310,
+                  "finish_ms": 2233,
+                  "hold_ms": 7579,
+                  "max_wait_us": 8487,
+                  "max_prepare_us": 66,
+                  "max_dma_us": 15185,
+                  "max_finish_us": 13884,
+                  "max_hold_us": 21673,
+                  "max_polls": 6997
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            },
+            "pak": [
+              {
+                "seconds": 10.916,
+                "host_seconds": 10.956,
+                "wall_seconds": 10.956,
+                "device_ms": 10916,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 1672
+              },
+              {
+                "seconds": 10.982,
+                "host_seconds": 11.063,
+                "wall_seconds": 11.063,
+                "device_ms": 10982,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 1661.9
+              }
+            ],
+            "font_receipt": "24 px: load=253 ms metric=65688 us first=339300 us warm=7069 us misses=52 hits=72 raster=329703 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+          }
+        ],
+        "settle_seconds": 60,
+        "firmware_boot_version": "0f2c419",
+        "host_clock": {
+          "monotonic_seconds": 165.952,
+          "wall_seconds": 165.955
+        },
+        "last_read_timing": {
+          "seconds": 10.982,
+          "host_seconds": 11.063,
+          "wall_seconds": 11.063,
+          "device_ms": 10982,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 1661.9
+        },
+        "trimmed_psram_before_kib": 23135,
+        "trimmed_psram_after_kib": 23119
+      }
+    },
+    {
+      "label": "after-burst",
+      "harness_commit": "0f2c4198dbf9d47fd1e4ec821daed61f3ef1707f",
+      "harness_arguments": [
+        "--reset",
+        "--settle-seconds",
+        "60",
+        "--pps",
+        "100",
+        "--burst-packets",
+        "12",
+        "--reads",
+        "1",
+        "--diagnostics",
+        "--sd-diagnostics"
+      ],
+      "report_sha256": "fb62a0573bad8df0f2739050a8519070ceb64c713f30db9c3cb917b192f7b007",
+      "serial_log_sha256": "9bbab3c7a04d7b269214e0c8623f3fc3343d955000040d6a1422362f8b7be16c",
+      "report": {
+        "result": "PASS",
+        "baseline": [
+          {
+            "seconds": 11.475,
+            "host_seconds": 11.514,
+            "wall_seconds": 11.515,
+            "device_ms": 11475,
+            "bytes": 18689235,
+            "crc32": "74e3b084",
+            "kib_per_second": 1590.5,
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 306,
+                  "blocks": 306,
+                  "errors": 0,
+                  "wait_ms": 27,
+                  "prepare_ms": 10,
+                  "dma_ms": 230,
+                  "finish_ms": 10,
+                  "hold_ms": 252,
+                  "max_wait_us": 10387,
+                  "max_prepare_us": 57,
+                  "max_dma_us": 10504,
+                  "max_finish_us": 576,
+                  "max_hold_us": 10568,
+                  "max_polls": 1033
+                },
+                "8": {
+                  "calls": 8,
+                  "blocks": 62,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 8,
+                  "finish_ms": 1,
+                  "hold_ms": 9,
+                  "max_wait_us": 1,
+                  "max_prepare_us": 30,
+                  "max_dma_us": 1281,
+                  "max_finish_us": 159,
+                  "max_hold_us": 1464,
+                  "max_polls": 901
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 286,
+                  "blocks": 36608,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 13,
+                  "dma_ms": 2233,
+                  "finish_ms": 878,
+                  "hold_ms": 3127,
+                  "max_wait_us": 5,
+                  "max_prepare_us": 59,
+                  "max_dma_us": 15267,
+                  "max_finish_us": 3893,
+                  "max_hold_us": 18384,
+                  "max_polls": 6616
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            }
+          }
+        ],
+        "loads": [
+          {
+            "pps": 100,
+            "payload_bytes": 1400,
+            "burst_packets": 12,
+            "invalid_replies": 0,
+            "phases": {
+              "idle": {
+                "sent": 300,
+                "received": 300,
+                "loss_percent": 0,
+                "rtt_median_ms": 22.014,
+                "rtt_p95_ms": 36.952
+              },
+              "pak": {
+                "sent": 1188,
+                "received": 1188,
+                "loss_percent": 0,
+                "rtt_median_ms": 24.613,
+                "rtt_p95_ms": 43.038
+              },
+              "font": {
+                "sent": 240,
+                "received": 240,
+                "loss_percent": 0,
+                "rtt_median_ms": 20.807,
+                "rtt_p95_ms": 91.262
+              },
+              "write": {
+                "sent": 144,
+                "received": 144,
+                "loss_percent": 0,
+                "rtt_median_ms": 25.92,
+                "rtt_p95_ms": 142.599
+              }
+            },
+            "device_diagnostics": {
+              "rx_frames": 2120,
+              "rx_partials": 266,
+              "rx_bad": 0,
+              "rx_max_pending": 17894,
+              "rx_reg_errors": 0,
+              "rx_io_errors": 0,
+              "rx_plan_errors": 0,
+              "tx_no_credit": 0,
+              "tx_io_errors": 0,
+              "icmp_requests": 1872,
+              "icmp_replies": 1872,
+              "icmp_failures": 0,
+              "time_poll_gap_us": 279944,
+              "time_poll_duration_us": 265184,
+              "time_bus_wait_us": 68896
+            },
+            "sd_io": {
+              "read": {
+                "1": {
+                  "calls": 524,
+                  "blocks": 524,
+                  "errors": 0,
+                  "wait_ms": 223,
+                  "prepare_ms": 19,
+                  "dma_ms": 425,
+                  "finish_ms": 15,
+                  "hold_ms": 462,
+                  "max_wait_us": 68598,
+                  "max_prepare_us": 62,
+                  "max_dma_us": 10628,
+                  "max_finish_us": 39,
+                  "max_hold_us": 10697,
+                  "max_polls": 1040
+                },
+                "8": {
+                  "calls": 70,
+                  "blocks": 447,
+                  "errors": 0,
+                  "wait_ms": 35,
+                  "prepare_ms": 2,
+                  "dma_ms": 92,
+                  "finish_ms": 19,
+                  "hold_ms": 115,
+                  "max_wait_us": 8761,
+                  "max_prepare_us": 69,
+                  "max_dma_us": 11103,
+                  "max_finish_us": 10458,
+                  "max_hold_us": 11546,
+                  "max_polls": 1240
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 395,
+                  "blocks": 50560,
+                  "errors": 0,
+                  "wait_ms": 11,
+                  "prepare_ms": 18,
+                  "dma_ms": 3080,
+                  "finish_ms": 1314,
+                  "hold_ms": 4414,
+                  "max_wait_us": 1030,
+                  "max_prepare_us": 96,
+                  "max_dma_us": 15856,
+                  "max_finish_us": 13984,
+                  "max_hold_us": 21811,
+                  "max_polls": 6946
+                }
+              },
+              "write": {
+                "1": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "8": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "32": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                },
+                "128": {
+                  "calls": 0,
+                  "blocks": 0,
+                  "errors": 0,
+                  "wait_ms": 0,
+                  "prepare_ms": 0,
+                  "dma_ms": 0,
+                  "finish_ms": 0,
+                  "hold_ms": 0,
+                  "max_wait_us": 0,
+                  "max_prepare_us": 0,
+                  "max_dma_us": 0,
+                  "max_finish_us": 0,
+                  "max_hold_us": 0,
+                  "max_polls": 0
+                }
+              }
+            },
+            "pak": [
+              {
+                "seconds": 12.204,
+                "host_seconds": 12.281,
+                "wall_seconds": 12.281,
+                "device_ms": 12204,
+                "bytes": 18689235,
+                "crc32": "74e3b084",
+                "kib_per_second": 1495.5
+              }
+            ],
+            "font_receipt": "24 px: load=259 ms metric=65049 us first=332242 us warm=15414 us misses=52 hits=72 raster=323057 us font=4667380 resident=0 cache=1082368 io=718836 reads=44 metrics=61/152"
+          }
+        ],
+        "settle_seconds": 60,
+        "firmware_boot_version": "0f2c419",
+        "host_clock": {
+          "monotonic_seconds": 113.235,
+          "wall_seconds": 113.237
+        },
+        "last_read_timing": {
+          "seconds": 12.204,
+          "host_seconds": 12.281,
+          "wall_seconds": 12.281,
+          "device_ms": 12204,
+          "bytes": 18689235,
+          "crc32": "74e3b084",
+          "kib_per_second": 1495.5
+        },
+        "trimmed_psram_before_kib": 23135,
+        "trimmed_psram_after_kib": 23119
+      }
+    }
+  ],
+  "lifecycle": {
+    "harness": "tools/sdroot/cache_lifecycle_device.py",
+    "harness_commit": "ac179f817f823de5bbfc07c6dc9994ce77672e56",
+    "arguments": [
+      "--boot-contention",
+      "--settle-seconds",
+      "60",
+      "--cycles",
+      "20"
+    ],
+    "serial_log_sha256": "6a1203b99fc3b03f34d8d2811342c7372ffa582cfa4a69f7a8edb592aa87b0c9",
+    "harness_output_sha256": "8e02dc2373d783f59d4c21d7886ee4168d29bd5e391de5e83dde06aad2c54045",
+    "report": {
+      "result": "PASS",
+      "boot_contention": true,
+      "settle_seconds": 60,
+      "ime_overlap_trims": 201,
+      "trimmed_baseline_kib": 23135,
+      "trimmed_final_kib": 23119,
+      "cycles": [
+        {
+          "cycle": 1,
+          "px": 20,
+          "load_ms": 233,
+          "first_us": 303038,
+          "warm_us": 5794,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 2,
+          "px": 24,
+          "load_ms": 235,
+          "first_us": 302729,
+          "warm_us": 7643,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 3,
+          "px": 28,
+          "load_ms": 238,
+          "first_us": 308146,
+          "warm_us": 9461,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 4,
+          "px": 32,
+          "load_ms": 238,
+          "first_us": 295045,
+          "warm_us": 10719,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 5,
+          "px": 20,
+          "load_ms": 235,
+          "first_us": 302447,
+          "warm_us": 5255,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 6,
+          "px": 24,
+          "load_ms": 234,
+          "first_us": 303766,
+          "warm_us": 8302,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 7,
+          "px": 28,
+          "load_ms": 244,
+          "first_us": 305830,
+          "warm_us": 9254,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 8,
+          "px": 32,
+          "load_ms": 236,
+          "first_us": 294564,
+          "warm_us": 9881,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 9,
+          "px": 20,
+          "load_ms": 237,
+          "first_us": 305479,
+          "warm_us": 5763,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 10,
+          "px": 24,
+          "load_ms": 229,
+          "first_us": 304390,
+          "warm_us": 7441,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 11,
+          "px": 28,
+          "load_ms": 241,
+          "first_us": 307928,
+          "warm_us": 9454,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 12,
+          "px": 32,
+          "load_ms": 240,
+          "first_us": 294429,
+          "warm_us": 10627,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 13,
+          "px": 20,
+          "load_ms": 239,
+          "first_us": 304117,
+          "warm_us": 6031,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 14,
+          "px": 24,
+          "load_ms": 239,
+          "first_us": 304968,
+          "warm_us": 7318,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 15,
+          "px": 28,
+          "load_ms": 237,
+          "first_us": 305613,
+          "warm_us": 8940,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 16,
+          "px": 32,
+          "load_ms": 231,
+          "first_us": 291279,
+          "warm_us": 10077,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 17,
+          "px": 20,
+          "load_ms": 236,
+          "first_us": 300240,
+          "warm_us": 5415,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 18,
+          "px": 24,
+          "load_ms": 238,
+          "first_us": 307294,
+          "warm_us": 7354,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 19,
+          "px": 28,
+          "load_ms": 235,
+          "first_us": 308685,
+          "warm_us": 9276,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        },
+        {
+          "cycle": 20,
+          "px": 32,
+          "load_ms": 235,
+          "first_us": 294505,
+          "warm_us": 10122,
+          "free_kib": 21949,
+          "cache_kib": 1170
+        }
+      ]
+    }
+  },
+  "initial_unsettled_lifecycle": {
+    "result": "FAIL",
+    "harness_commit": "0f2c4198dbf9d47fd1e4ec821daed61f3ef1707f",
+    "settle_seconds": 0,
+    "cycles_completed": 2,
+    "failure": "cache recreation or font memory cleanup failed on the third font run",
+    "trimmed_baseline_free_kib": 23201,
+    "third_font_free_kib": 21497,
+    "resident_asset_cache_kib": 1170,
+    "additional_drop_vs_previous_cycle_kib": 516,
+    "interpretation": "The memory sample coincided with Tailscale boot completion. Startup allocations were still changing; attribution to a cache leak was not established. The passing rerun preserved IME contention and the 32 KiB limit, then waited 60 seconds on the same serial connection before the memory baseline.",
+    "serial_log_sha256": "7ef45015ae065254b7d8f9649b8db76b9c21adb2d62c56e31a63935f47949768",
+    "harness_output_sha256": "16c9557209fde1a9b955b6df8a8ebbf9294eb85a46093813b6c5598ed5ac0ea8"
+  },
+  "hardware_handoff": {
+    "factory_boot_version_before_and_after": "db56a6c-dirty",
+    "factory_offset": "0x10000",
+    "factory_application_modified": false,
+    "bootloader_or_partition_table_modified": false,
+    "baseline_ota_1_digest_verified_before_activation": true,
+    "after_ota_1_write_hash_verified": true,
+    "modified_flash_regions": [
+      "otadata at 0x400000, 0x2000 bytes",
+      "measurement ota_1 at 0x7f0000, 0x3e0000-byte slot"
+    ],
+    "boot_selection_restored": "empty otadata; factory default",
+    "restored_factory_boot_and_active_native_sd_root_verified": true,
+    "preflight_serial_log_sha256": "663df6b115904a3f7c1ebb63f07266defc52e01561ba4d22cee7e516ccec8a2b",
+    "restoration_serial_log_sha256": "8e5d0bdf71818e3d0e42b9dc9034bf88cdf34061ba3f3254b5f2be4b645a65f9",
+    "installation_log_sha256": "f7534c09dddad60dc817a4a6c0b60833492a29647457ada36d29504ff64f8b0a",
+    "restore_command_log_sha256": "8d9efe248be14a88983410d60dc2110563ae05d9b74fbb8a6315d2e572884100",
+    "sd_reformatted": false,
+    "new_backup_taken": false,
+    "backup_omission_previously_authorized": true
+  },
+  "limitations": [
+    "Private serial transcripts may contain network identity; only hashes are published.",
+    "Quiet native counters cover one CRC. Loaded counters cover two CRCs plus font/Write for uniform trials, and one CRC plus font/Write for the burst trial.",
+    "Both firmware configurations and instrumentation are identical except the asset sector set calculation; later lifecycle harness changes do not change the firmware.",
+    "CRC timings include checksum CPU work, copying and voluntary scheduling; this is not maximum raw SD throughput.",
+    "Two quiet samples per paired firmware and one uniform setting per rate do not establish latency distributions. The faster run sends fewer packets; actual counts are retained.",
+    "Peak Wi-Fi wait did not improve. Write p95 increased at 25 pps and decreased slightly at 100 pps; shared-lock and scheduling tails remain separate work.",
+    "No native writes were observed in the measurement windows; write throughput, power loss, boot speed and other cards are not qualified."
+  ]
+}

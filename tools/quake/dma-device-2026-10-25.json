@@ -1,0 +1,119 @@
+{
+  "date": "2026-10-25",
+  "measured_source_base": "db56a6c",
+  "measured_source_state": "DMA/runtime/visual-test working changes before final PR rebase; firmware hash identifies tested image",
+  "firmware_sha256": "657dd214bd65572a6a028f60afb6286d3517307eacc780ea4579cc29fa69360c",
+  "firmware_bytes": 2008848,
+  "board": "M5Stack Tab5 ESP32-P4 v1.3 ST7121, 360 MHz, 128-byte L2 lines",
+  "benchmark": "timedemo demo1;toggleconsole",
+  "conditions": "CPU renderer, 960x720 viewport, shareware demo1, effect audio enabled, 600 KiB surface cache; DMA changes only final transfer",
+  "runs_in_order": [
+    {
+      "frames": 969,
+      "seconds": 30.3,
+      "fps": 32.0
+    },
+    {
+      "frames": 969,
+      "seconds": 30.3,
+      "fps": 32.0
+    },
+    {
+      "frames": 969,
+      "seconds": 38.8,
+      "fps": 25.0
+    },
+    {
+      "frames": 969,
+      "seconds": 38.8,
+      "fps": 25.0
+    },
+    {
+      "frames": 969,
+      "seconds": 30.3,
+      "fps": 32.0
+    },
+    {
+      "frames": 969,
+      "seconds": 30.3,
+      "fps": 32.0
+    }
+  ],
+  "reported_fps_gain_percent": 28.0,
+  "constant_30_fps_every_scene": false,
+  "synthetic_transfer_bench": [
+    {
+      "backend": "cpu",
+      "case": "static",
+      "wall_us": 732,
+      "scheduled_us": 400,
+      "fnv32": "6b1c94c5"
+    },
+    {
+      "backend": "cpu",
+      "case": "full",
+      "wall_us": 37055,
+      "scheduled_us": 18356,
+      "fnv32": "004b2fc5"
+    },
+    {
+      "backend": "cpu",
+      "case": "odd-band",
+      "wall_us": 15144,
+      "scheduled_us": 14616,
+      "fnv32": "99309205"
+    },
+    {
+      "backend": "dma",
+      "case": "static",
+      "wall_us": 418,
+      "scheduled_us": 373,
+      "fnv32": "6b1c94c5"
+    },
+    {
+      "backend": "dma",
+      "case": "full",
+      "wall_us": 8252,
+      "scheduled_us": 7509,
+      "fnv32": "004b2fc5"
+    },
+    {
+      "backend": "dma",
+      "case": "odd-band",
+      "wall_us": 8669,
+      "scheduled_us": 6880,
+      "fnv32": "99309205"
+    }
+  ],
+  "synthetic_bench_note": "Initial boot-time wall figures overlap background startup; scheduled-time values and game timedemos are reported separately. Old noisy synthetic pattern was not a visual acceptance test.",
+  "visual_qualification": {
+    "static_native_pixel_mismatches": 0,
+    "static_expected_viewport_fnv32": "986b6f69",
+    "cpu_matches_dma": true,
+    "moving_native_pixel_mismatches": 0,
+    "user_confirmed_static_pattern": true,
+    "user_confirmed_moving_pattern": true,
+    "user_confirmed_game_display_and_speed": true,
+    "initial_user_corruption_report": "Occurred during noisy synthetic benchmark; subsequently replaced by explicit static/moving comparison. Do not classify the old report solely from its checksum."
+  },
+  "normal_exit_audio": [
+    {
+      "dma_blocks": 8728,
+      "errors": 0
+    },
+    {
+      "dma_blocks": 8964,
+      "errors": 0
+    }
+  ],
+  "max_sampled_stack_bytes": 18432,
+  "stack_bytes": 49152,
+  "all_stack_guards_ok": true,
+  "scheduler_observation": "Other stable live tasks about 1 ms/frame in sampled DMA replay intervals; keyboard is the largest listed background task. Scheduled time includes IRQ/kernel work, not exclusive CPU cycles.",
+  "hardware_lifecycle_limits": [
+    "Normal quit/relaunch and ownership reacquisition observed.",
+    "Forced kill during an active burst and injected DMA/cache faults are not physically qualified."
+  ],
+  "flash_note": "Connected device initially exposed a 1 MiB factory partition. Standard repository layout/bootloader and app were installed for the 2 MiB image; NVS and SD assets were retained, no SD format or PAK upload.",
+  "integration_note": "Final PR incorporates newer SD/Wi-Fi fixes and a completed-before-deadline-poll correction; tests/builds rerun after rebase. Timings above belong to the identified prototype image."
+}

@@ -1,0 +1,219 @@
+{
+  "date": "2026-10-26",
+  "baseline_source": "7c343f6c718365558fcd9565e631486d824d2c6a",
+  "selected_source": "333a3661fbdff0b37a2207f9425db4edaf7ab8ff",
+  "baseline_firmware_sha256": "e17a48feb7500c2694394eb71a1889d07115fe39250931f8cdfeeba76e158e83",
+  "selected_firmware_sha256": "891625f21b145b2f8788eeb42cf375b2659d3d1cef3caecf8b51133e88366101",
+  "low_resolution_source": "6e569497cf35802d2120ad235a14465c30ab7905",
+  "low_firmware_sha256": "83d963f614fe7d88d7deb4a139b4367460327a516be3844b190c7148ebe20aba",
+  "high_resolution": [
+    512,
+    300
+  ],
+  "low_resolution": [
+    320,
+    200
+  ],
+  "batch_columns": 2,
+  "source_payload_bytes": 5120,
+  "source_internal_allocation_request_bytes": 5247,
+  "descriptor_bytes": 1024,
+  "persistent_lifetime": "Kernel-owned internal heap allocation, no application owner; retained across normal/forced app exit.",
+  "stack_capacity_bytes": 49152,
+  "timedemo_command": "timedemo demo1;toggleconsole",
+  "cpu_mhz": 360,
+  "l2_cache_kib": 128,
+  "surface_cache_kib": 600,
+  "audio_settings": "ES8388 24000Hz stereo -18dB",
+  "runs": {
+    "baseline": [
+      {
+        "frames": 969,
+        "seconds": 55.3,
+        "fps": 17.5
+      },
+      {
+        "frames": 969,
+        "seconds": 55.3,
+        "fps": 17.5
+      }
+    ],
+    "selected": [
+      {
+        "frames": 969,
+        "seconds": 52.7,
+        "fps": 18.4
+      },
+      {
+        "frames": 969,
+        "seconds": 52.7,
+        "fps": 18.4
+      }
+    ],
+    "low_resolution": [
+      {
+        "frames": 969,
+        "seconds": 29.7,
+        "fps": 32.6
+      },
+      {
+        "frames": 969,
+        "seconds": 29.7,
+        "fps": 32.6
+      }
+    ],
+    "excluded_four_columns": [
+      {
+        "frames": 969,
+        "seconds": 50.2,
+        "fps": 19.3
+      },
+      {
+        "frames": 969,
+        "seconds": 50.2,
+        "fps": 19.3
+      }
+    ]
+  },
+  "visual_comparisons": {
+    "baseline": [],
+    "selected": [
+      "quake visual: dma static mismatches 0 first -1,-1 checksum a4258a41",
+      "quake visual: cpu static mismatches 0 first -1,-1 checksum a4258a41",
+      "quake visual: cpu moving mismatches 0 first -1,-1 checksum 6adf7f5d",
+      "quake visual: cpu static mismatches 0 first -1,-1 checksum a4258a41",
+      "quake visual: dma static mismatches 0 first -1,-1 checksum a4258a41",
+      "quake visual: dma moving mismatches 0 first -1,-1 checksum 0b33ffb1",
+      "quake visual: dma static mismatches 0 first -1,-1 checksum a4258a41"
+    ],
+    "low_resolution": [
+      "quake visual: dma static mismatches 0 first -1,-1 checksum 986b6f69",
+      "quake visual: cpu static mismatches 0 first -1,-1 checksum 986b6f69",
+      "quake visual: cpu moving mismatches 0 first -1,-1 checksum 46a4b801",
+      "quake visual: cpu static mismatches 0 first -1,-1 checksum 986b6f69",
+      "quake visual: dma static mismatches 0 first -1,-1 checksum 986b6f69",
+      "quake visual: dma moving mismatches 0 first -1,-1 checksum 83097512",
+      "quake visual: dma moving mismatches 0 first -1,-1 checksum b39e3839",
+      "quake visual: dma static mismatches 0 first -1,-1 checksum 986b6f69"
+    ]
+  },
+  "normal_exit_audio": {
+    "baseline": [
+      "audio: stopped, 6133 blocks, 0 underruns/errors",
+      "quake audio: 3140096 output frames, 2647034 nonzero frames"
+    ],
+    "selected": [
+      "audio: stopped, 84746 blocks, 0 underruns/errors",
+      "quake audio: 43389952 output frames, 3786986 nonzero frames"
+    ],
+    "low_resolution": [
+      "audio: stopped, 3424 blocks, 0 underruns/errors",
+      "quake audio: 1753088 output frames, 1424713 nonzero frames"
+    ]
+  },
+  "transfer_microbenchmark": {
+    "baseline": [],
+    "selected": [
+      {
+        "mode": "cpu",
+        "pattern": "static",
+        "wall_us_per_frame": 2642,
+        "own_us_per_frame": 2557,
+        "checksum": "ea1451c5"
+      },
+      {
+        "mode": "cpu",
+        "pattern": "full",
+        "wall_us_per_frame": 27378,
+        "own_us_per_frame": 26383,
+        "checksum": "f8de61c5"
+      },
+      {
+        "mode": "cpu",
+        "pattern": "odd-band",
+        "wall_us_per_frame": 20576,
+        "own_us_per_frame": 19827,
+        "checksum": "8d4e65c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "static",
+        "wall_us_per_frame": 2622,
+        "own_us_per_frame": 2538,
+        "checksum": "ea1451c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "full",
+        "wall_us_per_frame": 17402,
+        "own_us_per_frame": 16777,
+        "checksum": "f8de61c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "odd-band",
+        "wall_us_per_frame": 14544,
+        "own_us_per_frame": 14050,
+        "checksum": "8d4e65c5"
+      }
+    ],
+    "low_resolution": [
+      {
+        "mode": "cpu",
+        "pattern": "static",
+        "wall_us_per_frame": 392,
+        "own_us_per_frame": 393,
+        "checksum": "6b1c94c5"
+      },
+      {
+        "mode": "cpu",
+        "pattern": "full",
+        "wall_us_per_frame": 19182,
+        "own_us_per_frame": 18602,
+        "checksum": "004b2fc5"
+      },
+      {
+        "mode": "cpu",
+        "pattern": "odd-band",
+        "wall_us_per_frame": 15376,
+        "own_us_per_frame": 14841,
+        "checksum": "99309205"
+      },
+      {
+        "mode": "dma",
+        "pattern": "static",
+        "wall_us_per_frame": 373,
+        "own_us_per_frame": 373,
+        "checksum": "6b1c94c5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "full",
+        "wall_us_per_frame": 7474,
+        "own_us_per_frame": 7241,
+        "checksum": "004b2fc5"
+      },
+      {
+        "mode": "dma",
+        "pattern": "odd-band",
+        "wall_us_per_frame": 6754,
+        "own_us_per_frame": 6548,
+        "checksum": "99309205"
+      }
+    ]
+  },
+  "notes": [
+    "Baseline includes the concurrently merged SD sector-cache fix; both high-resolution images use the same storage implementation.",
+    "Four-column prototype returned 19.3 FPS while audio initialization failed at stage 4. These silent results are excluded from speedup claims; the selected implementation reduces storage to two columns.",
+    "One selected timedemo attempt produced no result row; excluded. Two completed selected runs each have 969 frames. The cause of the unreported attempt has not been established.",
+    "A known post-diagnostic stack-allocation failure required early game start after reset. No stack reduction or allocator changes.",
+    "Only OTA application slot 0 written. Factory, other slot, partition table and SD data retained; no backup/format.",
+    "Low-resolution image predates the high-only two-column constant change; shared submission logic is identical.",
+    "Native memory comparisons are distinct from human display/audio acceptance; current candidate human acceptance pending.",
+    "Normal selected game quit -> transfer diagnostics -> selected game relaunch succeeded with ES8388 audio initialization. Forced-kill and injected hardware faults were not added to this qualification."
+  ],
+  "maximum_sampled_stack_bytes": 29696,
+  "all_sampled_guards_ok": true,
+  "selected_demo_attempts": 3,
+  "normal_relaunch_audio_initialized": true
+}

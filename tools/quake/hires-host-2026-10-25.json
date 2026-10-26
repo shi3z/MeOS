@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-25",
+  "source_base": "89385bb0f4d16b0acee7cb6659a4a0e8c622fcfc",
+  "qualification": "host and build only; hardware baseline pending; SD/Wi-Fi session retains device",
+  "default_resolution_unchanged": [
+    320,
+    200
+  ],
+  "high_resolution": [
+    512,
+    300
+  ],
+  "high_viewport": {
+    "x": 128,
+    "y": 60,
+    "width": 1024,
+    "height": 600
+  },
+  "baseline_budgets": {
+    "engine_arena_bytes": 12582912,
+    "stack_bytes": 49152,
+    "surface_cache_kib": 600
+  },
+  "high_host_steps": 1200,
+  "high_host_presentations": 1210,
+  "high_gameplay_hashed_frames": 1181,
+  "high_gameplay_fnv1a64": "bfc101a42954ef9a",
+  "high_frame20_sha256": "1d628a0abd6ee31e11620efa3c91d6358a6b62026cbc7cfd75eaf82c521b7ac9",
+  "low_frame20_sha256": "88b7f83db7da86e371452ed78ddefd1788701f5c356f6380cb30dd5296a6c06a",
+  "low_image_matches_previous": true,
+  "checks": [
+    "ASan/UBSan engine smoke at 512x300 through 1200 steps",
+    "320x200 engine image regression",
+    "independent 512x300 CPU RGB expansion and DMA column comparison",
+    "damage tracking above row 255 and unaligned buffers",
+    "input tests at both resolutions; control rails outside viewport",
+    "Quake native builds for both resolutions with matching engine/adapter compile flags",
+    "Doom host checks",
+    "clean-source simulator"
+  ],
+  "firmware": {
+    "build-quake": {
+      "bytes": 2014704,
+      "sha256": "ca104cb7180b9bafd7214c4f823691d5693405d03439fd684d9a6e787d98c37e"
+    },
+    "build-quake-512x300": {
+      "bytes": 2014864,
+      "sha256": "e077d3df9d7bfaf2be249a7c63a85076449cb28193db7b19d76f8fa0d0842b1a"
+    }
+  },
+  "device_fps": null,
+  "notes": [
+    "512x300 uses the existing scalar renderer and exact DMA architecture with twofold nearest-neighbor expansion; no new rendering optimizations.",
+    "High-resolution damage bounds are 16-bit; 8-bit bounds cannot represent rows 256..299.",
+    "The low-resolution blitter and DMA column expansion remain their original compile-time branches.",
+    "PPA smooth is rejected at high resolution because its stage/filter path remains 320x200-only.",
+    "No flash, new backup, SD write/format or hardware takeover performed for this baseline preparation."
+  ]
+}

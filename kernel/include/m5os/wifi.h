@@ -77,6 +77,17 @@ bool wifi_disconnect(void);
 /* Read current Wi-Fi status snapshot. */
 void wifi_get_status(wifi_status_t *out);
 
+/* Transport counters only; reset preserves pending RX fragments and protocol state. */
+typedef struct {
+    uint32_t rx_frames, rx_partials, rx_bad_headers, rx_max_pending;
+    uint32_t rx_reg_errors, rx_io_errors, rx_plan_errors;
+    uint32_t tx_no_credit, tx_io_errors;
+    uint32_t icmp_requests, icmp_replies, icmp_reply_failures;
+    uint32_t poll_max_gap_us, poll_max_duration_us, bus_max_wait_us;
+} wifi_diagnostics_t;
+void wifi_get_diagnostics(wifi_diagnostics_t *out);
+void wifi_reset_diagnostics(void);
+
 /* Saved credential helpers (/home/wifi.cfg + ESP32-C6 NVS flash fallback). */
 bool wifi_load_saved(char *ssid_out, char *pass_out, bool *auto_conn_out);
 bool wifi_save_config(const char *ssid, const char *password, bool auto_connect);

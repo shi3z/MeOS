@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "board": "tab5",
+  "architecture": "riscv32",
+  "source_revision": "@DOOM_SOURCE_REV@",
+  "wad_embedding_allowed": @DOOM_EMBED_ALLOWED@,
+  "wad_embedded": @DOOM_WAD_EMBEDDED@,
+  "wad_bytes": @DOOM_WAD_SIZE@
+}

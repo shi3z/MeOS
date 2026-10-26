@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-26",
+  "source_commit": "2dff44f3f1a5b402dca954045498e54dfeeda1e3",
+  "firmware_sha256": "774d2ba4a14e8a88af74ae83ed5a29f154c0708dcb95db7787e51519d662523d",
+  "resolution": [
+    512,
+    300
+  ],
+  "staging_columns": 16,
+  "tile_stack_bytes": 4800,
+  "stack_capacity_bytes": 49152,
+  "maximum_sampled_stack_bytes": 18368,
+  "runs": [
+    {
+      "mode": "dma",
+      "frames": 969,
+      "seconds": 60.6,
+      "fps": 16.0
+    },
+    {
+      "mode": "dma",
+      "frames": 969,
+      "seconds": 60.6,
+      "fps": 16.0
+    },
+    {
+      "mode": "cpu",
+      "frames": 969,
+      "seconds": 68.6,
+      "fps": 14.1
+    },
+    {
+      "mode": "cpu",
+      "frames": 969,
+      "seconds": 68.6,
+      "fps": 14.1
+    }
+  ],
+  "visual_comparisons": [
+    "quake visual: dma static mismatches 0 first -1,-1 checksum a4258a41",
+    "quake visual: cpu static mismatches 0 first -1,-1 checksum a4258a41",
+    "quake visual: cpu moving mismatches 0 first -1,-1 checksum 6adf7f5d",
+    "quake visual: cpu static mismatches 0 first -1,-1 checksum a4258a41",
+    "quake visual: dma static mismatches 0 first -1,-1 checksum a4258a41",
+    "quake visual: dma moving mismatches 0 first -1,-1 checksum a2026075",
+    "quake visual: dma moving mismatches 0 first -1,-1 checksum caa4597d",
+    "quake visual: dma static mismatches 0 first -1,-1 checksum a4258a41"
+  ],
+  "human_visual_acceptance": "User confirmed normal display during 16-column candidate testing",
+  "normal_exit_audio": [
+    "audio: stopped, 7021 blocks, 0 underruns/errors",
+    "audio: stopped, 7731 blocks, 0 underruns/errors"
+  ],
+  "all_sampled_guards_ok": true,
+  "notes": [
+    "Same baseline CPU/cache/renderer/audio settings; both repeats match.",
+    "64-column candidate measured separately."
+  ]
+}
