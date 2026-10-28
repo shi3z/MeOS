@@ -81,6 +81,7 @@ static const panel_info_t PANEL_ST7121 = {
 
 static volatile uint32_t s_frames;       /* refresh-done interrupts seen: proves the scan-out loop runs */
 static uint16_t *s_fb;                  /* physical layout: PANEL_H rows of PANEL_W pixels - what the panel scans out */
+static int s_clip_y = DISPLAY_HEIGHT;   /* drawing at logical y >= this is discarded (display_clip_bottom) */
 static uint16_t *s_draw;                /* where drawing goes: s_fb, or an off-screen buffer of the same layout (display_set_target) */
 static esp_lcd_panel_io_handle_t s_io;
 
@@ -120,7 +121,7 @@ static void fb_flush_real(int row0, int row1)
     esp_cache_msync((void *)a, b - a, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
 }
 
-static inline void put(int x, int y, uint16_t c) { s_draw[(size_t)(DISPLAY_WIDTH - 1 - x) * PANEL_W + y] = c; }
+static inline void put(int x, int y, uint16_t c) { if (y >= s_clip_y) return; s_draw[(size_t)(DISPLAY_WIDTH - 1 - x) * PANEL_W + y] = c; }
 
 /* Panel start-up over DSI, before the video stream runs.  The two controllers want different sequences. */
 static void panel_start_ili9881c(void)
@@ -231,7 +232,7 @@ void display_fill_rect(int x, int y, int w, int h, uint16_t color)
     if (x < 0) { w += x; x = 0; }
     if (y < 0) { h += y; y = 0; }
     if (x + w > DISPLAY_WIDTH)  w = DISPLAY_WIDTH  - x;
-    if (y + h > DISPLAY_HEIGHT) h = DISPLAY_HEIGHT - y;
+    if (y + h > s_clip_y) h = s_clip_y - y;
     if (w <= 0 || h <= 0 || !s_fb) return;
     for (int i = 0; i < w; i++)
         for (int j = 0; j < h; j++) put(x + i, y + j, color);
@@ -353,7 +354,7 @@ void display_draw_bitmap(int x, int y, int w, int h, const uint16_t *px)
     if (!s_fb || !px || w <= 0 || h <= 0) return;
     int x0 = x < 0 ? -x : 0, y0 = y < 0 ? -y : 0;
     int x1 = x + w > DISPLAY_WIDTH  ? DISPLAY_WIDTH  - x : w;
-    int y1 = y + h > DISPLAY_HEIGHT ? DISPLAY_HEIGHT - y : h;
+    int y1 = y + h > s_clip_y ? s_clip_y - y : h;
     if (x0 >= x1 || y0 >= y1) return;
 
     const int TILE = 32;
@@ -416,12 +417,17 @@ void display_fill_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint1
         else        yb = x2 == x1 ? y1 : y1 + (int)(((int64_t)(y2 - y1) * (x - x1)) / (x2 - x1));
         int lo = ya < yb ? ya : yb, hi = ya < yb ? yb : ya;
         if (lo < 0) lo = 0;
-        if (hi >= DISPLAY_HEIGHT) hi = DISPLAY_HEIGHT - 1;
+        if (hi >= s_clip_y) hi = s_clip_y - 1;
         uint16_t *col = &s_draw[(size_t)(DISPLAY_WIDTH - 1 - x) * PANEL_W];
         for (int y = lo; y <= hi; y++) col[y] = color;
     }
     fb_flush_rows(DISPLAY_WIDTH - 1 - xe, DISPLAY_WIDTH - 1 - xs);
 }
+
+/* Reserve the bottom of the screen for something that must stay on top (the on-screen keyboard): drawing at
+ * y >= `y` is discarded until the clip is lifted again with y = DISPLAY_HEIGHT.  The owner lifts it around its own
+ * drawing; because it runs at a higher priority and never sleeps while drawing, no other task can draw meanwhile. */
+void display_clip_bottom(int y) { s_clip_y = y < 0 ? 0 : y > DISPLAY_HEIGHT ? DISPLAY_HEIGHT : y; }
 
 void display_set_target(uint16_t *buf) { s_draw = buf ? buf : s_fb; }
 
@@ -454,7 +460,7 @@ void display_draw_bitmap_scaled(int x, int y, int w, int h, const uint16_t *px, 
     int dw = w * scale, dh = h * scale;
     int x0 = x < 0 ? -x : 0, y0 = y < 0 ? -y : 0;
     int x1 = x + dw > DISPLAY_WIDTH  ? DISPLAY_WIDTH  - x : dw;
-    int y1 = y + dh > DISPLAY_HEIGHT ? DISPLAY_HEIGHT - y : dh;
+    int y1 = y + dh > s_clip_y ? s_clip_y - y : dh;
     if (x0 >= x1 || y0 >= y1) return;
 
     for (int i = x0; i < x1; i++) {

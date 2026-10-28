@@ -33,3 +33,4 @@ void display_set_target(uint16_t *buf);     /* Tab5: draw into an off-screen buf
 void display_present(int x, int y, int w, int h);   /* Tab5: copy a rectangle of that buffer to the screen */
 void display_read_bitmap(int x, int y, int w, int h, uint16_t *rgb565_out);   /* Tab5: copy of the screen, to put back with display_draw_bitmap */
 void display_draw_bitmap_scaled(int x, int y, int w, int h, const uint16_t *rgb565, int scale);
+void display_clip_bottom(int y);          /* Tab5: discard drawing at y >= `y` (DISPLAY_HEIGHT = no clip); used by the on-screen keyboard */

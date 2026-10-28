@@ -292,6 +292,7 @@ bool edit_file(const char *path)
         int k = dq_getkey();
         s_status[0] = 0;
         switch (k) {
+        case DQK_REFRESH: s_full = true; break;                  /* redraw everything */
         case K_SAVE: save(); break;
         case K_QUIT: case DQK_ESC:
             if (!s_modified || dq_confirm("Discard unsaved changes?")) { ime_clear_anchor(); return s_saved_any; }

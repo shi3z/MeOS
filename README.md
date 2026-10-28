@@ -312,6 +312,7 @@ Every keyboard key goes through `drivers/ime` before it reaches the console, so 
   The ST712x protocol uses big-endian coordinates and per-slot valid bits; the GT911 ready/acknowledge
   protocol is retained. Both use the system I2C bus even with a Tab5 Keyboard on Ext.Port1.
   Use `osk on` / `osk off`, `osk debug`, and `osk map 0`–`3` to inspect and calibrate the console keyboard.
+  **Inside full-screen programs** (`files`, `edit`, `view`, ...) the keyboard is out of the way, but tapping the **right edge** of the screen calls it up at any time as an overlay. It saves the pixels it covers, the display's bottom clip (`display_clip_bottom`) keeps the program from drawing over the keys, and `Hide` puts the saved pixels back and sends the program a repaint request (`kconsole_request_refresh` → `DQK_REFRESH` from `dq_getkey`). `files`, `edit` and `view` repaint on it; other programs simply keep what was restored.
   The default portrait-to-landscape mapping is `(1279 - raw_y, raw_x)`; landscape-configured controllers use map 0.
   This does not add touch navigation to full-screen apps or implement the unsupported ST7123 LCD initialization.
   Driver regression tests (mock I2C, GT911 and ST712x): `sh tools/touch/host_test.sh`.

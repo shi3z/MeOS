@@ -160,6 +160,10 @@ void kconsole_inject(const char *s)
 static volatile uint32_t s_focus_task;
 void kconsole_set_focus(uint32_t task_id) { s_focus_task = task_id; }
 
+static volatile bool s_refresh;
+void kconsole_request_refresh(void) { s_refresh = true; }
+bool kconsole_take_refresh(void) { bool r = s_refresh; s_refresh = false; return r; }
+
 int kconsole_getc(void)
 {
     if (s_focus_task && task_current() && task_current()->id != s_focus_task) return -1;

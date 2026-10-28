@@ -9,8 +9,14 @@
  * twice locks it.  Backspace, Delete, Space and the arrows repeat while held.
  *
  * Hidden, the keyboard folds into a one-row bar at the bottom of the screen ("keyboard" at the right);
- * tapping it brings the keys back.  Full-screen programs that pause the console own the whole display:
- * the keyboard neither draws nor reacts while fbcon is paused and repaints when the console returns.
+ * tapping it brings the keys back.
+ *
+ * Full-screen programs (files, edit, ...) pause the console and own the whole display.  The keyboard is
+ * out of their way then, but a tap on the RIGHT EDGE of the screen calls it up at any time, as an
+ * overlay: the pixels it covers are saved first, and the display's bottom clip (display_clip_bottom)
+ * makes the program's own drawing skip that area while the keys are up, so the two never mix.  "Hide"
+ * puts the saved pixels back and asks the program to repaint (kconsole_request_refresh), because
+ * whatever it drew under the keyboard meanwhile was discarded.
  */
 #include "osk.h"
 #include "tab5touch.h"
@@ -21,6 +27,7 @@
 #include <m5os/kprintf.h>
 #include <m5os/task.h>
 #include <m5os/hal_time.h>
+#include <m5os/kmalloc.h>
 
 #define UNIT            40              /* key widths are multiples of this; 1280 = 32 units */
 #define KEY_H           52
@@ -31,6 +38,7 @@
 #define REPEAT_DELAY_MS 400u
 #define REPEAT_PERIOD_MS 60u
 #define SHIFT_LOCK_MS   500u
+#define EDGE_PX         64              /* a tap this close to the right edge calls the keyboard up */
 #define TASK_STACK      12288           /* the input method converts on this stack */
 
 #define COL_KBD_BG      RGB565(18, 18, 24)
@@ -81,6 +89,8 @@ static const key_t ROW4[] = {
 static const key_t *const ROWS_[KEY_ROWS] = { ROW0, ROW1, ROW2, ROW3, ROW4 };
 
 static bool s_avail, s_visible = true, s_debug;
+static bool s_ov;                                 /* the overlay keyboard is up (a full-screen program owns the screen) */
+static uint16_t *s_saved;                         /* the screen under the overlay */
 static int  s_top;                                /* y of the keyboard area (visible) or of the bar (hidden) */
 static int  s_shift, s_ctrl;                      /* 0 off, 1 one-shot, 2 locked (shift only) */
 static const key_t *s_down;                       /* the key under the finger, if any */
@@ -159,11 +169,34 @@ static void redraw_modifiers(void)
             if (k->usage == U_SHIFT || k->usage == U_CTRL) draw_key(ROWS_[r], r, k, false);
 }
 
+static void overlay_hide(void);
+
+static void overlay_show(void)
+{
+    if (s_ov) return;
+    if (!s_saved) s_saved = kmalloc_psram((size_t)DISPLAY_WIDTH * KBD_H * sizeof(uint16_t));
+    if (!s_saved) return;                                     /* no memory: better no keyboard than a damaged screen */
+    s_top = DISPLAY_HEIGHT - KBD_H;
+    display_read_bitmap(0, s_top, DISPLAY_WIDTH, KBD_H, s_saved);
+    s_ov = true;
+    s_shift = s_ctrl = 0;
+    draw_keyboard();
+}
+
+static void overlay_hide(void)
+{
+    if (!s_ov) return;
+    display_draw_bitmap(0, s_top, DISPLAY_WIDTH, KBD_H, s_saved);
+    s_ov = false;
+    s_down = NULL;
+    kconsole_request_refresh();                               /* what the program drew under the keys was discarded */
+}
+
 static void press(const key_t *k, int r)
 {
     static uint64_t last_shift_us;
     uint64_t now = hal_time_now_us();
-    if (k->usage == U_HIDE) { osk_show(false); return; }
+    if (k->usage == U_HIDE) { if (s_ov) overlay_hide(); else osk_show(false); return; }
     if (k->usage == U_SHIFT) {
         if (s_shift == 2) s_shift = 0;
         else if (s_shift == 1 && now - last_shift_us < SHIFT_LOCK_MS * 1000u) s_shift = 2;
@@ -181,36 +214,56 @@ static void press(const key_t *k, int r)
     if (was) { if (s_shift == 0) draw_keyboard(); else redraw_modifiers(); draw_key(ROWS_[r], r, k, true); }
 }
 
+static bool s_paused_before, s_down_before;
+static uint64_t s_pressed_at, s_last_repeat;
+
+/* One poll of the touch panel (every POLL_MS).  Runs with the display clip lifted, see osk_task. */
+static void osk_poll(void)
+{
+    bool paused = fbcon_is_paused();
+    if (paused && !s_paused_before) { s_paused_before = true; s_ov = false; s_down = NULL; s_down_before = false; }   /* a full-screen program starts: keys hidden */
+    if (!paused && s_paused_before) {
+        s_paused_before = false; s_ov = false; s_down = NULL;
+        task_sleep(60);                                               /* the console repaints itself... */
+        layout();                                                     /* ...then the keyboard area is drawn again */
+    }
+    bool up = paused ? s_ov : s_visible;                              /* are the keys on screen? */
+
+    int x = 0, y = 0;
+    bool down = tab5_touch_read(&x, &y);
+    uint64_t now = hal_time_now_us();
+    if (down && !s_down_before) {
+        if (s_debug) { uint32_t f, e; int rx, ry, mx, my; tab5_touch_stats(&f, &e, &rx, &ry, &mx, &my); kprintf("osk: touch raw %d,%d -> %d,%d (map %d)\n", rx, ry, x, y, tab5_touch_map()); }
+        if (!up) {
+            if (x >= DISPLAY_WIDTH - EDGE_PX) { if (paused) overlay_show(); else osk_show(true); }
+            else if (!paused && y >= s_top) osk_show(true);           /* the bar */
+        } else {
+            int r;
+            const key_t *k = hit(x, y, &r);
+            if (k) { s_down = k; s_down_row = r; s_down_x = x; s_down_y = y; press(k, r); s_pressed_at = s_last_repeat = now; }
+        }
+    } else if (!down && s_down_before && s_down) {
+        if (up && s_down->usage < U_SHIFT) draw_key(ROWS_[s_down_row], s_down_row, s_down, false);
+        s_down = NULL;
+    } else if (down && s_down && is_repeating(s_down->usage) &&
+               now - s_pressed_at > REPEAT_DELAY_MS * 1000u && now - s_last_repeat > REPEAT_PERIOD_MS * 1000u) {
+        emit(s_down); s_last_repeat = now;
+    }
+    s_down_before = down;
+}
+
 static void osk_task(void *arg)
 {
     (void)arg;
-    bool paused_before = fbcon_is_paused(), down_before = false;
-    uint64_t pressed_at = 0, last_repeat = 0;
+    s_paused_before = fbcon_is_paused();
     layout();
     for (;;) {
         task_sleep(POLL_MS);
-        bool paused = fbcon_is_paused();
-        if (paused) { paused_before = true; s_down = NULL; down_before = false; continue; }
-        if (paused_before) { paused_before = false; task_sleep(60); layout(); }     /* the console repainted: draw again */
-        int x = 0, y = 0;
-        bool down = tab5_touch_read(&x, &y);
-        uint64_t now = hal_time_now_us();
-        if (down && !down_before) {
-            if (s_debug) { uint32_t f, e; int rx, ry, mx, my; tab5_touch_stats(&f, &e, &rx, &ry, &mx, &my); kprintf("osk: touch raw %d,%d -> %d,%d (map %d)\n", rx, ry, x, y, tab5_touch_map()); }
-            if (!s_visible) { if (y >= s_top) osk_show(true); }
-            else {
-                int r;
-                const key_t *k = hit(x, y, &r);
-                if (k) { s_down = k; s_down_row = r; s_down_x = x; s_down_y = y; press(k, r); pressed_at = last_repeat = now; }
-            }
-        } else if (!down && down_before && s_down) {
-            if (s_visible && s_down->usage < U_SHIFT) draw_key(ROWS_[s_down_row], s_down_row, s_down, false);
-            s_down = NULL;
-        } else if (down && s_down && is_repeating(s_down->usage) &&
-                   now - pressed_at > REPEAT_DELAY_MS * 1000u && now - last_repeat > REPEAT_PERIOD_MS * 1000u) {
-            emit(s_down); last_repeat = now;
-        }
-        down_before = down;
+        /* This task outranks the programs it overlays and does not sleep while drawing, so it can lift the
+         * display clip for its own drawing and put it back before anyone else runs. */
+        display_clip_bottom(DISPLAY_HEIGHT);
+        osk_poll();
+        display_clip_bottom(s_ov ? s_top : DISPLAY_HEIGHT);
     }
 }
 

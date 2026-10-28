@@ -455,6 +455,7 @@ void filer_run(const char *start_dir)
         int rows = list_rows();
         s_status[0] = 0;
         switch (k) {
+        case DQK_REFRESH: s_full = true; break;
         case 'q': case 'Q': case DQK_ESC: return;
         case DQK_DOWN: case 'j': move_to(s_sel + 1); break;
         case DQK_UP:   case 'k': move_to(s_sel - 1); break;

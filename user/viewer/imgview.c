@@ -239,6 +239,7 @@ bool imgview_show(const char *start, const imgview_nav_t *nav)
 
             int k = dq_getkey();
             if (k == 'q' || k == 'Q' || k == DQK_ESC || k == DQK_ENTER) { kfree(px); return true; }
+            if (k == DQK_REFRESH) { changed_image = true; continue; }     /* reload and repaint everything */
             if (k == 'z' || k == 'Z' || k == ' ') { fit = !fit; continue; }
             if ((k == 'p' || k == 'P') && nav && nav->camera) { kfree(px); nav->camera(); return true; }
             int dir = (k == DQK_RIGHT || k == DQK_DOWN || k == 'l' || k == 'j' || k == 'n') ? 1

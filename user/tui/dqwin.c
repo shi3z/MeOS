@@ -111,7 +111,12 @@ static int decode_key(int c)
 
 int dq_getkey(void)
 {
-    return decode_key(raw_getc(0));
+    for (;;) {
+        if (kconsole_take_refresh()) return DQK_REFRESH;
+        int c = kconsole_getc();
+        if (c >= 0) return decode_key(c);
+        task_sleep(IDLE_MS);
+    }
 }
 
 int dq_pollkey(void)
@@ -198,5 +203,5 @@ void dq_message(const char *l1, const char *l2)
     dq_text(x + 2, y + 1, l1);
     if (l2) dq_text(x + 2, y + 2, l2);
     dq_text(x + w - 12, y + h - 2, "[any key]");
-    dq_getkey();
+    while (dq_getkey() == DQK_REFRESH) { }                    /* a repaint request is not a key press */
 }
