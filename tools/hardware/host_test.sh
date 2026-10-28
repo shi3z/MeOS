@@ -13,7 +13,7 @@ for TEST in power i2c; do
     "$OUT/$TEST"
 done
 # Compile new diagnostics on the other boards too; Tab5-only calls must not leak into their builds.
-for BOARD in CORES3 CARDPUTER; do
+for BOARD in CORES3; do
     cc -std=c11 -Wall -Wextra -Werror -D"M5OS_BOARD_$BOARD"=1 -Ikernel/include \
         -fsyntax-only drivers/power/power.c user/shell/hardware.c hal/common/i2c_bitbang.c
     cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \

@@ -324,7 +324,7 @@ from the bus selection used by the Tab5 Keyboard accessory. These APIs are not c
 
 Host regressions: `sh tools/hardware/host_test.sh` and `sh tools/touch/host_test.sh`.
 The hardware tests cover INA226 identity, signed scaling, estimation bounds, unavailable/error paths,
-and existing I2C API locking/routing on Tab5, CoreS3 and Cardputer. Battery-free Tab5 measurements and
+and existing I2C API locking/routing on Tab5 and CoreS3. Battery-free Tab5 measurements and
 coexistence with touch/keyboard polling have been checked; charging/discharging with an installed pack,
 external-DC source detection and physical regression on the other boards remain unqualified.
 

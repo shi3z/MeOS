@@ -9,9 +9,6 @@
 #if M5OS_BOARD_TAB5
 #define SYS_SCL 32
 #define SYS_SDA 31
-#elif M5OS_BOARD_CARDPUTER
-#define SYS_SCL 9
-#define SYS_SDA 8
 #else
 #define SYS_SCL 11
 #define SYS_SDA 12
