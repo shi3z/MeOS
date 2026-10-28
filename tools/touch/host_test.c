@@ -96,6 +96,37 @@ int main(void)
     /* Bad ST info falls back to GT911; failed reinit clears previously detected state. */
     st_info(0, 0, 0); assert(tab5_touch_init());
     reset(); assert(!tab5_touch_init()); assert(!tab5_touch_read(&x, &y));
+    /* Sparse multi-touch, capacity, legacy first-point and per-contact validation. */
+    tab5_touch_point_t pts[TAB5_TOUCH_MAX_POINTS];
+    reset(); st_info(720, 1280, 10); assert(tab5_touch_init());
+    point(2, 650, 1200); point(9, 680, 600);
+    assert(tab5_touch_read_points(pts, 10) == 2);
+    assert(pts[0].id == 2 && pts[0].x == 79 && pts[0].y == 650);
+    assert(pts[1].id == 9 && pts[1].x == 679 && pts[1].y == 680);
+    assert(tab5_touch_read_points(pts, 1) == 1 && pts[0].id == 2);
+    assert(tab5_touch_read(&x, &y) && x == 79 && y == 650);
+    st[0x14 + 2 * 7] = 0;
+    assert(tab5_touch_read_points(pts, 10) == 1 && pts[0].id == 9);
+    point(2, 720, 0); assert(tab5_touch_read_points(pts, 10) == 1 && pts[0].id == 9);
+    fail_reg = 0x14; assert(tab5_touch_read_points(pts, 10) == 0); fail_reg = 0;
+    assert(!tab5_touch_read_points(NULL, 10) && !tab5_touch_read_points(pts, 0));
+    /* GT911 packed eight-byte records, little endian, held snapshots and ACK. */
+    reset(); gt_info(1280, 720); assert(tab5_touch_init());
+    gt[0x814e] = 0x82;
+    gt[0x814f] = 3; gt[0x8150] = 70; gt[0x8152] = 0x8a; gt[0x8153] = 2;
+    gt[0x8157] = 7; gt[0x8158] = 0x9e; gt[0x8159] = 2;
+    gt[0x815a] = 0xa8; gt[0x815b] = 2;
+    before = writes;
+    assert(tab5_touch_read_points(pts, 10) == 2 && writes == before + 1);
+    assert(pts[0].id == 3 && pts[0].x == 70 && pts[0].y == 650);
+    assert(pts[1].id == 7 && pts[1].x == 670 && pts[1].y == 680);
+    assert(tab5_touch_read_points(pts, 10) == 2); /* no fresh frame */
+    gt[0x814e] = 0x81; memcpy(gt + 0x814f, gt + 0x8157, 8);
+    assert(tab5_touch_read_points(pts, 10) == 1 && pts[0].id == 7);
+    gt[0x814e] = 0x82; fail_reg = 0x814f;
+    assert(tab5_touch_read_points(pts, 10) == 0 && gt[0x814e] == 0); fail_reg = 0;
+    gt[0x814e] = 0x86; assert(!tab5_touch_read_points(pts, 10));
+    gt[0x814e] = 0x80; assert(!tab5_touch_read_points(pts, 10));
     puts("touch: GT911 / ST712x host regression tests PASS");
     return 0;
 }

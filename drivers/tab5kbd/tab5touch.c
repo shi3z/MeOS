@@ -9,7 +9,7 @@
  *   0x814E  status: bit 7 = a new frame is ready, bits 0-3 = number of fingers (0 when all lifted)
  *   0x814F  first point: track id; 0x8150 x lo, x hi, y lo, y hi, size lo, size hi, reserved (8 bytes per point)
  * After a frame has been read the host writes 0 to 0x814E, or the controller stops producing new ones.
- * Only the first finger is used.
+ * Up to five GT911 contacts or ten ST712x contacts are exposed; the legacy API uses the first.
  *
  * The 16-bit register helpers always use the system bus pins, whichever bus the 8-bit ones are
  * switched to (the Tab5 Keyboard accessory moves those to Ext.Port1), so the two keyboards and the
@@ -44,8 +44,8 @@ static uint8_t s_touch_slots;
 #define REG_POINT0      0x8150
 
 static bool     s_present;
-static bool     s_pressed;
-static int      s_x, s_y;                    /* logical */
+static tab5_touch_point_t s_points[TAB5_TOUCH_MAX_POINTS];
+static unsigned s_count;
 static int      s_raw_x, s_raw_y, s_max_x, s_max_y;
 static int      s_map = 1;
 static uint32_t s_frames, s_errors;
@@ -82,7 +82,8 @@ static void wake(void)
 
 bool tab5_touch_init(void)
 {
-    s_present = s_pressed = false;
+    s_present = false;
+    s_count = 0;
     s_kind = TOUCH_NONE;
     s_map = 1;
     s_frames = s_errors = 0;
@@ -125,55 +126,67 @@ bool tab5_touch_init(void)
     return true;
 }
 
-static bool read_st712x(int *x, int *y)
+static void add_point(int rx, int ry, uint8_t id)
+{
+    if (rx < 0 || ry < 0 || rx >= s_max_x || ry >= s_max_y) { s_errors++; return; }
+    if (!s_count) { s_raw_x = rx; s_raw_y = ry; }
+    tab5_touch_point_t *p = &s_points[s_count++];
+    map_point(rx, ry, &p->x, &p->y); p->id = id;
+}
+static void read_st712x(void)
 {
     uint8_t status = 0, points[ST_MAX_TOUCHES * ST_POINT_BYTES];
-    s_pressed = false; /* A missing/failed report must not leave a repeating key held. */
-    if (!hal_i2c_read_reg16(TAB5_ST7123_TOUCH_ADDR, ST_STATUS, &status, 1)) {
-        s_errors++; return false;
+    s_count = 0;
+    if (!hal_i2c_read_reg16(TAB5_ST7123_TOUCH_ADDR,ST_STATUS, &status, 1)) {
+        s_errors++; return;
     }
-    if (!(status & 0x08)) return false; /* with_coord: other reports contain no touch */
-    if (!hal_i2c_read_reg16(TAB5_ST7123_TOUCH_ADDR, ST_POINTS, points,
+    if (!(status & 0x08)) return;
+    if (!hal_i2c_read_reg16(TAB5_ST7123_TOUCH_ADDR,ST_POINTS, points,
                             (size_t)s_touch_slots * ST_POINT_BYTES)) {
-        s_errors++; return false;
+        s_errors++; return;
     }
     s_frames++;
-    /* Slots are sparse: slot zero need not be the active finger. Keep the first valid one. */
     for (unsigned i = 0; i < s_touch_slots; i++) {
         const uint8_t *p = points + i * ST_POINT_BYTES;
-        if (!(p[0] & 0x80)) continue;
-        int rx = ((p[0] & 0x3f) << 8) | p[1], ry = (p[2] << 8) | p[3];
-        if (rx >= s_max_x || ry >= s_max_y) { s_errors++; continue; }
-        s_raw_x = rx; s_raw_y = ry;
-        map_point(rx, ry, &s_x, &s_y);
-        s_pressed = true;
-        *x = s_x; *y = s_y;
-        break;
+        if (p[0] & 0x80) add_point(((p[0] & 0x3f) << 8) | p[1], (p[2] << 8) | p[3], i);
     }
-    return s_pressed;
 }
-
+unsigned tab5_touch_read_points(tab5_touch_point_t *points, unsigned capacity)
+{
+    if (!points || !capacity || !s_present) return 0;
+    if (s_kind == TOUCH_ST712X) read_st712x();
+    else {
+        uint8_t st = 0;
+        if (!hal_i2c_read_reg16(GT911_ADDR, REG_STATUS, &st, 1)) {
+            s_count = 0; s_errors++; return 0;
+        }
+        if (st & 0x80) {
+            unsigned n = st & 0x0f;
+            s_count = 0;
+            if (n > 5) s_errors++;
+            else if (n) {
+                /* Include the track ID byte before the old REG_POINT0 coordinate address. */
+                uint8_t p[5 * 8];
+                if (hal_i2c_read_reg16(GT911_ADDR, REG_POINT0 - 1, p, n * 8)) {
+                    for (unsigned i = 0; i < n; i++) {
+                        const uint8_t *q = p + i * 8;
+                        add_point(q[1] | (q[2] << 8), q[3] | (q[4] << 8), q[0]);
+                    }
+                } else s_errors++;
+            }
+            s_frames++;
+            if (!hal_i2c_write_reg16(GT911_ADDR, REG_STATUS, 0)) { s_count = 0; s_errors++; }
+        }
+    }
+    unsigned n = s_count < capacity ? s_count : capacity;
+    for (unsigned i = 0; i < n; i++) points[i] = s_points[i];
+    return n;
+}
 bool tab5_touch_read(int *x, int *y)
 {
-    if (!s_present) return false;
-    if (s_kind == TOUCH_ST712X) return read_st712x(x, y);
-    uint8_t st = 0;
-    if (!hal_i2c_read_reg16(GT911_ADDR, REG_STATUS, &st, 1)) { s_errors++; return false; }
-    if (st & 0x80) {
-        int n = st & 0x0F;
-        if (n > 0) {
-            uint8_t p[6];
-            if (hal_i2c_read_reg16(GT911_ADDR, REG_POINT0, p, sizeof p)) {
-                s_raw_x = p[0] | (p[1] << 8); s_raw_y = p[2] | (p[3] << 8);
-                map_point(s_raw_x, s_raw_y, &s_x, &s_y);
-                s_pressed = true;
-            } else s_errors++;
-        } else s_pressed = false;
-        s_frames++;
-        hal_i2c_write_reg16(GT911_ADDR, REG_STATUS, 0);
-    }
-    if (s_pressed) { *x = s_x; *y = s_y; }
-    return s_pressed;
+    tab5_touch_point_t point;
+    if (!tab5_touch_read_points(&point, 1)) return false;
+    *x = point.x; *y = point.y; return true;
 }
 
 void tab5_touch_set_map(int map) { s_map = map & 3; }
