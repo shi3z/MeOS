@@ -3274,6 +3274,13 @@ void ssh_app_run(void)
     dq_clear();
 
     for (;;) {
+        /* 0. The on-screen keyboard was closed: whatever was drawn under it meanwhile was discarded, and the
+         *    per-row dirty flags would say those rows are up to date.  Repaint everything. */
+        if (kconsole_take_refresh()) {
+            for (int t = 0; t < SSH_MAX_TABS; t++) tabs[t].all_dirty = true;
+            need_ui_redraw = true;
+        }
+
         /* 1. Render UI if needed */
         if (need_ui_redraw) {
             gui_render_bars(tabs, active_tab, show_manager, ctrl_b_prefix);

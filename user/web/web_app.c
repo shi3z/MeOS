@@ -3135,7 +3135,8 @@ void web_app_open_url(const char *initial_url)
         }
 
         int k = dq_getkey();
-        if (k == DQK_UP || k == 'k') {
+        if (k == DQK_REFRESH) { need_redraw = true; }                  /* the on-screen keyboard covered part of the page */
+        else if (k == DQK_UP || k == 'k') {
             if (doc->scroll_y > 0) { doc->scroll_y--; need_redraw = true; }
         } else if (k == DQK_DOWN || k == 'j') {
             if (doc->scroll_y + 1 < doc->line_count) { doc->scroll_y++; need_redraw = true; }
