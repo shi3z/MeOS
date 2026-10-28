@@ -1,6 +1,7 @@
 #include <m5os/kprintf.h>
 #include <m5os/hal_console.h>
 #include <m5os/mutex.h>
+#include <m5os/task.h>
 #include <m5os/arch.h>
 #include <stdarg.h>
 
@@ -61,9 +62,14 @@ static void vformat(out_fn out, void *ctx, const char *fmt, va_list ap)
             break;
         }
         case 'u':
-        case 'x': {
+        case 'x':
+        case 'X': {
             n = utoa_radix(va_arg(ap, uint32_t), *fmt == 'u' ? RADIX_DEC : RADIX_HEX, rev);
-            while (n) tmp[k++] = rev[--n];
+            while (n) {
+                char ch = rev[--n];
+                if (*fmt == 'X' && ch >= 'a' && ch <= 'f') ch = (char)(ch - 32);
+                tmp[k++] = ch;
+            }
             pad_out(out, ctx, tmp, k, width, left ? ' ' : pad, left);
             break;
         }
@@ -99,7 +105,7 @@ static void console_unlock(bool locked) { if (locked) mutex_unlock(&s_console_lo
 /* Everything printed is also kept in a small ring so a GUI terminal can show it,
  * and the console can be fed characters as if typed (see kprintf.h). */
 #define CONSOLE_LOG_SIZE  2048u
-#define CONSOLE_IN_SIZE   64u
+#define CONSOLE_IN_SIZE   256u
 
 static char     s_log[CONSOLE_LOG_SIZE];
 static uint32_t s_log_total;                              /* characters ever logged */
@@ -130,19 +136,33 @@ size_t kconsole_log_read(uint32_t *pos, char *buf, size_t max)
     return n;
 }
 
-void kconsole_inject(const char *s)
+size_t kconsole_inject_n(const char *s, size_t n)
 {
+    size_t done = 0;
     uint32_t irq = arch_irq_disable();
-    for (; *s; s++) {
-        if (((s_in_head + 1) % CONSOLE_IN_SIZE) == s_in_tail) break;           /* full: drop the rest */
-        s_in[s_in_head] = *s;
+    for (; done < n; done++) {
+        if (((s_in_head + 1) % CONSOLE_IN_SIZE) == s_in_tail) break;           /* full: the caller keeps the rest */
+        s_in[s_in_head] = s[done];
         s_in_head = (s_in_head + 1) % CONSOLE_IN_SIZE;
     }
     arch_irq_restore(irq);
+    return done;
 }
+
+void kconsole_inject(const char *s)
+{
+    size_t n = 0;
+    while (s[n]) n++;
+    kconsole_inject_n(s, n);                                                    /* full: drop the rest */
+}
+
+/* Input focus: a full-screen app that owns the display gets the keys; everyone else reads nothing meanwhile. */
+static volatile uint32_t s_focus_task;
+void kconsole_set_focus(uint32_t task_id) { s_focus_task = task_id; }
 
 int kconsole_getc(void)
 {
+    if (s_focus_task && task_current() && task_current()->id != s_focus_task) return -1;
     int c = -1;
     uint32_t irq = arch_irq_disable();
     if (s_in_tail != s_in_head) { c = (uint8_t)s_in[s_in_tail]; s_in_tail = (s_in_tail + 1) % CONSOLE_IN_SIZE; }
@@ -154,6 +174,7 @@ void kputs(const char *s)
 {
     bool l = console_lock();
     while (*s) con_out(*s++, NULL);
+    hal_console_flush();
     console_unlock(l);
 }
 
@@ -161,6 +182,7 @@ void kconsole_write(const char *buf, size_t n)
 {
     bool l = console_lock();
     for (size_t i = 0; i < n; i++) con_out(buf[i], NULL);
+    hal_console_flush();
     console_unlock(l);
 }
 
@@ -170,6 +192,7 @@ void kprintf(const char *fmt, ...)
     va_start(ap, fmt);
     bool l = console_lock();
     vformat(con_out, NULL, fmt, ap);
+    hal_console_flush();
     console_unlock(l);
     va_end(ap);
 }

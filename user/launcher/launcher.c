@@ -63,7 +63,7 @@ static void launch(const char *name)
 void launcher_main(void *arg)
 {
     (void)arg;
-    int wi = window_create("M5OS", GUI_WIN_HOME);
+    int wi = window_create("MeOS", GUI_WIN_HOME);
     if (wi < 0) return;
     window_t w = (window_t)wi;
     int down = -1;

@@ -13,6 +13,7 @@ static uint8_t s_internal_arena[KHEAP_INTERNAL_SIZE] __attribute__((aligned(16))
 static heap_t  s_internal;
 static heap_t  s_psram;
 static bool    s_psram_present;
+static uint32_t current_owner(void);
 
 void kmem_init(void)
 {
@@ -30,6 +31,11 @@ void *kmalloc_internal(size_t size) { return heap_alloc(&s_internal, size); }
 /* Kernel allocation on behalf of an app (e.g. its loaded code image): tagged like umalloc, so
  * it is reclaimed with the app, but explicit about the owner because the task may not exist yet. */
 void *kmalloc_internal_owned(size_t size, uint32_t owner) { return heap_alloc_owned(&s_internal, size, owner); }
+void *kmalloc_psram_owned(size_t size, uint32_t owner) { return s_psram_present ? heap_alloc_owned(&s_psram, size, owner) : NULL; }
+void *umalloc_psram(size_t size)
+{
+    return s_psram_present ? heap_alloc_owned(&s_psram, size, current_owner()) : NULL;
+}
 void *kmalloc_psram(size_t size)    { return s_psram_present ? heap_alloc(&s_psram, size) : NULL; }
 /* Internal DRAM is DMA-capable on the S3 and our blocks are 16-byte aligned,
  * which also satisfies the cache-line rules a future PSRAM-DMA path would add. */

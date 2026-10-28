@@ -2,6 +2,7 @@
 #include <m5os/display.h>
 #include <m5os/kprintf.h>
 #include <m5os/task.h>
+#include <m5os/ime.h>
 
 #define GLYPH     8
 #define SCALE     M5OS_FBCON_SCALE
@@ -40,8 +41,14 @@ static void put_text(int cx, int cy, const char *s, uint16_t fg, uint16_t bg)
 {
     if (cy < 0 || cy >= dq_rows() || cx < 0) return;
     char line[160];
-    int n = 0;
-    while (s[n] && cx + n < dq_cols() && n < (int)sizeof line - 1) { line[n] = s[n]; n++; }
+    int n = 0, cells = 0;                                            /* UTF-8: one cell per character, whatever its bytes */
+    while (s[n] && cx + cells < dq_cols() && n < (int)sizeof line - 4) {
+        int k = 1;
+        unsigned char c = (unsigned char)s[n];
+        if (c >= 0xF0) k = 4; else if (c >= 0xE0) k = 3; else if (c >= 0xC0) k = 2;
+        for (int i = 0; i < k; i++) { if (!s[n]) break; line[n] = s[n]; n++; }
+        cells++;
+    }
     line[n] = 0;
     if (n) display_draw_text(cx * CELL, cy * CELL, line, fg, bg, SCALE);
 }
@@ -73,9 +80,9 @@ static int raw_getc(uint32_t wait_ms)
     }
 }
 
-int dq_getkey(void)
+static int decode_key(int c)
 {
-    int c = raw_getc(0);
+    if (c < 0) return DQK_NONE;
     if (c == '\n') return DQK_ENTER;
     if (c == 0x08) return DQK_BACKSPACE;
     if (c != 0x1B) return c;
@@ -89,6 +96,10 @@ int dq_getkey(void)
     case 'D': return DQK_LEFT;
     case 'H': return DQK_HOME;
     case 'F': return DQK_END;
+    case 'P': return DQK_F1;
+    case 'Q': return DQK_F2;
+    case 'R': return DQK_F3;
+    case 'S': return DQK_F4;
     case '1': case '3': case '4': case '5': case '6': case '7': case '8': {
         int c4 = raw_getc(ESC_WAIT_MS);                       /* ESC [ n ~ */
         if (c4 != '~') return DQK_NONE;
@@ -96,6 +107,16 @@ int dq_getkey(void)
     }
     default: return DQK_NONE;
     }
+}
+
+int dq_getkey(void)
+{
+    return decode_key(raw_getc(0));
+}
+
+int dq_pollkey(void)
+{
+    return decode_key(kconsole_getc());
 }
 
 /* ---- dialogs -------------------------------------------------------------------- */
@@ -121,27 +142,51 @@ bool dq_confirm(const char *question)
     }
 }
 
+static int u8_cells(const char *s, int bytes)                       /* characters in the first `bytes` bytes */
+{
+    int n = 0;
+    for (int i = 0; i < bytes; i++) if (((unsigned char)s[i] & 0xC0) != 0x80) n++;
+    return n;
+}
+
 bool dq_input(const char *title, char *buf, int max)
 {
     int w = dq_cols() * 3 / 5, h = 5, x = (dq_cols() - w) / 2, y = (dq_rows() - h) / 2;
     dq_window(x, y, w, h);
     dq_text(x + 2, y + 1, title);
     int len = slen(buf), field = w - 4;
+    bool ok = false;
     for (;;) {
-        char line[160];
-        int n = 0;
-        int start = len > field - 1 ? len - (field - 1) : 0;             /* show the tail if the text is long */
+        char line[200];
+        int n = 0, start = 0;
+        while (u8_cells(buf + start, len - start) > field - 1) {          /* show the tail if the text is long */
+            start++;
+            while (start < len && ((unsigned char)buf[start] & 0xC0) == 0x80) start++;
+        }
         for (int i = start; i < len && n < (int)sizeof line - 2; i++) line[n++] = buf[i];
+        int shown = u8_cells(buf + start, len - start);
         line[n++] = '_';
-        while (n < field && n < (int)sizeof line - 1) line[n++] = ' ';
+        for (int c = shown + 1; c < field && n < (int)sizeof line - 1; c++) line[n++] = ' ';
         line[n] = 0;
         dq_text(x + 2, y + 3, line);
+        ime_set_anchor(x + 2 + shown, y + 3);                             /* the Japanese input method composes here, inline */
         int k = dq_getkey();
-        if (k == DQK_ENTER) return true;
-        if (k == DQK_ESC) return false;
-        if (k == DQK_BACKSPACE) { if (len) buf[--len] = 0; }
-        else if (k >= 0x20 && k < 0x7F && len < max - 1) { buf[len++] = (char)k; buf[len] = 0; }
+        if (k == DQK_ENTER) { ok = true; break; }
+        if (k == DQK_ESC) break;
+        if (k == DQK_BACKSPACE || k == DQK_DEL) {
+            if (len) { do len--; while (len > 0 && ((unsigned char)buf[len] & 0xC0) == 0x80); buf[len] = 0; }
+        }
+        else if (k == 0x15) { len = 0; buf[0] = 0; }                     /* Ctrl-U clears field */
+        else if (k >= 0x20 && k != 0x7F && !(k >= 0x80 && k < 0xC0) && k < 0x100) {
+            char ch[4];
+            int cn = k >= 0xF0 ? 4 : k >= 0xE0 ? 3 : k >= 0xC0 ? 2 : 1;
+            ch[0] = (char)k;
+            for (int i = 1; i < cn; i++) { int c = dq_getkey(); ch[i] = (char)(c < 0 ? 0 : c); }
+            if (len + cn < max) { for (int i = 0; i < cn; i++) buf[len++] = ch[i]; buf[len] = 0; }
+        }
     }
+    ime_clear_anchor();
+    return ok;
 }
 
 void dq_message(const char *l1, const char *l2)

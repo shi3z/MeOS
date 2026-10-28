@@ -267,7 +267,7 @@ bool gui_selftest(void)
     /* ---- launcher, end to end, through simulated touches ------------------------- */
     CK(app_start("launcher", &id) == ERR_OK);
     uint32_t launcher_id = id;
-    CK(WAIT(front_is("M5OS"), 3000));
+    CK(WAIT(front_is("MeOS"), 3000));
     task_sleep(600);                                                          /* its first paint (4 buttons) */
 
     tap(LAUNCHER_BTN_X, LAUNCHER_BTN_Y(2));                                   /* [ Calculator ] */
@@ -276,7 +276,7 @@ bool gui_selftest(void)
     if (!app_running("calculator", NULL)) dump_state("after tapping Calculator");
 
     tap(BTN_HOME_X, STRIP_Y);                                                 /* Home */
-    CK(WAIT(front_is("M5OS"), 3000));
+    CK(WAIT(front_is("MeOS"), 3000));
     tap(LAUNCHER_BTN_X, LAUNCHER_BTN_Y(2));                                   /* already running: focus it, do not start another */
     CK(WAIT(front_is("Calculator"), 4000));
     int running = 0;
@@ -284,7 +284,7 @@ bool gui_selftest(void)
     CK(running == 1);
 
     tap(BTN_NEXT_X, STRIP_Y);                                                 /* Next: send the front window back */
-    CK(WAIT(front_is("M5OS"), 3000));
+    CK(WAIT(front_is("MeOS"), 3000));
     tap(LAUNCHER_BTN_X, LAUNCHER_BTN_Y(2));                                   /* back to the calculator */
     CK(WAIT(front_is("Calculator"), 4000));
 
@@ -300,13 +300,13 @@ bool gui_selftest(void)
     CK(WAIT(streq(app_calc_display, "0"), 3000));
 
     tap(BTN_CLOSE_X, STRIP_Y);                                                /* Close: the app is told, leaves, its window goes */
-    CK(WAIT(!app_running("calculator", NULL) && front_is("M5OS"), 5000));
+    CK(WAIT(!app_running("calculator", NULL) && front_is("MeOS"), 5000));
     { app_info_t all[APP_MAX]; int n = app_list(all, APP_MAX); app_info_t info = { 0 }; for (int i = 0; i < n; i++) if (all[i].app_id == calc_id) info = all[i]; CK(info.state == APP_EXITED); }
     CK(gui_window_count() == 1);
 
     tap(BTN_CLOSE_X, STRIP_Y);                                                /* Close on the home window does nothing */
     task_sleep(SETTLE_MS + 300);
-    CK(app_running("launcher", NULL) && front_is("M5OS"));
+    CK(app_running("launcher", NULL) && front_is("MeOS"));
 
     /* the terminal: its buttons type into the console input */
     while (kconsole_getc() >= 0) { }
@@ -317,7 +317,7 @@ bool gui_selftest(void)
     CK(WAIT(kconsole_getc() == 'p', 2000));
     CK(WAIT(kconsole_getc() == 's', 500) && WAIT(kconsole_getc() == '\r', 500));
     tap(BTN_CLOSE_X, STRIP_Y);
-    CK(WAIT(!app_running("terminal", NULL) && front_is("M5OS"), 5000));
+    CK(WAIT(!app_running("terminal", NULL) && front_is("MeOS"), 5000));
 
     tap(LAUNCHER_BTN_X, LAUNCHER_BTN_Y(3));                                   /* [ Snake ] */
     CK(WAIT(front_is("Snake") && app_running("snake", NULL), 4000));
@@ -328,13 +328,13 @@ bool gui_selftest(void)
     task_sleep(400);
     CK(app_running("snake", NULL));
     tap(BTN_CLOSE_X, STRIP_Y);
-    CK(WAIT(!app_running("snake", NULL) && front_is("M5OS"), 5000));
+    CK(WAIT(!app_running("snake", NULL) && front_is("MeOS"), 5000));
 
     tap(LAUNCHER_BTN_X, LAUNCHER_BTN_Y(1));                                   /* [ Clock ] */
     CK(WAIT(front_is("Clock"), 4000));
     task_sleep(500);
     tap(BTN_CLOSE_X, STRIP_Y);
-    CK(WAIT(!app_running("clock", NULL) && front_is("M5OS"), 5000));
+    CK(WAIT(!app_running("clock", NULL) && front_is("MeOS"), 5000));
 
     /* an app that has no window is still stoppable (Close cannot reach it) */
     CK(app_start("hog", &id) == ERR_OK);

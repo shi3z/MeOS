@@ -11,8 +11,21 @@
 #include "../tui/dqwin.h"
 #include "../edit/edit.h"
 #include "../viewer/imgview.h"
+#include "../camera/camera_app.h"
+#include "../wifi/wifi_app.h"
+#include "../ssh/ssh_app.h"
+#include "../tailscale/tailscale_app.h"
+#include "../web/web_app.h"
+#include <m5os/wasm.h>
+#if M5OS_BOARD_TAB5
+#include "../wasmapps/wasmapps.h"
+#include "../wasmapps/qrinstall.h"
+#endif
 #include "../../drivers/lcd/fbcon.h"
+
 #define FILER_PAUSE_SETTLE_MS 100u
+
+static bool sh_streq(const char *a, const char *b);      /* used by cmd_osk, defined further down */
 #include "shell.h"
 #include <m5os/vfs.h>
 #include <m5os/task.h>
@@ -27,13 +40,18 @@
 #include <m5os/crc32.h>
 #include <m5os/msg.h>
 #include <m5os/gui.h>
+#include <m5os/wifi.h>
 #include <m5os/board_config.h>
 #if M5OS_HAS_KEYBOARD
 #include "../../drivers/keyboard/keyboard.h"
+#if M5OS_BOARD_TAB5
+#include "../../drivers/tab5kbd/osk.h"
+#include "../../drivers/tab5kbd/tab5touch.h"
+#endif
 #endif
 
 #define LINE_MAX     128
-#define ARG_MAX      8
+#define ARG_MAX      16
 #define OUT_BUF      160
 #define CAT_CHUNK    128
 #define PS_MAX       TASK_MAX
@@ -297,7 +315,10 @@ static int cmd_run(int argc, char **argv)
     int rc;
     if (has_slash(argv[1])) {                                    /* an explicit file */
         if (!resolve(argv[1], path)) return fail("run", argv[1], ERR_INVAL);
-        rc = app_start_file(path, &id);
+        size_t pl = 0;
+        while (path[pl]) pl++;
+        bool wasm = pl > 5 && path[pl - 5] == '.' && path[pl - 4] == 'w' && path[pl - 3] == 'a' && path[pl - 2] == 's' && path[pl - 1] == 'm';
+        rc = wasm ? app_start_wasm_file(path, &id) : app_start_file(path, &id);
         if (rc != ERR_OK) return fail("run", path, rc);
         print_started(path, id);
         return 0;
@@ -306,6 +327,10 @@ static int cmd_run(int argc, char **argv)
     if (rc == ERR_NOENT) {                                       /* ... then /apps/NAME.m5ex */
         ksnprintf(path, sizeof path, "/apps/%s.m5ex", argv[1]);
         rc = app_start_file(path, &id);
+        if (rc == ERR_NOENT) {                                   /* ... then a WebAssembly app */
+            ksnprintf(path, sizeof path, "/apps/%s.wasm", argv[1]);
+            rc = app_start_wasm_file(path, &id);
+        }
         if (rc == ERR_NOENT) { SH_PRINTF("run: no such app: %s\n", argv[1]); return 1; }
         if (rc != ERR_OK) return fail("run", path, rc);
         print_started(path, id);
@@ -421,6 +446,22 @@ static int cmd_gui(int argc, char **argv)
 }
 
 #if M5OS_HAS_KEYBOARD
+#if M5OS_BOARD_TAB5
+static int cmd_osk(int argc, char **argv)
+{
+    if (!osk_available()) { sh_puts("osk: no touch controller\n"); return 0; }
+    if (argc > 1 && sh_streq(argv[1], "on"))  { osk_show(true);  return 0; }
+    if (argc > 1 && sh_streq(argv[1], "off")) { osk_show(false); return 0; }
+    if (argc > 1 && sh_streq(argv[1], "debug")) { static bool on; on = !on; osk_set_debug(on); SH_PRINTF("osk: touch debug %s\n", on ? "on" : "off"); return 0; }
+    if (argc > 2 && sh_streq(argv[1], "map")) { tab5_touch_set_map(argv[2][0] - '0'); SH_PRINTF("osk: touch map %d\n", tab5_touch_map()); return 0; }
+    uint32_t frames, errors; int rx, ry, mx, my;
+    tab5_touch_stats(&frames, &errors, &rx, &ry, &mx, &my);
+    SH_PRINTF("osk: %s, touch map %d, %u frames, %u i2c errors, last raw %d,%d, controller resolution %d x %d\n",
+              osk_visible() ? "visible" : "hidden", tab5_touch_map(), frames, errors, rx, ry, mx, my);
+    return 0;
+}
+#endif
+
 static int cmd_keys(int argc, char **argv)
 {
     (void)argc; (void)argv;
@@ -434,7 +475,19 @@ static int cmd_keys(int argc, char **argv)
 
 static int cmd_apps(int argc, char **argv)
 {
+#if M5OS_BOARD_TAB5
+    if (argc < 2 || !(argv[1][0] == '-' && argv[1][1] == 'l' && !argv[1][2])) {                  /* the list of installed apps: pick one to run */
+        fbcon_pause(true);
+        task_sleep(FILER_PAUSE_SETTLE_MS);
+        dq_clear();
+        wasmapps_run();
+        dq_clear();
+        fbcon_pause(false);
+        return 0;
+    }
+#else
     (void)argc; (void)argv;
+#endif
     app_info_t a[APP_MAX];
     int n = app_list(a, APP_MAX);
     sh_puts("ID   NAME     STATE    PID  PERMS    TASKS  MEMORY\n");
@@ -481,7 +534,7 @@ static int cmd_view(int argc, char **argv)
     fbcon_pause(true);
     task_sleep(FILER_PAUSE_SETTLE_MS);
     dq_clear();
-    bool ok = imgview_show(path);
+    bool ok = imgview_show(path, NULL);
     fbcon_pause(false);
     if (!ok) SH_PRINTF("view: %s: %s\n", path, imgview_last_error());
     return ok ? 0 : 1;
@@ -499,9 +552,258 @@ static int cmd_edit(int argc, char **argv)
     fbcon_pause(false);
     return 0;
 }
+
+static int cmd_camera(int argc, char **argv)
+{
+    char path[VFS_PATH_MAX];
+    const char *dir = (argc > 1) ? argv[1] : ((s_cwd[0] == '/' && s_cwd[1] == 0) ? "/home" : s_cwd);
+    if (!resolve(dir, path)) return fail("camera", "bad path", ERR_INVAL);
+    fbcon_pause(true);
+    task_sleep(FILER_PAUSE_SETTLE_MS);
+    dq_clear();
+    char saved[32] = "";
+    camera_app_run(path, saved);
+    dq_clear();
+    fbcon_pause(false);
+    if (saved[0]) SH_PRINTF("camera: last photo saved as %s/%s\n", path, saved);
+    return 0;
+}
+
+static int cmd_snap(int argc, char **argv)
+{
+    char path[VFS_PATH_MAX];
+    const char *target = (argc > 1) ? argv[1] : "/home/snap.bmp";
+    if (!resolve(target, path)) return fail("snap", "bad path", ERR_INVAL);
+    SH_PRINTF("snap: capturing %dx%d BMP to %s ...\n", CAM_PHOTO_W, CAM_PHOTO_H, path);
+    if (!camera_capture_bmp_file(path)) {
+        sh_puts("snap: capture failed\n");
+        return 1;
+    }
+    vfs_info_t st;
+    if (vfs_stat(path, &st) == ERR_OK) {
+        SH_PRINTF("snap: saved %s (%u bytes)\n", path, st.size);
+    }
+    return 0;
+}
 #endif
 
+static bool sh_streq(const char *a, const char *b)
+{
+    if (!a || !b) return false;
+    while (*a && *a == *b) { a++; b++; }
+    return *a == *b;
+}
+
+static void print_wifi_status(void)
+{
+    wifi_status_t st;
+    wifi_get_status(&st);
+    SH_PRINTF("State       : %s (%s)\n", wifi_state_name(st.state), st.last_msg);
+    SH_PRINTF("MAC         : %02X:%02X:%02X:%02X:%02X:%02X\n",
+              st.mac[0], st.mac[1], st.mac[2], st.mac[3], st.mac[4], st.mac[5]);
+    if (st.state == WIFI_STATE_CONNECTED) {
+        SH_PRINTF("Connected AP: %s (ch %u, %d dBm, %s)\n",
+                  st.ssid, st.channel, (int)st.rssi, wifi_auth_name(st.authmode));
+        SH_PRINTF("IPv4        : %u.%u.%u.%u  netmask %u.%u.%u.%u  gw %u.%u.%u.%u\n",
+                  st.ip[0], st.ip[1], st.ip[2], st.ip[3],
+                  st.netmask[0], st.netmask[1], st.netmask[2], st.netmask[3],
+                  st.gateway[0], st.gateway[1], st.gateway[2], st.gateway[3]);
+    }
+    SH_PRINTF("Saved AP    : %s   (auto-connect: %s)\n",
+              st.has_saved ? st.saved_ssid : "(none)",
+              st.auto_connect ? "ON" : "OFF");
+    SH_PRINTF("Packets     : RX %u   TX %u\n", st.rx_packets, st.tx_packets);
+}
+
+static int cmd_wifi(int argc, char **argv)
+{
+#if M5OS_HAS_KEYBOARD
+    if (argc < 2 || sh_streq(argv[1], "gui")) {
+        fbcon_pause(true);
+        task_sleep(FILER_PAUSE_SETTLE_MS);
+        dq_clear();
+        wifi_app_run();
+        dq_clear();
+        fbcon_pause(false);
+        print_wifi_status();
+        return 0;
+    }
+#else
+    if (argc < 2) {
+        print_wifi_status();
+        return 0;
+    }
+#endif
+    if (sh_streq(argv[1], "status") || sh_streq(argv[1], "st")) {
+        wifi_init();
+        print_wifi_status();
+        return 0;
+    }
+    if (sh_streq(argv[1], "scan")) {
+        sh_puts("wifi: scanning 2.4 GHz networks...\n");
+        static wifi_ap_t aps[WIFI_MAX_SCAN_APS];
+        int n = wifi_scan(aps, WIFI_MAX_SCAN_APS);
+        if (n < 0) { sh_puts("wifi: scan failed\n"); return 1; }
+        SH_PRINTF("Found %d network(s):\n", n);
+        sh_puts("  #   RSSI     CH  SECURITY  SSID                              STATUS\n");
+        for (int i = 0; i < n; i++) {
+            const char *tag = aps[i].connected ? "[CONNECTED]" : (aps[i].saved ? "[SAVED]" : "");
+            SH_PRINTF("  %2d  %4d dBm %2u  %-8s  %-32s  %s\n",
+                      i + 1, (int)aps[i].rssi, aps[i].channel,
+                      wifi_auth_name(aps[i].authmode), aps[i].ssid, tag);
+        }
+        return 0;
+    }
+    if (sh_streq(argv[1], "connect") || sh_streq(argv[1], "conn")) {
+        char ssid[WIFI_SSID_MAX + 1] = "";
+        char pass[WIFI_PASS_MAX + 1] = "";
+        if (argc >= 3) {
+            int i = 0;
+            for (; argv[2][i] && i < WIFI_SSID_MAX; i++) ssid[i] = argv[2][i];
+            ssid[i] = 0;
+            if (argc >= 4) {
+                int j = 0;
+                for (; argv[3][j] && j < WIFI_PASS_MAX; j++) pass[j] = argv[3][j];
+                pass[j] = 0;
+            } else {
+                char saved_s[WIFI_SSID_MAX + 1] = "";
+                char saved_p[WIFI_PASS_MAX + 1] = "";
+                if (wifi_load_saved(saved_s, saved_p, NULL) && sh_streq(saved_s, ssid)) {
+                    for (int j = 0; saved_p[j] && j < WIFI_PASS_MAX; j++) { pass[j] = saved_p[j]; pass[j + 1] = 0; }
+                }
+            }
+        } else if (!wifi_load_saved(ssid, pass, NULL) || !ssid[0]) {
+            sh_puts("usage: wifi connect <SSID> [PASSWORD]\n");
+            return 1;
+        }
+        SH_PRINTF("wifi: connecting to \"%s\" ...\n", ssid);
+        if (wifi_connect(ssid, pass, true)) {
+            print_wifi_status();
+            return 0;
+        }
+        sh_puts("wifi: connection failed\n");
+        print_wifi_status();
+        return 1;
+    }
+    if (sh_streq(argv[1], "disconnect") || sh_streq(argv[1], "dc")) {
+#if M5OS_HAS_KEYBOARD
+        if (argc >= 3 && (sh_streq(argv[2], "gui") || sh_streq(argv[2], "-g") || sh_streq(argv[2], "--gui"))) {
+            fbcon_pause(true);
+            task_sleep(FILER_PAUSE_SETTLE_MS);
+            dq_clear();
+            wifi_app_disconnect_gui();
+            dq_clear();
+            fbcon_pause(false);
+            print_wifi_status();
+            return 0;
+        }
+#endif
+        wifi_disconnect();
+        sh_puts("wifi: disconnected\n");
+        return 0;
+    }
+    if (sh_streq(argv[1], "auto")) {
+        if (argc >= 3) {
+            bool en = sh_streq(argv[2], "on") || sh_streq(argv[2], "1") || sh_streq(argv[2], "true");
+            wifi_set_auto_connect(en);
+        }
+        wifi_status_t st;
+        wifi_get_status(&st);
+        SH_PRINTF("wifi: auto-connect is %s (saved AP: %s)\n",
+                  st.auto_connect ? "ON" : "OFF", st.has_saved ? st.saved_ssid : "(none)");
+        return 0;
+    }
+    if (sh_streq(argv[1], "forget")) {
+        wifi_forget();
+        sh_puts("wifi: cleared saved credentials\n");
+        return 0;
+    }
+    sh_puts("usage:\n"
+            "  wifi                       launch graphical Wi-Fi configuration app\n"
+            "  wifi gui                   launch graphical Wi-Fi configuration app\n"
+            "  wifi status                show Wi-Fi connection & IPv4 status\n"
+            "  wifi scan                  scan nearby Wi-Fi networks\n"
+            "  wifi connect <SSID> [PASS] connect & save credentials for auto-connect\n"
+            "  wifi disconnect [gui]      disconnect Wi-Fi (or open GUI disconnect modal)\n"
+            "  wifi auto [on|off]         enable/disable auto-connect\n"
+            "  wifi forget                clear saved Wi-Fi credentials\n");
+    return 1;
+}
+
+static int cmd_ssh(int argc, char **argv)
+{
+    return ssh_cmd_main(argc, argv);
+}
+
+static int cmd_tailscale(int argc, char **argv)
+{
+#if M5OS_HAS_KEYBOARD
+    if (argc < 2 || sh_streq(argv[1], "gui")) {
+        fbcon_pause(true);
+        task_sleep(FILER_PAUSE_SETTLE_MS);
+        dq_clear();
+        tailscale_app_main();
+        dq_clear();
+        fbcon_pause(false);
+        return 0;
+    }
+#endif
+    tailscale_cmd_main(argc, argv);
+    return 0;
+}
+
+static int cmd_web(int argc, char **argv)
+{
+#if M5OS_HAS_KEYBOARD
+    if (argc < 2 || (!sh_streq(argv[1], "--dump") && !sh_streq(argv[1], "--help") && !sh_streq(argv[1], "-h"))) {
+        fbcon_pause(true);
+        task_sleep(FILER_PAUSE_SETTLE_MS);
+        dq_clear();
+        web_cmd_main(argc, argv);
+        dq_clear();
+        fbcon_pause(false);
+        return 0;
+    }
+#endif
+    return web_cmd_main(argc, argv);
+}
+
+static int cmd_install(int argc, char **argv)
+{
+    char path[VFS_PATH_MAX], name[16];
+#if M5OS_BOARD_TAB5
+    if (argc == 1) {                                             /* no file: scan a QR code with the camera */
+        fbcon_pause(true);
+        task_sleep(FILER_PAUSE_SETTLE_MS);
+        dq_clear();
+        bool ok = qrinstall_run(name);
+        dq_clear();
+        fbcon_pause(false);
+        if (ok) SH_PRINTF("installed %s\n", name);
+        return ok ? 0 : 1;
+    }
+#endif
+#if M5OS_BOARD_TAB5
+    if (argc == 2 && (argv[1][0] == 'h' || argv[1][0] == 'm') && (has_slash(argv[1]) || argv[1][1] == 'e')) {     /* an https:// link or a meos:// code */
+        fbcon_pause(true);
+        task_sleep(FILER_PAUSE_SETTLE_MS);
+        dq_clear();
+        bool ok = qrinstall_code(argv[1], name);
+        dq_clear();
+        fbcon_pause(false);
+        if (ok) SH_PRINTF("installed %s\n", name);
+        return ok ? 0 : 1;
+    }
+#endif
+    if (argc != 2 || !resolve(argv[1], path)) { sh_puts("usage: install [FILE.wasm | URL]   (no file: scan an app's QR code)\n"); return 1; }
+    int rc = wasm_install_file(path, name);
+    if (rc != ERR_OK) return fail("install", path, rc);
+    SH_PRINTF("installed %s\n", name);
+    return 0;
+}
+
 static int cmd_pwd(int argc, char **argv) { (void)argc; (void)argv; SH_PRINTF("%s\n", s_cwd); return 0; }
+
 
 static int cmd_cd(int argc, char **argv)
 {
@@ -527,6 +829,26 @@ static int cmd_rm(int argc, char **argv)
 {
     char path[VFS_PATH_MAX];
     if (argc != 2 || !resolve(argv[1], path)) { sh_puts("usage: rm FILE|EMPTYDIR\n"); return 1; }
+    size_t al = 0;
+    while (argv[1][al]) al++;
+    if (!has_slash(argv[1]) && al < 16 && wasm_is_installed(argv[1])) {          /* rm snake: uninstall an app (not a file called so) */
+        vfs_info_t st;
+        if (vfs_stat(path, &st) != ERR_OK) {
+            int r = wasm_uninstall(argv[1]);
+            if (r == ERR_OK) SH_PRINTF("uninstalled %s\n", argv[1]);
+            return r == ERR_OK ? 0 : fail("rm", argv[1], r);
+        }
+    }
+    size_t pl = 0;
+    while (path[pl]) pl++;
+    if (pl > 11 && path[0] == '/' && path[1] == 'a' && path[2] == 'p' && path[3] == 'p' && path[4] == 's' && path[5] == '/' &&
+        path[pl - 5] == '.' && path[pl - 4] == 'w' && path[pl - 3] == 'a' && path[pl - 2] == 's' && path[pl - 1] == 'm') {   /* /apps/NAME.wasm */
+        char name[16];
+        size_t k = 0;
+        for (size_t i = 6; i < pl - 5 && k < 15; i++) name[k++] = path[i];
+        name[k] = 0;
+        if (wasm_uninstall(name) == ERR_OK) { SH_PRINTF("uninstalled %s\n", name); return 0; }
+    }
     int rc = vfs_unlink(path);
     return rc == ERR_OK ? 0 : fail("rm", path, rc);
 }
@@ -541,38 +863,99 @@ static int cmd_mount(int argc, char **argv)
     return 0;
 }
 
+/* ----------------------------------------------------------- line editing */
+
+#define HIST_MAX     32
+#define CH_CTRL_A    0x01
+#define CH_CTRL_B    0x02
+#define CH_CTRL_D    0x04
+#define CH_CTRL_E    0x05
+#define CH_CTRL_F    0x06
+#define CH_CTRL_K    0x0B
+#define CH_CTRL_N    0x0E
+#define CH_CTRL_P    0x10
+
+static char s_history[HIST_MAX][LINE_MAX];
+static int  s_hist_count = 0;
+
+static bool str_eq(const char *a, const char *b) { while (*a && *a == *b) { a++; b++; } return *a == *b; }
+
+static int str_copy_len(char *dst, const char *src, int max_len)
+{
+    int i = 0;
+    while (src[i] && i < max_len - 1) {
+        dst[i] = src[i];
+        i++;
+    }
+    dst[i] = 0;
+    return i;
+}
+
+static void history_add(const char *line)
+{
+    int i = 0;
+    while (line[i] == ' ' || line[i] == '\t') i++;
+    if (!line[i]) return;
+    if (s_hist_count > 0 && str_eq(line, s_history[(s_hist_count - 1) % HIST_MAX])) return;
+    str_copy_len(s_history[s_hist_count % HIST_MAX], line, LINE_MAX);
+    s_hist_count++;
+}
+
+static int cmd_history(int argc, char **argv)
+{
+    (void)argc; (void)argv;
+    int first = (s_hist_count > HIST_MAX) ? (s_hist_count - HIST_MAX) : 0;
+    for (int i = first; i < s_hist_count; i++) {
+        SH_PRINTF("  %3d  %s\n", i + 1, s_history[i % HIST_MAX]);
+    }
+    return 0;
+}
+
 static const command_t s_commands[] = {
-    { "help",   cmd_help,   "list commands" },
-    { "ps",     cmd_ps,     "list tasks" },
-    { "kill",   cmd_kill,   "kill PID        terminate one task (an app: its owner task)" },
-    { "ls",     cmd_ls,     "ls [PATH]       list a directory (/dev lists devices)" },
-    { "cat",    cmd_cat,    "cat FILE...     print files" },
-    { "echo",   cmd_echo,   "echo TEXT [> FILE | >> FILE]" },
-    { "mem",    cmd_mem,    "heap usage" },
-    { "uptime", cmd_uptime, "time since boot" },
-    { "run",    cmd_run,    "run [APP]       start an application (no argument: list them)" },
-    { "put",    cmd_put,    "put PATH        receive a file as base64 (see tools/m5ex_push.py)" },
-    { "send",   cmd_send,   "send PID TEXT   send a message to a task" },
-    { "recv",   cmd_recv,   "recv [MS]       receive messages (waits up to MS, default 1000)" },
-    { "tap",    cmd_tap,    "tap X Y         simulate a touch on the screen" },
-    { "gui",    cmd_gui,    "list windows (front first)" },
+    { "help",    cmd_help,    "list commands" },
+    { "history", cmd_history, "show command history (or use Up/Down arrows)" },
+    { "ps",      cmd_ps,      "list tasks" },
+    { "kill",    cmd_kill,    "kill PID        terminate one task (an app: its owner task)" },
+    { "ls",      cmd_ls,      "ls [PATH]       list a directory (/dev lists devices)" },
+    { "cat",     cmd_cat,     "cat FILE...     print files" },
+    { "echo",    cmd_echo,    "echo TEXT [> FILE | >> FILE]" },
+    { "mem",     cmd_mem,     "heap usage" },
+    { "uptime",  cmd_uptime,  "time since boot" },
+    { "run",     cmd_run,     "run [APP]       start an application (no argument: list them)" },
+    { "put",     cmd_put,     "put PATH        receive a file as base64 (see tools/m5ex_push.py)" },
+    { "send",    cmd_send,    "send PID TEXT   send a message to a task" },
+    { "recv",    cmd_recv,    "recv [MS]       receive messages (waits up to MS, default 1000)" },
+    { "tap",     cmd_tap,     "tap X Y         simulate a touch on the screen" },
+    { "gui",     cmd_gui,     "list windows (front first)" },
 #if M5OS_HAS_KEYBOARD
-    { "files",  cmd_files,  "files [DIR]     full-screen file manager (filer)" },
-    { "view",   cmd_view,   "view IMAGE      show a BMP/PPM image" },
-    { "edit",   cmd_edit,   "edit FILE       full-screen text editor (^S save, ^Q quit)" },
-    { "keys",   cmd_keys,   "keyboard statistics (bring-up diagnostics)" },
+    { "files",   cmd_files,   "files [DIR]     full-screen file manager (filer)" },
+    { "view",    cmd_view,    "view IMAGE      show an image (BMP/PPM)" },
+    { "edit",    cmd_edit,    "edit FILE       full-screen text editor (^S save, ^Q quit)" },
+    { "camera",  cmd_camera,  "camera [DIR]    full-screen camera viewfinder (Space:capture, Q:quit)" },
+    { "cam",     cmd_camera,  "cam [DIR]       alias for camera" },
+    { "snap",    cmd_snap,    "snap [FILE.bmp] capture one 640x360 BMP photo from camera" },
+    { "keys",    cmd_keys,    "keyboard statistics (bring-up diagnostics)" },
+#if M5OS_BOARD_TAB5
+    { "osk",     cmd_osk,     "osk [on|off|map N|debug]  on-screen keyboard (touch); no argument: status" },
 #endif
-    { "apps",   cmd_apps,   "list running and finished applications" },
-    { "stop",   cmd_stop,   "stop APP_ID     stop an application and reclaim its resources" },
-    { "pwd",    cmd_pwd,    "print working directory" },
-    { "cd",     cmd_cd,     "cd [DIR]" },
-    { "mkdir",  cmd_mkdir,  "mkdir DIR" },
-    { "rm",     cmd_rm,     "rm FILE|EMPTYDIR" },
-    { "mount",  cmd_mount,  "show mounts and free space" },
+#endif
+    { "wifi",      cmd_wifi,      "wifi [gui|scan|connect|disconnect|status|auto|forget]" },
+    { "ssh",       cmd_ssh,       "ssh [user@]host [-p port] [-pw pass] [cmd...]   SSH-2 client" },
+    { "tailscale", cmd_tailscale, "tailscale [up|status|ip|ping|down|gui]          Tailscale Mesh VPN" },
+    { "ts",        cmd_tailscale, "ts [up|status|ip|ping|down|gui]                 alias for tailscale" },
+    { "web",       cmd_web,       "web [url | --dump url]                          HTTP/HTTPS Web Browser" },
+    { "browser",   cmd_web,       "browser [url]                                   alias for web" },
+    { "apps",      cmd_apps,      "apps [-l]       installed WebAssembly apps (pick one to run); -l: running and finished applications" },
+    { "install",   cmd_install,   "install [FILE]  install a WebAssembly app from a file, or (no file) from a QR code the camera sees" },
+
+    { "stop",    cmd_stop,    "stop APP_ID     stop an application and reclaim its resources" },
+    { "pwd",     cmd_pwd,     "print working directory" },
+    { "cd",      cmd_cd,      "cd [DIR]" },
+    { "mkdir",   cmd_mkdir,   "mkdir DIR" },
+    { "rm",      cmd_rm,      "rm FILE|EMPTYDIR" },
+    { "mount",   cmd_mount,   "show mounts and free space" },
     { NULL, NULL, NULL },
 };
-
-/* ----------------------------------------------------------- line editing */
 
 static int read_byte(void)
 {
@@ -589,38 +972,217 @@ static void prompt(void)
     sh_puts("> ");
 }
 
+/* The line is UTF-8 (the Japanese input method types it); every character is one cell on the console. */
+static int u8_prev(const char *line, int pos)                 /* start of the character before pos */
+{
+    do pos--; while (pos > 0 && ((unsigned char)line[pos] & 0xC0) == 0x80);
+    return pos;
+}
+
+static int u8_len(const char *line, int pos, int len)         /* bytes of the character starting at pos */
+{
+    int n = 1;
+    while (pos + n < len && ((unsigned char)line[pos + n] & 0xC0) == 0x80) n++;
+    return n;
+}
+
+static int u8_count(const char *line, int a, int b)           /* characters in [a, b) */
+{
+    int n = 0;
+    for (int i = a; i < b; i++) if (((unsigned char)line[i] & 0xC0) != 0x80) n++;
+    return n;
+}
+
+static void line_delete(char *line, int *len, int at, int n)  /* removes n bytes at `at` */
+{
+    for (int i = at; i + n < *len; i++) line[i] = line[i + n];
+    *len -= n;
+    line[*len] = 0;
+}
+
+static void refresh_line(const char *line, int len, int pos)
+{
+    char buf[LINE_MAX * 2 + 16];
+    int n = 0;
+    buf[n++] = '\r';
+    buf[n++] = '>';
+    buf[n++] = ' ';
+    for (int i = 0; i < len && n < (int)sizeof(buf) - 8; i++) {
+        buf[n++] = line[i];
+    }
+    buf[n++] = '\x1b';
+    buf[n++] = '[';
+    buf[n++] = 'K';
+    for (int i = u8_count(line, pos, len); i > 0 && n < (int)sizeof(buf) - 1; i--) {
+        buf[n++] = '\b';
+    }
+    sh_write(buf, (size_t)n);
+}
+
 /* Returns the line length, or -1 for a cancelled line (Ctrl-C).  echo=false is used for `put`. */
 static int read_line_ex(char *line, bool echo)
 {
     int len = 0;
+    int pos = 0;
     int last = 0;
+    int hist_pos = s_hist_count;
+    int first_hist = (s_hist_count > HIST_MAX) ? (s_hist_count - HIST_MAX) : 0;
+    char saved_line[LINE_MAX];
+    saved_line[0] = 0;
+    line[0] = 0;
+
     for (;;) {
         int c = read_byte();
         int prev = last;
         last = c;
         if (c == '\n' && prev == '\r') continue;             /* CR LF from the terminal: one Enter */
-        if (c == '\r' || c == '\n') { if (echo) sh_puts("\n"); line[len] = 0; return len; }
-        if (c == CH_CTRL_C) { if (echo) sh_puts("^C\n"); return -1; }
+        if (c == '\r' || c == '\n') {
+            if (echo) sh_puts("\n");
+            line[len] = 0;
+            if (echo && len > 0) history_add(line);
+            return len;
+        }
+        if (c == CH_CTRL_C) { if (echo) sh_puts("^C\n"); line[0] = 0; return -1; }
+
         if (c == CH_BACKSPACE || c == CH_DEL) {
-            if (len > 0) { len--; if (echo) sh_puts("\b \b"); }
-            continue;
-        }
-        if (c == CH_CTRL_U) {
-            while (len > 0) { len--; if (echo) sh_puts("\b \b"); }
-            continue;
-        }
-        if (c == CH_ESC) {                                   /* swallow ESC [ x  /  ESC O x */
-            int c2 = read_byte();
-            if (c2 == '[' || c2 == 'O') {
-                int c3;
-                do { c3 = read_byte(); } while ((c3 >= '0' && c3 <= '9') || c3 == ';');
+            if (pos > 0) {
+                int start = u8_prev(line, pos);
+                line_delete(line, &len, start, pos - start);
+                pos = start;
+                if (echo) {
+                    if (pos == len) sh_puts("\b \b");
+                    else            refresh_line(line, len, pos);
+                }
             }
             continue;
         }
-        if (c >= 0x20 && c < 0x7F && len < LINE_MAX - 1) {
-            line[len++] = (char)c;
-            char ch = (char)c;
-            if (echo) sh_write(&ch, 1);
+        if (c == CH_CTRL_D) {
+            if (pos < len) {
+                line_delete(line, &len, pos, u8_len(line, pos, len));
+                if (echo) refresh_line(line, len, pos);
+            }
+            continue;
+        }
+        if (c == CH_CTRL_U) {
+            if (len > 0) {
+                len = 0;
+                pos = 0;
+                line[0] = 0;
+                if (echo) refresh_line(line, len, pos);
+            }
+            continue;
+        }
+        if (c == CH_CTRL_K) {
+            if (pos < len) {
+                len = pos;
+                line[len] = 0;
+                if (echo) refresh_line(line, len, pos);
+            }
+            continue;
+        }
+        if (c == CH_CTRL_A) {
+            if (pos > 0) { pos = 0; if (echo) refresh_line(line, len, pos); }
+            continue;
+        }
+        if (c == CH_CTRL_E) {
+            if (pos < len) { pos = len; if (echo) refresh_line(line, len, pos); }
+            continue;
+        }
+        if (c == CH_CTRL_B) {
+            if (pos > 0) { pos = u8_prev(line, pos); if (echo) sh_puts("\b"); }
+            continue;
+        }
+        if (c == CH_CTRL_F) {
+            if (pos < len) { int n = u8_len(line, pos, len); if (echo) sh_write(&line[pos], (size_t)n); pos += n; }
+            continue;
+        }
+        if (c == CH_CTRL_P || c == CH_CTRL_N) {
+            if (!echo) continue;
+            if (c == CH_CTRL_P && hist_pos > first_hist) {
+                if (hist_pos == s_hist_count) { line[len] = 0; str_copy_len(saved_line, line, LINE_MAX); }
+                hist_pos--;
+                len = str_copy_len(line, s_history[hist_pos % HIST_MAX], LINE_MAX);
+                pos = len;
+                refresh_line(line, len, pos);
+            } else if (c == CH_CTRL_N && hist_pos < s_hist_count) {
+                hist_pos++;
+                if (hist_pos == s_hist_count) len = str_copy_len(line, saved_line, LINE_MAX);
+                else                          len = str_copy_len(line, s_history[hist_pos % HIST_MAX], LINE_MAX);
+                pos = len;
+                refresh_line(line, len, pos);
+            }
+            continue;
+        }
+        if (c == CH_ESC) {
+            int c2 = read_byte();
+            if (c2 == '[' || c2 == 'O') {
+                char seq[16];
+                int slen = 0;
+                int c3;
+                do {
+                    c3 = read_byte();
+                    if (slen < (int)sizeof(seq) - 1) seq[slen++] = (char)c3;
+                } while ((c3 >= '0' && c3 <= '9') || c3 == ';');
+                seq[slen] = 0;
+
+                if (!echo) continue;
+
+                if (c3 == 'A') { /* Up arrow: previous command in history */
+                    if (hist_pos > first_hist) {
+                        if (hist_pos == s_hist_count) { line[len] = 0; str_copy_len(saved_line, line, LINE_MAX); }
+                        hist_pos--;
+                        len = str_copy_len(line, s_history[hist_pos % HIST_MAX], LINE_MAX);
+                        pos = len;
+                        refresh_line(line, len, pos);
+                    }
+                } else if (c3 == 'B') { /* Down arrow: next command in history */
+                    if (hist_pos < s_hist_count) {
+                        hist_pos++;
+                        if (hist_pos == s_hist_count) len = str_copy_len(line, saved_line, LINE_MAX);
+                        else                          len = str_copy_len(line, s_history[hist_pos % HIST_MAX], LINE_MAX);
+                        pos = len;
+                        refresh_line(line, len, pos);
+                    }
+                } else if (c3 == 'C') { /* Right arrow */
+                    if (pos < len) { int n = u8_len(line, pos, len); sh_write(&line[pos], (size_t)n); pos += n; }
+                } else if (c3 == 'D') { /* Left arrow */
+                    if (pos > 0) { pos = u8_prev(line, pos); sh_puts("\b"); }
+                } else if (c3 == 'H') { /* Home */
+                    if (pos > 0) { pos = 0; refresh_line(line, len, pos); }
+                } else if (c3 == 'F') { /* End */
+                    if (pos < len) { pos = len; refresh_line(line, len, pos); }
+                } else if (c3 == '~') {
+                    if (seq[0] == '3') { /* Delete (ESC [ 3 ~) */
+                        if (pos < len) {
+                            line_delete(line, &len, pos, u8_len(line, pos, len));
+                            refresh_line(line, len, pos);
+                        }
+                    } else if (seq[0] == '1' || seq[0] == '7') { /* Home */
+                        if (pos > 0) { pos = 0; refresh_line(line, len, pos); }
+                    } else if (seq[0] == '4' || seq[0] == '8') { /* End */
+                        if (pos < len) { pos = len; refresh_line(line, len, pos); }
+                    }
+                }
+            }
+            continue;
+        }
+        if (c >= 0x20 && c != 0x7F && !(c >= 0x80 && c < 0xC0)) {        /* ASCII, or the lead byte of a UTF-8 character */
+            char ch[4];
+            int n = 1;
+            ch[0] = (char)c;
+            if (c >= 0xF0) n = 4; else if (c >= 0xE0) n = 3; else if (c >= 0xC0) n = 2;
+            for (int i = 1; i < n; i++) ch[i] = (char)read_byte();
+            if (len + n < LINE_MAX) {
+                for (int i = len + n - 1; i >= pos + n; i--) line[i] = line[i - n];
+                for (int i = 0; i < n; i++) line[pos + i] = ch[i];
+                pos += n;
+                len += n;
+                line[len] = 0;
+                if (echo) {
+                    if (pos == len) sh_write(ch, (size_t)n);
+                    else refresh_line(line, len, pos);
+                }
+            }
         }
     }
 }
@@ -647,8 +1209,6 @@ static int tokenize(char *line, char **argv)
     return argc;
 }
 
-static bool str_eq(const char *a, const char *b) { while (*a && *a == *b) { a++; b++; } return *a == *b; }
-
 static void execute(char *line)
 {
     char *argv[ARG_MAX];
@@ -656,6 +1216,12 @@ static void execute(char *line)
     if (argc == 0) return;
     for (const command_t *c = s_commands; c->name; c++) {
         if (str_eq(argv[0], c->name)) { c->fn(argc, argv); return; }
+    }
+    uint32_t app_id;                                                /* a name that is an installed WebAssembly app: run it */
+    if (!has_slash(argv[0]) && wasm_is_installed(argv[0])) {
+        int rc = wasm_run_installed(argv[0], &app_id);
+        if (rc != ERR_OK) fail(argv[0], "cannot start", rc);
+        return;
     }
     SH_PRINTF("%s: command not found (try: help)\n", argv[0]);
 }
@@ -669,7 +1235,9 @@ void shell_task(void *arg)
     int32_t forever = -1;
     vfs_ioctl(s_in, UART_IOC_SET_RX_TIMEOUT, &forever);      /* read() now waits for input */
 
-    sh_puts("\nM5OS " M5OS_VERSION_STRING "\nBoard: " M5OS_BOARD_NAME "\nCPU: " M5OS_CPU_NAME "\nScheduler: M5OS\nFreeRTOS: disabled\n\n");
+    tailscale_boot_start();
+
+    sh_puts("\nMeOS " M5OS_VERSION_STRING "\nBoard: " M5OS_BOARD_NAME "\nCPU: " M5OS_CPU_NAME "\nScheduler: MeOS\nFreeRTOS: disabled\n\n");
     char line[LINE_MAX];
     for (;;) {
         prompt();

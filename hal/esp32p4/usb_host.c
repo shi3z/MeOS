@@ -18,6 +18,7 @@
 #include <m5os/kprintf.h>
 #include <string.h>
 
+#include "esp_idf_version.h"
 #include "hal/usb_dwc_hal.h"
 #include "esp_private/usb_phy.h"
 #include "esp_cache.h"
@@ -56,7 +57,11 @@ bool hal_usbh_init(void)
     if (s_inited) return true;
     usb_phy_config_t phy_cfg = {
         .controller = USB_PHY_CTRL_OTG,
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 2)
         .target     = USB_PHY_TARGET_UTMI,
+#else
+        .target     = USB_PHY_TARGET_INT,
+#endif
         .otg_mode   = USB_OTG_MODE_HOST,
         .otg_speed  = USB_PHY_SPEED_UNDEFINED,         /* host: the speed is whatever gets plugged in */
     };
@@ -66,6 +71,7 @@ bool hal_usbh_init(void)
     s_hal.channels.hdls = s_chan_hdls;
     if (s_hal.constant_config.chan_num_total > MAX_CHANNELS) { kprintf("usbh: unexpected channel count\n"); return false; }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 2)
     /* FIFO split = "balanced" in hcd_dwc.c.  Each unit is one 32-bit line. */
     usb_dwc_hal_fifo_config_t fifo;
     fifo.nptx_fifo_lines = FIFO_DEPTH_HS_LINES / 4;
@@ -73,6 +79,10 @@ bool hal_usbh_init(void)
     fifo.rx_fifo_lines   = s_hal.constant_config.fifo_size - fifo.ptx_fifo_lines - fifo.nptx_fifo_lines;
     if (!usb_dwc_hal_fifo_config_is_valid(&s_hal, &fifo)) { kprintf("usbh: FIFO config invalid\n"); return false; }
     usb_dwc_hal_set_fifo_config(&s_hal, &fifo);
+#else
+    (void)FIFO_DEPTH_HS_LINES;
+    usb_dwc_hal_set_fifo_bias(&s_hal, USB_HAL_FIFO_BIAS_DEFAULT);
+#endif
 
     usb_dwc_hal_port_init(&s_hal);                     /* unmask port/channel interrupt status */
     usb_dwc_hal_port_toggle_power(&s_hal, true);       /* VBUS comes from the expander (board_init); this powers the port logic */

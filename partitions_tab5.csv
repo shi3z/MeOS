@@ -1,0 +1,10 @@
+# Tab5 flash map (16 MB).  The application gets everything up to 0x3F0000 (the stock single-app table gave it 1 MB).
+# 0x3F0000..0x3FFFFF is raw flash, not a partition: user/ssh/ssh_app.c keeps the SSH Ed25519 key there.
+# imedict holds the Japanese input method's SKK dictionary (tools/ime_flash_dict.sh); drivers/ime/ime_flash.c reads 0x400000.
+# Name,     Type, SubType, Offset,   Size,     Flags
+nvs,        data, nvs,     0x9000,   0x6000,
+phy_init,   data, phy,     0xf000,   0x1000,
+factory,    app,  factory, 0x10000,  0x3E0000,
+imedict,    data, 0x40,    0x400000, 0x600000,
+# wasmapps: the installed WebAssembly apps (kernel/app/wasm_store.c, a small append-only log; 0xA00000 is hard-coded there).
+wasmapps,   data, 0x41,    0xA00000, 0x200000,

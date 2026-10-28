@@ -2,7 +2,11 @@
 #   cores3             (ESP32-S3, Xtensa)  -> ESP-IDF v4.4.3
 #   tab5               (ESP32-P4, RISC-V)  -> ESP-IDF v5.4.4   (v4.4.3 knows nothing about the P4)
 if [ "$M5OS_BOARD" = "tab5" ]; then
-    export IDF_PATH=$HOME/esp32/esp-idf-v5.4.4
+    if [ -d "$HOME/esp32/esp-idf-v5.4.4" ]; then
+        export IDF_PATH=$HOME/esp32/esp-idf-v5.4.4
+    else
+        export IDF_PATH=${M5OS_IDF_P4:-$HOME/esp/esp-idf}
+    fi
     unset IDF_PYTHON_ENV_PATH
 else
     export IDF_PATH=${M5OS_IDF_S3:-$HOME/esp32/esp-idf}

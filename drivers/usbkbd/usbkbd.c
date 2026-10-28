@@ -18,13 +18,14 @@
 #include "../keyboard/keyboard.h"
 #include "usbkbd.h"
 #include "hid_keys.h"
+#include <m5os/ime.h>
 #include <m5os/hal_usbh.h>
 #include <m5os/kprintf.h>
 #include <m5os/task.h>
 #include <m5os/hal_time.h>
 #include <string.h>
 
-#define TASK_STACK        4096
+#define TASK_STACK        8192       /* the input method converts on this stack */
 #define POLL_MS           10u
 #define CONNECT_POLL_MS   50u
 #define DEBOUNCE_MS       250u        /* USB 2.0 7.1.7.3: wait for the connection to be stable */
@@ -82,9 +83,9 @@ static int ctrl(uint8_t type, uint8_t req, uint16_t value, uint16_t index, void 
 
 static void emit(uint8_t usage, uint8_t mods)
 {
-    char buf[4];
+    char buf[8];
     hid_decode(usage, mods, s_caps, buf);
-    if (buf[0]) { kconsole_inject(buf); s_stats.last_char = (unsigned char)buf[0]; }
+    if (buf[0]) { ime_feed(buf); s_stats.last_char = (unsigned char)buf[0]; }
 }
 
 /* ---- enumeration ---------------------------------------------------------------- */

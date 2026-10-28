@@ -13,6 +13,8 @@
 #include <m5os/vfs.h>
 #include <m5os/errno.h>
 #include <m5os/kprintf.h>
+#include <m5os/kmalloc.h>
+#include <m5os/ime.h>
 #include <string.h>
 
 #define HEADER_ROWS  3
@@ -35,6 +37,38 @@ static char s_path[VFS_PATH_MAX];
 static int line_start(int pos) { while (pos > 0 && s_buf[pos - 1] != '\n') pos--; return pos; }
 static int line_end(int pos)   { while (pos < s_len && s_buf[pos] != '\n') pos++; return pos; }
 
+/* The text is UTF-8.  Positions are byte offsets, but the screen, the cursor column and the horizontal scroll count
+ * characters: every character, wide or not, is one cell of the console font. */
+static int cp_len(int pos)                                          /* bytes of the character at pos */
+{
+    unsigned char c = (unsigned char)s_buf[pos];
+    int k = c >= 0xF0 ? 4 : c >= 0xE0 ? 3 : c >= 0xC0 ? 2 : 1;
+    if (pos + k > s_len) return 1;
+    for (int i = 1; i < k; i++) if (((unsigned char)s_buf[pos + i] & 0xC0) != 0x80) return 1;
+    return k;
+}
+
+static int prev_start(int pos)                                      /* start of the character before pos */
+{
+    int p = pos - 1;
+    while (p > 0 && ((unsigned char)s_buf[p] & 0xC0) == 0x80 && pos - p < 4) p--;
+    return p + cp_len(p) == pos ? p : pos - 1;
+}
+
+static int col_of(int ls, int pos)                                  /* character column of pos in the line starting at ls */
+{
+    int col = 0;
+    for (int p = ls; p < pos; p += cp_len(p)) col++;
+    return col;
+}
+
+static int pos_at_col(int ls, int le, int col)                      /* byte position of a column, clamped to the line end */
+{
+    int p = ls;
+    while (col > 0 && p < le) { p += cp_len(p); col--; }
+    return p;
+}
+
 static int vis_rows(void)  { return dq_rows() - HEADER_ROWS - FOOTER_ROWS; }
 static int vis_cols(void)  { return dq_cols() - 4; }
 
@@ -52,7 +86,7 @@ static void scroll_to_cursor(void)
     int below = 0;                                          /* lines between top and the cursor's line */
     for (int i = s_top; i < ls; i++) if (s_buf[i] == '\n') below++;
     while (below >= vis_rows()) { s_top = line_end(s_top) + 1; below--; }
-    int col = s_cur - ls;
+    int col = col_of(ls, s_cur);
     if (col < s_hscroll) s_hscroll = col;
     if (col >= s_hscroll + vis_cols()) s_hscroll = col - vis_cols() + 1;
 }
@@ -63,30 +97,41 @@ static void scroll_to_cursor(void)
  * moment (clear, then draw) is seen as a flash.  Therefore the frame is drawn once (`full`), and after
  * that every text row is written in ONE pass with its background, and only if it changed. */
 #define MAX_SCREEN_ROWS 64
-#define ROW_CHARS       200
-static struct { char text[ROW_CHARS]; int cursor; } s_shown[MAX_SCREEN_ROWS];
+#define ROW_CHARS       400                                         /* bytes: up to 80 cells of 3-byte characters, with room */
+static struct row { char text[ROW_CHARS]; int cursor; } *s_shown;  /* PSRAM: allocated by edit_file */
 static bool s_full = true;
+static int s_anchor_x, s_anchor_y;                                  /* where the cursor is on screen, for the input method */
+
+static int u8_step(const char *s)                                   /* bytes of the character at s (1 for a stray byte) */
+{
+    unsigned char c = (unsigned char)s[0];
+    int k = c >= 0xF0 ? 4 : c >= 0xE0 ? 3 : c >= 0xC0 ? 2 : 1;
+    for (int i = 1; i < k; i++) if (((unsigned char)s[i] & 0xC0) != 0x80) return 1;
+    return k;
+}
 
 static void row_out(int y, const char *s, int cursor_col)          /* pad to the window width, write if changed */
 {
-    if (y < 0 || y >= MAX_SCREEN_ROWS) return;
+    if (y < 0 || y >= MAX_SCREEN_ROWS || !s_shown) return;
     int vw = vis_cols();
     char line[ROW_CHARS];
-    int n = 0;
-    while (s[n] && n < vw && n < ROW_CHARS - 1) { line[n] = s[n]; n++; }
-    while (n < vw && n < ROW_CHARS - 1) line[n++] = ' ';
-    line[n] = 0;
-    if (!s_full && s_shown[y].cursor == cursor_col) {
-        int i = 0;
-        while (line[i] && line[i] == s_shown[y].text[i]) i++;
-        if (!line[i]) return;                                       /* identical to what is on screen */
+    int n = 0, cells = 0, cur_at = -1, cur_len = 0;
+    while (s[n] && cells < vw && n < ROW_CHARS - 5) {
+        int k = u8_step(s + n);
+        if (cells == cursor_col) { cur_at = n; cur_len = k; }
+        for (int i = 0; i < k; i++) { line[n] = s[n]; n++; }
+        cells++;
     }
+    while (cells < vw && n < ROW_CHARS - 1) { if (cells == cursor_col) { cur_at = n; cur_len = 1; } line[n++] = ' '; cells++; }
+    line[n] = 0;
+    if (!s_full && s_shown[y].cursor == cursor_col && strcmp(line, s_shown[y].text) == 0) return;   /* identical to what is on screen */
     dq_text(2, y, line);
-    if (cursor_col >= 0 && cursor_col < n) {
-        char under[2] = { line[cursor_col], 0 };
+    if (cur_at >= 0) {
+        char under[5] = { 0 };
+        for (int i = 0; i < cur_len; i++) under[i] = line[cur_at + i];
         dq_text_rev(2 + cursor_col, y, under);
     }
-    for (int i = 0; i <= n; i++) s_shown[y].text[i] = line[i];
+    memcpy(s_shown[y].text, line, (size_t)n + 1);
     s_shown[y].cursor = cursor_col;
 }
 
@@ -94,7 +139,7 @@ static void draw(void)
 {
     if (s_full) {
         dq_window(0, 0, dq_cols(), dq_rows());
-        for (int y = 0; y < MAX_SCREEN_ROWS; y++) s_shown[y].cursor = -2;
+        for (int y = 0; y < MAX_SCREEN_ROWS; y++) { s_shown[y].cursor = -2; s_shown[y].text[0] = 1; }
     }
     char head[160];
     ksnprintf(head, sizeof head, "EDIT  %s%s", s_path, s_modified ? "  [modified]" : "");
@@ -108,13 +153,20 @@ static void draw(void)
         int n = 0, cc = -1;
         if (pos <= s_len) {
             int le = line_end(pos);
-            for (int i = pos + s_hscroll; i < le && n < vw && n < ROW_CHARS - 1; i++) {
+            int i = pos, cells = 0;
+            for (int skip = s_hscroll; skip > 0 && i < le; skip--) i += cp_len(i);
+            while (i < le && cells < vw && n < ROW_CHARS - 5) {
+                int k = cp_len(i);
                 unsigned char c = (unsigned char)s_buf[i];
-                line[n++] = (c >= 0x20 && c < 0x7F) ? (char)c : '.';
+                if (k == 1 && (c < 0x20 || c >= 0x7F)) { line[n++] = '.'; i++; }   /* control or stray byte */
+                else { for (int j = 0; j < k; j++) line[n++] = s_buf[i + j]; i += k; }
+                cells++;
             }
             if (pos == cur_ls) {
-                cc = s_cur - cur_ls - s_hscroll;
-                while (n <= cc && n < ROW_CHARS - 1) line[n++] = ' ';            /* the cursor may sit past the end of the line */
+                cc = col_of(cur_ls, s_cur) - s_hscroll;
+                while (cells <= cc && n < ROW_CHARS - 1) { line[n++] = ' '; cells++; }   /* the cursor may sit past the end of the line */
+                s_anchor_x = 2 + cc;
+                s_anchor_y = HEADER_ROWS + r;
             }
             pos = le + 1;
         }
@@ -125,7 +177,7 @@ static void draw(void)
     int fy = dq_rows() - FOOTER_ROWS;
     row_out(fy, "^S:save  ^Q/ESC:quit  arrows/PgUp/PgDn/Home/End:move  Del/BS:delete  Tab:indent", -1);
     char st[160];
-    ksnprintf(st, sizeof st, "Ln %d Col %d   %d/%d bytes   %s", line_number(s_cur), s_cur - cur_ls + 1, s_len, EDIT_MAX, s_status);
+    ksnprintf(st, sizeof st, "Ln %d Col %d   %d/%d bytes   %s", line_number(s_cur), col_of(cur_ls, s_cur) + 1, s_len, EDIT_MAX, s_status);
     row_out(fy + 1, st, -1);
     s_full = false;
 }
@@ -143,30 +195,40 @@ static void insert(char c)
     s_modified = true;
 }
 
-static void erase_at(int pos)                    /* delete the byte at pos */
+static void insert_bytes(const char *b, int n)
 {
-    if (pos < 0 || pos >= s_len) return;
-    memmove(&s_buf[pos], &s_buf[pos + 1], (size_t)(s_len - pos - 1));
-    s_len--;
+    if (s_len + n > EDIT_MAX) { say("buffer full"); return; }
+    memmove(&s_buf[s_cur + n], &s_buf[s_cur], (size_t)(s_len - s_cur));
+    for (int i = 0; i < n; i++) s_buf[s_cur++] = b[i];
+    s_len += n;
     s_modified = true;
 }
 
-static void set_cursor(int pos) { s_cur = pos; s_want = pos - line_start(pos); }
+static void erase_at(int pos)                    /* delete the character at pos */
+{
+    if (pos < 0 || pos >= s_len) return;
+    int n = cp_len(pos);
+    memmove(&s_buf[pos], &s_buf[pos + n], (size_t)(s_len - pos - n));
+    s_len -= n;
+    s_modified = true;
+}
+
+static void set_cursor(int pos) { s_cur = pos; s_want = col_of(line_start(pos), pos); }
 
 static void move_up(void)
 {
     int ls = line_start(s_cur);
     if (ls == 0) return;
-    int pend = ls - 1, pls = line_start(pend), l = pend - pls;
-    s_cur = pls + (s_want < l ? s_want : l);
+    int pend = ls - 1, pls = line_start(pend);
+    s_cur = pos_at_col(pls, pend, s_want);
 }
 
 static void move_down(void)
 {
     int le = line_end(s_cur);
     if (le >= s_len) return;
-    int nls = le + 1, nle = line_end(nls), l = nle - nls;
-    s_cur = nls + (s_want < l ? s_want : l);
+    int nls = le + 1, nle = line_end(nls);
+    s_cur = pos_at_col(nls, nle, s_want);
 }
 
 /* ---- file ------------------------------------------------------------------------ */
@@ -183,9 +245,17 @@ static int load(void)
     int n;
     while (s_len < EDIT_MAX && (n = vfs_read(fd, &s_buf[s_len], (size_t)(EDIT_MAX - s_len))) > 0) s_len += n;
     vfs_close(fd);
-    for (int i = 0; i < s_len; i++) {                              /* the 8x8 font is ASCII: refuse binary data */
+    for (int i = 0; i < s_len;) {                                  /* text only: ASCII and well-formed UTF-8, no control bytes */
         unsigned char c = (unsigned char)s_buf[i];
-        if ((c < 0x20 && c != '\n' && c != '\t' && c != '\r') || c >= 0x7F) return ERR_INVAL;
+        if (c < 0x80) {
+            if ((c < 0x20 && c != '\n' && c != '\t' && c != '\r') || c == 0x7F) return ERR_INVAL;
+            i++;
+            continue;
+        }
+        if (c < 0xC2 || c > 0xF4) return ERR_INVAL;
+        int k = cp_len(i);
+        if (k == 1) return ERR_INVAL;
+        i += k;
     }
     return 0;
 }
@@ -206,38 +276,49 @@ static bool save(void)
 bool edit_file(const char *path)
 {
     ksnprintf(s_path, sizeof s_path, "%s", path);
+    if (!s_shown) s_shown = kmalloc_psram(sizeof(struct row) * MAX_SCREEN_ROWS);
+    if (!s_shown) { dq_message("Out of memory.", NULL); return false; }
     s_full = true;
     s_status[0] = 0; s_cur = s_top = s_hscroll = s_want = 0; s_modified = s_saved_any = false;
     int rc = load();
     if (rc == ERR_NOSPC) { dq_message("File is larger than the editor buffer", "(32 KB)."); return false; }
-    if (rc == ERR_INVAL) { dq_message("Cannot edit: not a plain ASCII text file.", NULL); return false; }
+    if (rc == ERR_INVAL) { dq_message("Cannot edit: not a UTF-8 text file.", NULL); return false; }
     if (rc < 0)          { dq_message("Cannot open the file.", NULL); return false; }
 
     for (;;) {
         scroll_to_cursor();
         draw();
+        ime_set_anchor(s_anchor_x, s_anchor_y);                     /* Japanese input is composed at the cursor */
         int k = dq_getkey();
         s_status[0] = 0;
         switch (k) {
         case K_SAVE: save(); break;
         case K_QUIT: case DQK_ESC:
-            if (!s_modified || dq_confirm("Discard unsaved changes?")) return s_saved_any;
+            if (!s_modified || dq_confirm("Discard unsaved changes?")) { ime_clear_anchor(); return s_saved_any; }
             s_full = true;                                           /* the dialog covered the text */
             break;
         case DQK_UP:    move_up(); break;
         case DQK_DOWN:  move_down(); break;
-        case DQK_LEFT:  if (s_cur > 0) set_cursor(s_cur - 1); break;
-        case DQK_RIGHT: if (s_cur < s_len) set_cursor(s_cur + 1); break;
+        case DQK_LEFT:  if (s_cur > 0) set_cursor(prev_start(s_cur)); break;
+        case DQK_RIGHT: if (s_cur < s_len) set_cursor(s_cur + cp_len(s_cur)); break;
         case DQK_HOME:  set_cursor(line_start(s_cur)); break;
         case DQK_END:   set_cursor(line_end(s_cur)); break;
         case DQK_PGUP:  for (int i = 0; i < vis_rows() - 1; i++) move_up(); break;
         case DQK_PGDN:  for (int i = 0; i < vis_rows() - 1; i++) move_down(); break;
         case DQK_ENTER: insert('\n'); set_cursor(s_cur); break;
-        case DQK_BACKSPACE: if (s_cur > 0) { erase_at(s_cur - 1); set_cursor(s_cur - 1); } break;
+        case DQK_BACKSPACE: if (s_cur > 0) { int st = prev_start(s_cur); erase_at(st); set_cursor(st); } break;
         case DQK_DEL:   erase_at(s_cur); set_cursor(s_cur); break;
         case '\t':      for (int i = 0; i < TAB_SPACES; i++) insert(' '); set_cursor(s_cur); break;
         default:
             if (k >= 0x20 && k < 0x7F) { insert((char)k); set_cursor(s_cur); }
+            else if (k >= 0xC2 && k <= 0xF4) {                       /* a UTF-8 character from the input method */
+                char b[4];
+                int n = k >= 0xF0 ? 4 : k >= 0xE0 ? 3 : 2;
+                b[0] = (char)k;
+                for (int i = 1; i < n; i++) { int c = dq_getkey(); b[i] = (char)(c < 0 ? 0 : c); }
+                insert_bytes(b, n);
+                set_cursor(s_cur);
+            }
             break;
         }
     }

@@ -1,7 +1,16 @@
 #include "filer.h"
 #include "../tui/dqwin.h"
 #include "../edit/edit.h"
+#include "../camera/camera_app.h"
 #include "../viewer/imgview.h"
+#include "../wifi/wifi_app.h"
+#include "../ssh/ssh_app.h"
+#include "../tailscale/tailscale_app.h"
+#include "../web/web_app.h"
+#include "../../drivers/lcd/fbcon.h"
+
+#include <m5os/display.h>
+#include <m5os/kmalloc.h>
 #include <m5os/vfs.h>
 #include <m5os/fs.h>
 #include <m5os/errno.h>
@@ -107,8 +116,15 @@ static void draw_entry(int idx)
     const entry_t *e = &s_ent[idx];
     char size[12];
     if (e->dir) ksnprintf(size, sizeof size, "<DIR>"); else ksnprintf(size, sizeof size, "%u", (unsigned)e->size);
-    char line[COL_WIDTH + 8];
-    ksnprintf(line, sizeof line, "%c%-23s %8s ", s_mark[idx] ? '*' : ' ', e->name, size);      /* 1 + 23 + 1 + 8 + 1 = 34 = COL_WIDTH */
+    char line[COL_WIDTH + 40];
+    int cells = 0;
+    for (const char *q = e->name; *q; q++) if (((unsigned char)*q & 0xC0) != 0x80) cells++;     /* names are UTF-8: pad by characters */
+    char pad[FS_NAME_MAX + 1];
+    int np = FS_NAME_MAX - cells;
+    if (np < 0) np = 0;
+    for (int i = 0; i < np; i++) pad[i] = ' ';
+    pad[np] = 0;
+    ksnprintf(line, sizeof line, "%c%s%s %8s ", s_mark[idx] ? '*' : ' ', e->name, pad, size);   /* 1 + 23 + 1 + 8 + 1 = 34 = COL_WIDTH */
     if (idx == s_sel) dq_text_rev(cx, cy, line); else dq_text(cx, cy, line);
 }
 
@@ -135,9 +151,15 @@ static int marked_count(void) { int c = 0; for (int i = 0; i < s_n; i++) if (s_m
 static void padded(int cx, int cy, const char *s)         /* write s and blank the rest of the line inside the window */
 {
     char line[200];
-    int n = 0, w = dq_cols() - cx - 2;
-    while (s[n] && n < w && n < (int)sizeof line - 1) { line[n] = s[n]; n++; }
-    while (n < w && n < (int)sizeof line - 1) line[n++] = ' ';
+    int n = 0, w = dq_cols() - cx - 2, cells = 0;
+    while (s[n] && cells < w && n < (int)sizeof line - 5) {            /* UTF-8: count characters, never cut one */
+        int k = 1;
+        unsigned char c = (unsigned char)s[n];
+        if (c >= 0xF0) k = 4; else if (c >= 0xE0) k = 3; else if (c >= 0xC0) k = 2;
+        for (int i = 0; i < k && s[n]; i++) line[n] = s[n], n++;
+        cells++;
+    }
+    while (cells < w && n < (int)sizeof line - 1) { line[n++] = ' '; cells++; }
     line[n] = 0;
     dq_text(cx, cy, line);
 }
@@ -147,9 +169,9 @@ static void draw_chrome(void)
     int w = dq_cols(), fy = dq_rows() - FOOTER_ROWS;
     if (s_full) {
         dq_window(0, 0, w, HEADER_ROWS);
-        dq_text(2, 1, "M5 FILER");
+        dq_text(2, 1, "MeOS FILER");
         dq_window(0, fy, w, FOOTER_ROWS);
-        dq_text(2, fy + 1, "Enter:open BS:up Space:mark C:copy M:move D:delete K:mkdir N:rename V:view E:edit F:new Q:quit");
+        dq_text(2, fy + 1, "Ent/V:view P:cam W:wifi S:ssh B:web BS:up Spc:mark C:cp M:mv D:del K:mkdir N:ren E:edit Q:quit");
     }
     padded(12, 1, s_path);
     char st[120];
@@ -298,31 +320,63 @@ static void do_rename(void)
 
 /* ---------------------------------------------------------------- viewer */
 
-static bool has_ext(const char *name, const char *ext)          /* case-insensitive suffix test, ext like ".bmp" */
+/* The image viewer lives in user/viewer; the filer only tells it which file is next / previous in this directory. */
+static int strlen_(const char *s) { int n = 0; while (s[n]) n++; return n; }
+
+static int  s_view_idx;
+static bool s_camera_ran;
+
+static bool view_step(int dir, char *path, size_t cap)
 {
-    int n = 0, m = 0;
-    while (name[n]) n++;
-    while (ext[m]) m++;
-    if (n < m) return false;
-    for (int i = 0; i < m; i++) {
-        char a = name[n - m + i], b = ext[i];
-        if (a >= 'A' && a <= 'Z') a = (char)(a + 32);
-        if (a != b) return false;
+    for (int step = 1; step < s_n; step++) {
+        int cand = (s_view_idx + dir * step % s_n + s_n) % s_n;
+        if (s_ent[cand].dir || !imgview_is_image_name(s_ent[cand].name)) continue;
+        char p[PATH_MAX_];
+        path_join(p, s_path, s_ent[cand].name);
+        if (!p[0] || strlen_(p) >= cap) return false;
+        for (int i = 0; ; i++) { path[i] = p[i]; if (!p[i]) break; }
+        s_view_idx = cand;
+        return true;
     }
-    return true;
+    return false;
 }
 
-static bool is_image(const char *name) { return has_ext(name, ".bmp") || has_ext(name, ".ppm") || has_ext(name, ".pgm"); }
+static void view_camera(void)
+{
+    char saved[32] = "";
+    camera_app_run(s_path, saved);
+    reload(saved[0] ? saved : s_ent[s_view_idx].name);       /* the new photo becomes the selection */
+    s_camera_ran = true;
+}
+
+static void view_image_file(int idx)
+{
+    static const imgview_nav_t nav = { view_step, view_camera };
+    char p[PATH_MAX_];
+    path_join(p, s_path, s_ent[idx].name);
+    if (!p[0]) return;
+    s_view_idx = idx;
+    s_camera_ran = false;
+    if (!imgview_show(p, &nav)) ksnprintf(s_status, sizeof s_status, "cannot show image: %s", s_ent[idx].name);
+    if (!s_camera_ran) move_to(s_view_idx);
+}
 
 static void view_file(const entry_t *e)
 {
+    if (imgview_is_image_name(e->name)) {
+        view_image_file(s_sel);
+        return;
+    }
     char p[PATH_MAX_];
     path_join(p, s_path, e->name);
-    if (p[0] && is_image(e->name)) { imgview_show(p); return; }
     int fd = p[0] ? vfs_open(p, VFS_O_READ) : ERR_INVAL;
     if (fd < 0) { ksnprintf(s_status, sizeof s_status, "cannot open (error %d)", fd); return; }
     int len = vfs_read(fd, s_view, VIEW_BYTES);
     vfs_close(fd);
+    if (len >= 54 && (uint8_t)s_view[0] == 'B' && (uint8_t)s_view[1] == 'M') {
+        view_image_file(s_sel);
+        return;
+    }
     if (len < 0) len = 0;
     s_view[len] = 0;
     for (int i = 0; i < len; i++) {                               /* show only what the 8x8 font has */
@@ -437,7 +491,51 @@ void filer_run(const char *start_dir)
             }
             break;
         }
+        case 'p': case 'P': {                                       /* launch camera */
+            char saved[32] = "";
+            camera_app_run(s_path, saved);
+            dq_clear();
+            s_full = true;
+            reload(saved[0] ? saved : (s_n ? s_ent[s_sel].name : NULL));
+            if (saved[0]) ksnprintf(s_status, sizeof s_status, "captured %s", saved);
+            break;
+        }
+        case 'w': case 'W': {                                       /* launch Wi-Fi settings */
+            wifi_app_run();
+            dq_clear();
+            s_full = true;
+            reload(s_n ? s_ent[s_sel].name : NULL);
+            break;
+        }
+        case 's': case 'S': {                                       /* launch SSH client */
+            ssh_app_run();
+            fbcon_pause(true);
+            task_sleep(100);
+            dq_clear();
+            s_full = true;
+            reload(s_n ? s_ent[s_sel].name : NULL);
+            break;
+        }
+        case 't': case 'T': {                                       /* launch Tailscale VPN manager */
+            tailscale_app_main();
+            fbcon_pause(true);
+            task_sleep(100);
+            dq_clear();
+            s_full = true;
+            reload(s_n ? s_ent[s_sel].name : NULL);
+            break;
+        }
+        case 'b': case 'B': {                                       /* launch Web Browser */
+            web_app_run();
+            fbcon_pause(true);
+            task_sleep(100);
+            dq_clear();
+            s_full = true;
+            reload(s_n ? s_ent[s_sel].name : NULL);
+            break;
+        }
         case 'v': case 'V': if (s_n && !s_ent[s_sel].dir) { view_file(&s_ent[s_sel]); s_full = true; } break;
+
         case ' ':
             if (s_n && s_ent[s_sel].name[0] != '.') { s_mark[s_sel] = !s_mark[s_sel]; move_to(s_sel + 1); }
             break;
@@ -445,7 +543,7 @@ void filer_run(const char *start_dir)
         case 'm': case 'M': do_copy_move(true);  reload(NULL); s_full = true; break;
         case 'd': case 'D': case DQK_DEL: do_delete(); reload(NULL); s_full = true; break;
         case 'n': case 'N': do_rename(); reload(NULL); s_full = true; break;
-        case 'K': case 'B': do_mkdir(); reload(NULL); s_full = true; break;
+        case 'K': do_mkdir(); reload(NULL); s_full = true; break;
         case 'r': case 'R': reload(NULL); say("reloaded"); break;
         default: continue;
         }

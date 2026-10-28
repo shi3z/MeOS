@@ -47,6 +47,13 @@ void hal_console_putc(char c)
     }
 }
 
+void hal_console_flush(void)
+{
+    if (!s_host_stalled) {
+        usb_serial_jtag_ll_txfifo_flush();
+    }
+}
+
 int hal_console_getc(void)
 {
     uint8_t b;

@@ -19,8 +19,10 @@ void dq_cursor(int cx, int cy, bool on);              /* the triangle, one cell 
 
 /* Keys.  Printable characters are returned as themselves; the rest are the DQK_* codes. */
 enum { DQK_NONE = -1, DQK_ESC = 0x1B, DQK_ENTER = '\r', DQK_BACKSPACE = 0x7F,
-       DQK_UP = 0x100, DQK_DOWN, DQK_LEFT, DQK_RIGHT, DQK_PGUP, DQK_PGDN, DQK_HOME, DQK_END, DQK_DEL };
+       DQK_UP = 0x100, DQK_DOWN, DQK_LEFT, DQK_RIGHT, DQK_PGUP, DQK_PGDN, DQK_HOME, DQK_END, DQK_DEL,
+       DQK_F1, DQK_F2, DQK_F3, DQK_F4 };
 int  dq_getkey(void);                                 /* blocks (sleeping) until a key arrives */
+int  dq_pollkey(void);                                /* non-blocking: returns DQK_NONE if no key is queued */
 
 /* Ready-made dialogs; each draws its own window in the middle of the screen and leaves it there
  * (the caller repaints what is underneath). */

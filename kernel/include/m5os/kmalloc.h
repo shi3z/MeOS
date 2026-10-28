@@ -22,6 +22,8 @@ void *kmalloc(size_t size);             /* internal first; PSRAM if internal is 
 void *kcalloc(size_t n, size_t size);   /* zeroed, same policy as kmalloc */
 void *kmalloc_internal(size_t size);    /* internal SRAM only (NULL when full) */
 void *kmalloc_internal_owned(size_t size, uint32_t owner);   /* internal, tagged for app `owner` */
+void *kmalloc_psram_owned(size_t size, uint32_t owner);       /* PSRAM, tagged for app `owner` (NULL without PSRAM) */
+void *umalloc_psram(size_t size);                              /* PSRAM only, tagged with the calling app */
 void *kmalloc_psram(size_t size);       /* PSRAM only (NULL if absent or full) */
 void *kmalloc_dma(size_t size);         /* DMA-capable: internal, 16-byte aligned */
 void *umalloc(size_t size);             /* for applications: tagged with the app, reclaimed when it ends */

@@ -1,3 +1,4 @@
+#include <m5os/wasm.h>
 #include <m5os/app.h>
 #include <m5os/arch.h>
 #include <m5os/errno.h>
@@ -189,6 +190,7 @@ static void appd_task(void *arg)
             task_kill_app(a);                          /* children still running */
             gui_release_owner(a->app_id);              /* its windows */
             vfs_close_owned(a->app_id);                /* handles left open */
+            wasm_app_cleanup(a->app_id);               /* the screen, if a WebAssembly app still held it */
             a->reclaimed_bytes = (uint32_t)kmem_reclaim_owner(a->app_id);   /* umalloc'd memory */
             a->cleaned = true;
         }

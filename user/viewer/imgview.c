@@ -7,7 +7,7 @@
 #include <m5os/kprintf.h>
 
 #define MAX_FILE   (8u * 1024u * 1024u)
-#define MAX_ZOOM   4                      /* small images are enlarged by whole factors, up to this */
+#define MAX_PIXELS (4 * 1024 * 1024)      /* a 16-bit copy of the biggest picture must fit in PSRAM */
 #define LINE_BYTES 4                      /* BMP rows are padded to a multiple of 4 bytes */
 
 static uint32_t le32(const uint8_t *p) { return p[0] | p[1] << 8 | p[2] << 16 | (uint32_t)p[3] << 24; }
@@ -43,6 +43,7 @@ static uint16_t pixel(const src_t *s, int x, int y)
     case 32: { p += x * 4; uint32_t v = le32(p);
                return s->mask_r ? rgb565((int)take(v, s->mask_r), (int)take(v, s->mask_g), (int)take(v, s->mask_b)) : rgb565(p[2], p[1], p[0]); }
     case 16: { uint32_t v = le16(p + x * 2);
+               if (s->mask_r == 0xF800 && s->mask_g == 0x07E0 && s->mask_b == 0x001F) return (uint16_t)v;   /* already RGB565 */
                return rgb565((int)take(v, s->mask_r), (int)take(v, s->mask_g), (int)take(v, s->mask_b)); }
     case 8:  if (s->pal) { const uint8_t *e = s->pal + 4 * p[x]; return rgb565(e[2], e[1], e[0]); }
              return rgb565(p[x], p[x], p[x]);
@@ -105,17 +106,30 @@ static bool parse_ppm(const uint8_t *f, size_t n, src_t *s)
 static const char *s_why = "";
 const char *imgview_last_error(void) { return s_why; }
 
-uint16_t *imgview_decode(const char *path, int max_w, int max_h, int *ow, int *oh)
+bool imgview_is_image_name(const char *name)
+{
+    if (!name) return false;
+    int n = 0;
+    while (name[n]) n++;
+    if (n < 5 || name[n - 4] != '.') return false;
+    char a = name[n - 3], b = name[n - 2], c = name[n - 1];
+    a = (char)(a >= 'A' && a <= 'Z' ? a + 32 : a);
+    b = (char)(b >= 'A' && b <= 'Z' ? b + 32 : b);
+    c = (char)(c >= 'A' && c <= 'Z' ? c + 32 : c);
+    return (a == 'b' && b == 'm' && c == 'p') || (a == 'p' && (b == 'p' || b == 'g') && c == 'm');
+}
+
+bool imgview_load(const char *path, uint16_t **pixels, int *ow, int *oh)
 {
     vfs_info_t st;
+    *pixels = NULL;
     s_why = "";
-    int rc = vfs_stat(path, &st);
-    if (rc != ERR_OK)                { s_why = "cannot stat the file"; return NULL; }
-    if (st.type != FS_TYPE_FILE)     { s_why = "not a regular file"; return NULL; }
-    if (st.size < 16)                { s_why = "file too small"; return NULL; }
-    if (st.size > MAX_FILE)          { s_why = "file larger than 8 MB"; return NULL; }
+    if (vfs_stat(path, &st) != ERR_OK) { s_why = "cannot stat the file"; return false; }
+    if (st.type != FS_TYPE_FILE)       { s_why = "not a regular file"; return false; }
+    if (st.size < 16)                  { s_why = "file too small"; return false; }
+    if (st.size > MAX_FILE)            { s_why = "file larger than 8 MB"; return false; }
     uint8_t *file = kmalloc_psram(st.size);
-    if (!file)                       { s_why = "out of PSRAM"; return NULL; }
+    if (!file)                         { s_why = "out of PSRAM"; return false; }
     int fd = vfs_open(path, VFS_O_READ);
     size_t got = 0;
     if (fd >= 0) {
@@ -127,45 +141,116 @@ uint16_t *imgview_decode(const char *path, int max_w, int max_h, int *ow, int *o
     uint16_t *out = NULL;
     if (got != st.size) s_why = "short read";
     else if (!parse_bmp(file, got, &s) && !parse_ppm(file, got, &s)) s_why = "not a supported BMP/PPM";
+    else if ((int64_t)s.w * s.h > MAX_PIXELS) s_why = "picture too large";
+    else if (!(out = kmalloc_psram((size_t)s.w * (size_t)s.h * 2))) s_why = "out of PSRAM for the picture";
     else {
-        /* Fit: enlarge small images by a whole factor, shrink big ones to the screen (nearest neighbour). */
-        int zoom = 1;
-        while (zoom < MAX_ZOOM && s.w * (zoom + 1) <= max_w && s.h * (zoom + 1) <= max_h) zoom++;
-        int w = s.w * zoom, h = s.h * zoom;
-        if (w > max_w) { h = (int)((int64_t)s.h * max_w / s.w); w = max_w; }
-        if (h > max_h) { w = (int)((int64_t)s.w * max_h / s.h); h = max_h; }
-        if (w < 1) w = 1;
-        if (h < 1) h = 1;
-        out = kmalloc_psram((size_t)w * (size_t)h * 2);
-        if (!out) s_why = "out of PSRAM for the picture";
-        else {
-            for (int y = 0; y < h; y++) {
-                int sy = (int)((int64_t)y * s.h / h);
-                for (int x = 0; x < w; x++) out[(size_t)y * (size_t)w + (size_t)x] = pixel(&s, (int)((int64_t)x * s.w / w), sy);
-            }
-            *ow = w; *oh = h;
-        }
+        for (int y = 0; y < s.h; y++)
+            for (int x = 0; x < s.w; x++) out[(size_t)y * (size_t)s.w + (size_t)x] = pixel(&s, x, y);
+        *ow = s.w; *oh = s.h;
     }
     kfree(file);
-    return out;
+    *pixels = out;
+    return out != NULL;
 }
 
-bool imgview_show(const char *path)
+void imgview_draw_fit(int x, int y, int dw, int dh, const uint16_t *src, int sw, int sh)
 {
-    int w = 0, h = 0;
-    uint16_t *px = imgview_decode(path, DISPLAY_WIDTH, DISPLAY_HEIGHT, &w, &h);
-    if (!px) { dq_message("Cannot show this file:", imgview_last_error()); return false; }
-    dq_clear();
-    display_draw_bitmap((DISPLAY_WIDTH - w) / 2, (DISPLAY_HEIGHT - h) / 2, w, h, px);
-    char info[100];
-    ksnprintf(info, sizeof info, " %dx%d  Q:close ", w, h);
-    dq_text(0, dq_rows() - 1, info);
-    for (;;) {
-        int k = dq_getkey();
-        if (k == 'q' || k == 'Q' || k == DQK_ESC || k == DQK_ENTER) break;
+    static uint16_t *buf;                                    /* scaled copy, at most one screenful, allocated once */
+    static int xmap[DISPLAY_WIDTH];
+    if (!src || sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) return;
+    if (dw > DISPLAY_WIDTH) dw = DISPLAY_WIDTH;
+    if (dh > DISPLAY_HEIGHT) dh = DISPLAY_HEIGHT;
+    if (dw == sw && dh == sh) { display_draw_bitmap(x, y, sw, sh, src); return; }
+    if (!buf) buf = kmalloc_psram((size_t)DISPLAY_WIDTH * DISPLAY_HEIGHT * 2);
+    if (!buf) { display_draw_bitmap(x, y, sw < dw ? sw : dw, sh < dh ? sh : dh, src); return; }
+    for (int i = 0; i < dw; i++) xmap[i] = (int)((int64_t)i * sw / dw);
+    for (int j = 0; j < dh; j++) {
+        const uint16_t *row = &src[(size_t)((int64_t)j * sh / dh) * (size_t)sw];
+        uint16_t *out = &buf[(size_t)j * (size_t)dw];
+        for (int i = 0; i < dw; i++) out[i] = row[xmap[i]];
     }
-    kfree(px);
-    return true;
+    display_draw_bitmap(x, y, dw, dh, buf);
+}
+
+/* ---- the viewer ------------------------------------------------------------------ */
+
+#define V_HEADER_ROWS 3
+#define V_FOOTER_ROWS 4
+#define V_CELL        (8 * M5OS_FBCON_SCALE)
+
+static void pad_text(int cx, int cy, const char *s)           /* write s, blanking the rest of the line inside the frame */
+{
+    char line[200];
+    int n = 0, w = dq_cols() - cx - 2;
+    while (s[n] && n < w && n < (int)sizeof line - 1) { line[n] = s[n]; n++; }
+    while (n < w && n < (int)sizeof line - 1) line[n++] = ' ';
+    line[n] = 0;
+    dq_text(cx, cy, line);
+}
+
+bool imgview_show(const char *start, const imgview_nav_t *nav)
+{
+    char path[VFS_PATH_MAX];
+    ksnprintf(path, sizeof path, "%s", start);
+    bool fit = true;                                           /* Z toggles between "fill the area" and the real size */
+    int cols = dq_cols(), rows = dq_rows(), fy = rows - V_FOOTER_ROWS, mid_rows = rows - V_HEADER_ROWS - V_FOOTER_ROWS;
+
+    for (;;) {                                                 /* one pass per image */
+        uint16_t *px;
+        int w, h;
+        if (!imgview_load(path, &px, &w, &h)) { dq_message("Cannot show this file:", s_why); return false; }
+        vfs_info_t st;
+        unsigned kb = vfs_stat(path, &st) == ERR_OK ? (unsigned)(st.size / 1024u) : 0;
+        const char *name = path;
+        for (const char *q = path; *q; q++) if (*q == '/') name = q + 1;
+
+        dq_window(0, 0, cols, V_HEADER_ROWS);
+        dq_window(0, V_HEADER_ROWS, cols, mid_rows);
+        dq_window(0, fy, cols, V_FOOTER_ROWS);
+        dq_text(2, 1, "IMAGE VIEWER");
+        char help[140];
+        ksnprintf(help, sizeof help, "Z/Space:Zoom  %s%sQ/ESC/Enter:Close",
+                  (nav && nav->step) ? "Left/Right:Prev/Next  " : "", (nav && nav->camera) ? "P:Camera  " : "");
+        dq_text(2, fy + 1, help);
+        pad_text(2, fy + 2, path);
+
+        bool changed_image = false;
+        while (!changed_image) {
+            char info[140];
+            ksnprintf(info, sizeof info, "%s  (%dx%d, %u KB)  [%s]", name, w, h, kb, fit ? "Fit" : "1:1");
+            pad_text(16, 1, info);
+
+            int area_w = DISPLAY_WIDTH - 2 * V_CELL, area_h = mid_rows * V_CELL - V_CELL;
+            int dw, dh;
+            if (fit) {                                         /* scale up or down to fill the area, keeping the proportions */
+                dw = area_w; dh = (int)((int64_t)h * dw / w);
+                if (dh > area_h) { dh = area_h; dw = (int)((int64_t)w * dh / h); }
+            } else {
+                dw = w; dh = h;
+                if (dw > area_w) { dh = (int)((int64_t)dh * area_w / dw); dw = area_w; }
+                if (dh > area_h) { dw = (int)((int64_t)dw * area_h / dh); dh = area_h; }
+            }
+            if (dw < 1) dw = 1;
+            if (dh < 1) dh = 1;
+            int dx = (DISPLAY_WIDTH - dw) / 2, dy = V_HEADER_ROWS * V_CELL + (mid_rows * V_CELL - dh) / 2;
+            display_fill_rect(V_CELL / 2, V_HEADER_ROWS * V_CELL + V_CELL / 2, DISPLAY_WIDTH - V_CELL, mid_rows * V_CELL - V_CELL, COLOR_BLACK);
+            display_draw_rect(dx - 2, dy - 2, dw + 4, dh + 4, COLOR_WHITE);
+            imgview_draw_fit(dx, dy, dw, dh, px, w, h);
+
+            int k = dq_getkey();
+            if (k == 'q' || k == 'Q' || k == DQK_ESC || k == DQK_ENTER) { kfree(px); return true; }
+            if (k == 'z' || k == 'Z' || k == ' ') { fit = !fit; continue; }
+            if ((k == 'p' || k == 'P') && nav && nav->camera) { kfree(px); nav->camera(); return true; }
+            int dir = (k == DQK_RIGHT || k == DQK_DOWN || k == 'l' || k == 'j' || k == 'n') ? 1
+                    : (k == DQK_LEFT || k == DQK_UP || k == 'h' || k == 'k') ? -1 : 0;
+            char next[VFS_PATH_MAX];
+            if (dir && nav && nav->step) {
+                ksnprintf(next, sizeof next, "%s", path);
+                if (nav->step(dir, next, sizeof next)) { ksnprintf(path, sizeof path, "%s", next); changed_image = true; }
+            }
+        }
+        kfree(px);
+    }
 }
 
 int imgview_write_bmp(const char *path, const uint16_t *px, int w, int h)

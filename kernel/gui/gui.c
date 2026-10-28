@@ -147,7 +147,7 @@ static void draw_status(void)
     const win_t *w = front();
     uint32_t s = now_ms() / 1000u;
     display_fill_rect(0, 0, GUI_SCREEN_W, GUI_STATUS_H, COL_STATUS_BG);
-    ksnprintf(buf, sizeof buf, "M5OS  %-15s up %02u:%02u", w ? w->title : "(no window)", (s / 60u) % 100u, s % 60u);
+    ksnprintf(buf, sizeof buf, "MeOS  %-15s up %02u:%02u", w ? w->title : "(no window)", (s / 60u) % 100u, s % 60u);
     display_draw_text(4, 4, buf, COL_STATUS_FG, COL_STATUS_BG, 1);
 }
 

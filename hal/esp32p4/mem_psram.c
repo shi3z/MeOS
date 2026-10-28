@@ -23,11 +23,9 @@ void hal_psram_region(uintptr_t *base, size_t *size)
 #if CONFIG_SPIRAM
     if (!esp_psram_is_initialized()) return;
     size_t sz = esp_psram_get_size();
-    uintptr_t start = SOC_EXTRAM_LOW;
-    esp_paddr_t paddr = 0;
-    mmu_target_t target;
-    if (esp_mmu_vaddr_to_paddr((void *)start, &paddr, &target) != ESP_OK || target != MMU_TARGET_PSRAM0 || paddr != 0) return;
-    *base = start;
+    void *vaddr = NULL;
+    if (esp_mmu_paddr_to_vaddr(0, MMU_TARGET_PSRAM0, MMU_VADDR_DATA, &vaddr) != ESP_OK || !vaddr) return;
+    *base = (uintptr_t)vaddr;
     *size = sz - M5OS_PSRAM_RESERVE;                 /* the reserve stays with the IDF heap, see hal_psram_reserve_region */
 #endif
 }

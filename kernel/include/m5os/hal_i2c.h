@@ -12,4 +12,5 @@ bool hal_i2c_read_reg(uint8_t addr7, uint8_t reg, uint8_t *val);
 bool hal_i2c_bit_on(uint8_t addr7, uint8_t reg, uint8_t mask);
 bool hal_i2c_bit_off(uint8_t addr7, uint8_t reg, uint8_t mask);
 bool hal_i2c_read_regs(uint8_t addr7, uint8_t reg, uint8_t *buf, size_t len);  /* auto-increment read */
-bool hal_i2c_read_reg16(uint8_t addr7, uint16_t reg, uint8_t *buf, size_t len);  /* devices with 16-bit register numbers (ST7123 touch) */
+bool hal_i2c_read_reg16(uint8_t addr7, uint16_t reg, uint8_t *buf, size_t len);  /* devices with 16-bit register numbers (ST7123 touch, SC202CS camera) */
+bool hal_i2c_write_reg16(uint8_t addr7, uint16_t reg, uint8_t val);
