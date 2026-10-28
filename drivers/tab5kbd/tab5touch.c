@@ -177,6 +177,10 @@ bool tab5_touch_read(int *x, int *y)
 }
 
 void tab5_touch_set_map(int map) { s_map = map & 3; }
+const char *tab5_touch_name(void)
+{
+    return s_kind == TOUCH_GT911 ? "GT911" : s_kind == TOUCH_ST712X ? "ST712x" : "none";
+}
 int  tab5_touch_map(void) { return s_map; }
 void tab5_touch_stats(uint32_t *frames, uint32_t *errors, int *raw_x, int *raw_y, int *max_x, int *max_y)
 {
