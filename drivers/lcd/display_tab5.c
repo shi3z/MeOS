@@ -24,6 +24,7 @@
 #include <m5os/kprintf.h>
 #include <m5os/tab5.h>
 #include "font8x8.h"
+#include "bitmap_resize.h"
 #include "font_ja16.h"
 #include "ili9881c_tab5_init.h"
 #include "st7121_tab5_init.h"
@@ -472,4 +473,22 @@ void display_draw_bitmap_scaled(int x, int y, int w, int h, const uint16_t *px, 
         }
     }
     fb_flush_rows(DISPLAY_WIDTH - (x + x1), DISPLAY_WIDTH - 1 - (x + x0));
+}
+
+/* The panel is rotated: blit contiguous columns, then flush only that span. */
+void display_draw_bitmap_resized(int x,int y,int w,int h,const uint16_t *px,int dw,int dh)
+{
+    if (!s_fb) return;
+    int first,last;
+    if (tab5_bitmap_resize_clip(s_draw,x,y,w,h,px,dw,dh,&first,&last,s_clip_y))
+        fb_flush_rows(DISPLAY_WIDTH-1-last,DISPLAY_WIDTH-1-first);
+}
+
+void display_draw_indexed_bitmap_resized(int x,int y,int w,int h,const uint8_t *indices,
+    const uint16_t palette[256],int dw,int dh)
+{
+    if (!s_fb) return;
+    int first,last;
+    if (tab5_indexed_resize_rows_clip(s_draw,x,y,w,h,indices,palette,dw,dh,&first,&last,dh,s_clip_y))
+        fb_flush_rows(DISPLAY_WIDTH-1-last,DISPLAY_WIDTH-1-first);
 }
