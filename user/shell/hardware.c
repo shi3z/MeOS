@@ -91,7 +91,7 @@ void hardware_print_devices(void)
     row("microSD", "unsupported", "Tab5 SDMMC driver absent; details: storage");
     row("RTC", "unsupported", "RX8130CE; presence not probed");
     row("IMU", "unsupported", "BMI270; presence not probed");
-    row("audio", "unsupported", "codec/microphones/speaker; presence not probed");
+    row("audio", "output driver", "ES8388 output; ES7210 input bring-up: mic test");
     row("RS485", "unsupported", "no serial app or transceiver control");
     row("USB host", "keyboard only", "no generic mass-storage/mouse support");
     kputs("unsupported != absent. Only INA226/charger are read on demand; other rows report existing state.\n");

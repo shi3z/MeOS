@@ -186,3 +186,18 @@ bool hal_i2c_sys_read_regs(uint8_t addr, uint8_t reg, uint8_t *buf, size_t len)
     bus_unlock(locked);
     return ok;
 }
+
+bool hal_i2c_sys_write_reg(uint8_t addr, uint8_t reg, uint8_t val)
+{
+    bool locked = bus_lock();
+    bool ok = transfer(PIN_I2C_SCL, PIN_I2C_SDA, addr, reg, 1, &val, NULL, 1);
+    bus_unlock(locked); return ok;
+}
+bool hal_i2c_sys_update_reg(uint8_t addr, uint8_t reg, uint8_t mask, uint8_t value)
+{
+    bool locked = bus_lock(); uint8_t v;
+    bool ok = transfer(PIN_I2C_SCL, PIN_I2C_SDA, addr, reg, 1, NULL, &v, 1);
+    if (ok) { v = (v & ~mask) | (value & mask);
+        ok = transfer(PIN_I2C_SCL, PIN_I2C_SDA, addr, reg, 1, &v, NULL, 1); }
+    bus_unlock(locked); return ok;
+}
