@@ -1,4 +1,0 @@
-CONFIG_IDF_TARGET="esp32s3"
-# M5Cardputer: ESP32-S3FN8 = 8 MB flash, NO PSRAM (verified with esptool: flash_id, no 'Embedded PSRAM').
-CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
-CONFIG_ESP32S3_SPIRAM_SUPPORT=n

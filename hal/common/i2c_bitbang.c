@@ -2,10 +2,7 @@
 #include <m5os/hal_gpio.h>
 
 #include <m5os/board_config.h>
-#if defined(M5OS_BOARD_CARDPUTER)
-#  define PIN_I2C_SCL      9       /* Cardputer-ADV only: SYS_SCL/SYS_SDA (M5Unified pin table). On the original */
-#  define PIN_I2C_SDA      8       /* Cardputer these two pins are the keyboard decoder's selects - see keyboard.c */
-#elif defined(M5OS_BOARD_TAB5)
+#if defined(M5OS_BOARD_TAB5)
 #  define PIN_I2C_SCL      32      /* Tab5 system bus: IO expanders, touch, RTC, sensors (M5Tab5-UserDemo BSP) */
 #  define PIN_I2C_SDA      31
 #else

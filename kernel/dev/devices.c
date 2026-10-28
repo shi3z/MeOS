@@ -15,5 +15,5 @@ void devices_init(void)
 #if M5OS_HAS_TOUCH
     buttons_dev_register();      /* starts the touch polling task: needs sched_init() first */
 #endif
-    /* The Cardputer keyboard is not a device node: keyboard_start() feeds the console input. */
+    /* The keyboard is not a device node: keyboard_start() feeds the console input. */
 }

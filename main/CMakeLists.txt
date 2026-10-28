@@ -10,18 +10,14 @@ file(GLOB_RECURSE M5OS_SRCS
 # tools/m5exbuild.py with their own link layout; the firmware only embeds the generated images.c.
 list(FILTER M5OS_SRCS EXCLUDE REGEX "/apps/sdk/|/apps/m5ex/[^i]")      # keep images.c / images_none.c (generated / stub)
 
-# Board-specific sources: *_cores3.c / *_cardputer.c, the chip directories hal/esp32s3 (Xtensa) and
+# Board-specific sources: *_cores3.c, the chip directories hal/esp32s3 (Xtensa) and
 # hal/esp32p4 (RISC-V), and the drivers that only some boards have.
-if("$ENV{M5OS_BOARD}" STREQUAL "cardputer")
-    list(FILTER M5OS_SRCS EXCLUDE REGEX "_cores3\\.c$|/hal/esp32p4/|/drivers/(touch|button|usbkbd|tab5kbd)/|/drivers/lcd/(ili9342|display_tab5)\\.c$|/m5ex/images_none\\.c$")
-    set(M5OS_BOARD_DEF M5OS_BOARD_CARDPUTER=1)
-    set(M5OS_ARCH_REQUIRES xtensa)
-elseif("$ENV{M5OS_BOARD}" STREQUAL "tab5")
-    list(FILTER M5OS_SRCS EXCLUDE REGEX "_cores3\\.c$|_cardputer\\.c$|/hal/esp32s3/|/drivers/(touch|button|keyboard|sd)/|/drivers/lcd/(ili9342|st7789|display)\\.c$|/m5ex/images\\.c$")
+if("$ENV{M5OS_BOARD}" STREQUAL "tab5")
+    list(FILTER M5OS_SRCS EXCLUDE REGEX "_cores3\\.c$|/hal/esp32s3/|/drivers/(touch|button|sd)/|/drivers/lcd/(ili9342|display)\\.c$|/m5ex/images\\.c$")
     set(M5OS_BOARD_DEF M5OS_BOARD_TAB5=1)
     set(M5OS_ARCH_REQUIRES riscv esp_psram esp_mm esp_lcd usb)
 else()
-    list(FILTER M5OS_SRCS EXCLUDE REGEX "_cardputer\\.c$|/hal/esp32p4/|/drivers/(keyboard|usbkbd|tab5kbd)/|/drivers/lcd/(st7789|display_tab5)\\.c$|/m5ex/images_none\\.c$")
+    list(FILTER M5OS_SRCS EXCLUDE REGEX "/hal/esp32p4/|/drivers/(usbkbd|tab5kbd)/|/drivers/lcd/display_tab5\\.c$|/m5ex/images_none\\.c$")
     set(M5OS_BOARD_DEF M5OS_BOARD_CORES3=1)
     set(M5OS_ARCH_REQUIRES xtensa)
 endif()

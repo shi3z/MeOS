@@ -2,8 +2,6 @@ build/
 build-*/
 sdkconfig
 sdkconfig.old
-sdkconfig.cardputer
-sdkconfig.cardputer.old
 sdkconfig.tab5
 sdkconfig.tab5.old
 __pycache__/

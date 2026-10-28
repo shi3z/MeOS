@@ -1,5 +1,5 @@
 # source this file:  . tools/env.sh        (uses M5OS_BOARD to pick the ESP-IDF; default cores3)
-#   cores3 / cardputer (ESP32-S3, Xtensa)  -> ESP-IDF v4.4.3
+#   cores3             (ESP32-S3, Xtensa)  -> ESP-IDF v4.4.3
 #   tab5               (ESP32-P4, RISC-V)  -> ESP-IDF v5.4.4   (v4.4.3 knows nothing about the P4)
 if [ "$M5OS_BOARD" = "tab5" ]; then
     export IDF_PATH=$HOME/esp32/esp-idf-v5.4.4
