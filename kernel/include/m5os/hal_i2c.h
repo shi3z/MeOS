@@ -19,3 +19,9 @@ bool hal_i2c_write_reg16(uint8_t addr7, uint16_t reg, uint8_t val);
 /* Fixed system bus, 8-bit register ADDRESS and arbitrary data length (INA226, IO expanders).
  * Does not change the legacy bus selected for the keyboard accessory. */
 bool hal_i2c_sys_read_regs(uint8_t addr7, uint8_t reg, uint8_t *buf, size_t len);
+
+bool hal_i2c_sys_write_reg(uint8_t addr7, uint8_t reg, uint8_t val);
+/* Atomic masked read-modify-write on the fixed system bus. */
+bool hal_i2c_sys_update_reg(uint8_t addr7, uint8_t reg, uint8_t mask, uint8_t value);
+/* Several bytes to ONE register address (a data port such as the BMI270's INIT_DATA), fixed system bus. */
+bool hal_i2c_sys_write_regs(uint8_t addr7, uint8_t reg, const uint8_t *buf, size_t len);

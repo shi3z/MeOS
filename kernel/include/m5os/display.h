@@ -41,3 +41,6 @@ void display_draw_bitmap_resized(int x,int y,int source_w,int source_h,
     const uint16_t *rgb565,int dest_w,int dest_h);
 void display_draw_indexed_bitmap_resized(int x,int y,int source_w,int source_h,
     const uint8_t *indices,const uint16_t palette[256],int dest_w,int dest_h);
+bool display_is_suspended(void);            /* Tab5: true while the screen is off, see display_set_suspended */
+void display_set_suspended(bool on);        /* Tab5: screen off - all drawing is discarded, the framebuffer keeps the picture */
+void display_panel_power(bool on);          /* Tab5: panel display off / on (the backlight is board_backlight) */

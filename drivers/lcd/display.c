@@ -9,6 +9,8 @@
 #define GLYPH_SIZE  8
 #define BACKLIGHT_FULL  255
 
+bool display_is_suspended(void) { return false; }          /* only the Tab5 can suspend */
+
 bool display_init(void)
 {
     if (!board_init()) {

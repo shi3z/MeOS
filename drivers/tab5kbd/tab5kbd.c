@@ -20,6 +20,7 @@
 #include <m5os/hal_i2c.h>
 #include <m5os/kprintf.h>
 #include <m5os/task.h>
+#include <m5os/suspend.h>
 #include <m5os/hal_time.h>
 
 #define KBD_ADDR        0x6D
@@ -43,6 +44,10 @@ static bool s_caps;
 
 static void emit(uint8_t usage, uint8_t mods)
 {
+    if (hid_is_suspend_hotkey(usage, mods)) {            /* Ctrl+Alt+S: sleep (or, if asleep, this key just wakes) */
+        if (!suspend_filter_input()) suspend_request();
+        return;
+    }
     char buf[8];
     hid_decode(usage, mods, s_caps, buf);
     if (buf[0]) { ime_feed(buf); s_stats.last_char = (unsigned char)buf[0]; }
@@ -55,7 +60,7 @@ static void kbd_task(void *arg)
     uint64_t pressed_at = 0, last_repeat = 0;
 
     for (;;) {
-        task_sleep(POLL_MS);
+        task_sleep(suspend_poll_ms(POLL_MS));
         uint8_t count = 0;
         if (!hal_i2c_read_reg(KBD_ADDR, REG_EVENT_NUM, &count)) { s_stats.i2c_errors++; continue; }
         for (int n = 0; n < MAX_PER_POLL && count > 0; n++, count--) {

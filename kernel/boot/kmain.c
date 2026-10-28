@@ -1,4 +1,5 @@
 #include <m5os/kernel.h>
+#include <m5os/suspend.h>
 #include <m5os/kprintf.h>
 #include <m5os/hal_console.h>
 #include <m5os/hal_time.h>
@@ -427,6 +428,9 @@ void kernel_main(void)
 #if M5OS_HAS_KEYBOARD
     if (lcd_ok) fbcon_start();                       /* no touch: the whole screen is the console */
     keyboard_start();                                /* typed characters go to the shell like serial input */
+#endif
+#if M5OS_BOARD_TAB5
+    suspend_start();                                 /* idle timer, `sleep`, wake on key / touch / movement */
 #endif
     task_create_stack("shell", shell_task, NULL, TASK_PRIO_DEFAULT + 1, 32768);
 #endif

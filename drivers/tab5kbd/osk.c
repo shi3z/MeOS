@@ -29,6 +29,7 @@
 #include <m5os/hal_time.h>
 #include <m5os/kmalloc.h>
 #include <m5os/battery.h>
+#include <m5os/suspend.h>
 #include <m5os/power.h>
 #include <string.h>
 
@@ -69,6 +70,7 @@
 #define U_CTRL  0xF2
 #define U_JP    0xF3                    /* Ctrl+Space: Japanese input on/off */
 #define U_HIDE  0xF4
+#define U_SLEEP 0xF5                    /* the "Zz" key: suspend now */
 
 typedef struct { const char *lo, *hi; uint8_t usage; uint8_t w; } key_t;   /* w in UNITs */
 
@@ -89,7 +91,7 @@ static const key_t ROW3[] = {
     { "b", "B", 0x05, 2 }, { "n", "N", 0x11, 2 }, { "m", "M", 0x10, 2 }, { ",", "<", 0x36, 2 }, { ".", ">", 0x37, 2 },
     { "/", "?", 0x38, 2 }, { "^", "^", U_UP, 2 }, { "Shift", "Shift", U_SHIFT, 5 }, { 0 } };
 static const key_t ROW4[] = {
-    { "Esc", "Esc", U_ESC, 3 }, { "Jp/En", "Jp/En", U_JP, 4 }, { "", "", U_SPACE, 16 }, { "<", "<", U_LEFT, 2 },
+    { "Esc", "Esc", U_ESC, 3 }, { "Jp/En", "Jp/En", U_JP, 4 }, { "Zz", "Zz", U_SLEEP, 3 }, { "", "", U_SPACE, 13 }, { "<", "<", U_LEFT, 2 },
     { "v", "v", U_DOWN, 2 }, { ">", ">", U_RIGHT, 2 }, { "Hide", "Hide", U_HIDE, 3 }, { 0 } };
 static const key_t *const ROWS_[KEY_ROWS] = { ROW0, ROW1, ROW2, ROW3, ROW4 };
 
@@ -223,6 +225,7 @@ static void press(const key_t *k, int r)
 {
     static uint64_t last_shift_us;
     uint64_t now = hal_time_now_us();
+    if (k->usage == U_SLEEP) { suspend_request(); return; }
     if (k->usage == U_HIDE) { if (s_ov) overlay_hide(); else osk_show(false); return; }
     if (k->usage == U_SHIFT) {
         if (s_shift == 2) s_shift = 0;
@@ -255,11 +258,12 @@ static void osk_poll(void)
         layout();                                                     /* ...then the keyboard area is drawn again */
     }
     bool up = paused ? s_ov : s_visible;                              /* are the keys on screen? */
-    if (!paused && !s_visible && hal_time_now_us() - s_bat_at >= BATTERY_REFRESH_MS * 1000u)
+    if (!paused && !s_visible && !display_is_suspended() && hal_time_now_us() - s_bat_at >= BATTERY_REFRESH_MS * 1000u)
         if (battery_refresh()) draw_bar();                            /* only while the bar is what is on screen */
 
     int x = 0, y = 0;
     bool down = tab5_touch_read(&x, &y);
+    if (down && suspend_filter_input()) { s_down_before = true; s_down = NULL; return; }   /* asleep: this touch only wakes; it types nothing, even once awake */
     uint64_t now = hal_time_now_us();
     if (down && !s_down_before) {
         if (s_debug) { uint32_t f, e; int rx, ry, mx, my; tab5_touch_stats(&f, &e, &rx, &ry, &mx, &my); kprintf("osk: touch raw %d,%d -> %d,%d (map %d)\n", rx, ry, x, y, tab5_touch_map()); }
@@ -287,7 +291,7 @@ static void osk_task(void *arg)
     s_paused_before = fbcon_is_paused();
     layout();
     for (;;) {
-        task_sleep(POLL_MS);
+        task_sleep(suspend_poll_ms(POLL_MS));
         /* This task outranks the programs it overlays and does not sleep while drawing, so it can lift the
          * display clip for its own drawing and put it back before anyone else runs. */
         display_clip_bottom(DISPLAY_HEIGHT);

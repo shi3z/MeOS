@@ -35,4 +35,6 @@ void     kconsole_set_focus(uint32_t task_id);   /* 0 = nobody: only this task r
 /* A program that owns the screen is asked to repaint it (the on-screen keyboard covered part of it). */
 void     kconsole_request_refresh(void);
 bool     kconsole_take_refresh(void);          /* true once per request */
+/* Called when a character arrives from the serial port (not for injected keys): lets power management see activity. */
+void     kconsole_set_input_hook(void (*hook)(void));
 int      kconsole_getc(void);                 /* injected characters first, then the serial port; -1 if none */

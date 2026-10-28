@@ -28,6 +28,7 @@
 static bool sh_streq(const char *a, const char *b);      /* used by cmd_osk, defined further down */
 #include "shell.h"
 #include "hardware.h"
+#include <m5os/suspend.h>
 #include <m5os/vfs.h>
 #include <m5os/task.h>
 #include <m5os/kprintf.h>
@@ -811,6 +812,10 @@ static int cmd_install(int argc, char **argv)
     return 0;
 }
 
+#if M5OS_BOARD_TAB5
+static int cmd_sleep(int argc, char **argv) { return suspend_command(argc, argv); }
+#endif
+
 static int cmd_pwd(int argc, char **argv) { (void)argc; (void)argv; SH_PRINTF("%s\n", s_cwd); return 0; }
 
 
@@ -941,6 +946,9 @@ static const command_t s_commands[] = {
     { "devices", cmd_devices, "board devices: detected, untested, or unsupported (read-only)" },
     { "power",   cmd_power,   "battery voltage/current, estimated level and charger state (read-only)" },
     { "storage", cmd_storage, "root backing, persistence and microSD support (read-only)" },
+#endif
+#if M5OS_BOARD_TAB5
+    { "sleep", cmd_sleep, "sleep [status | idle SECONDS|off]   suspend now: screen and 5 V off, slow CPU, wakes on key/touch/movement" },
 #endif
     { "history", cmd_history, "show command history (or use Up/Down arrows)" },
     { "ps",      cmd_ps,      "list tasks" },

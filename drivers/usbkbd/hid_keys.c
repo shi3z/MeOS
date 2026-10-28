@@ -61,3 +61,9 @@ void hid_decode(uint8_t usage, uint8_t mods, bool caps, char out[8])
     default: break;
     }
 }
+
+#define HID_USAGE_S 0x16
+bool hid_is_suspend_hotkey(uint8_t usage, uint8_t mods)
+{
+    return usage == HID_USAGE_S && (mods & (HID_MOD_LCTRL | HID_MOD_RCTRL)) && (mods & (HID_MOD_LALT | HID_MOD_RALT));
+}

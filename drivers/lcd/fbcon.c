@@ -391,7 +391,7 @@ static void fbcon_task(void *arg)
         size_t n;
         bool moved = false;
         while ((n = kconsole_log_read(&pos, buf, sizeof buf)) > 0) { for (size_t i = 0; i < n; i++) feed(buf[i]); moved = true; }
-        if (s_paused) { task_sleep(POLL_MS); continue; }
+        if (s_paused || display_is_suspended()) { task_sleep(POLL_MS); continue; }     /* suspended: keep the changes, paint them on wake */
         ovl_prepare();
         flush_rows();
 

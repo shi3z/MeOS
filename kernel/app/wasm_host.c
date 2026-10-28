@@ -11,6 +11,7 @@
 #include <m5os/display.h>
 #include <m5os/hal_time.h>
 #include <m5os/task.h>
+#include <m5os/suspend.h>
 #include <string.h>
 #include "app_internal.h"
 #include "wasm3.h"
@@ -180,6 +181,7 @@ static void dirty_add(int x, int y, int w, int h)
 }
 static void present_now(void)
 {
+    suspend_wait_if_active();                       /* a suspended screen shows nothing: do not spin the game */
     if (s_back && s_dx1 >= s_dx0 && s_dy1 >= s_dy0) {
         display_present(s_dx0, s_dy0, s_dx1 - s_dx0 + 1, s_dy1 - s_dy0 + 1);
         dirty_reset();

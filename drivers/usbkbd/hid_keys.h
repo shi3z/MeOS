@@ -7,9 +7,13 @@
 #define HID_MOD_LALT    0x04
 #define HID_MOD_RCTRL   0x10
 #define HID_MOD_RSHIFT  0x20
+#define HID_MOD_RALT    0x40
 #define HID_MOD_SHIFT   (HID_MOD_LSHIFT | HID_MOD_RSHIFT)
 #define HID_USAGE_FIRST 0x04          /* 'a'; 0..3 mean "no key" / rollover error */
 #define HID_USAGE_CAPSLOCK 0x39
 
 /* Fills out[] with the bytes the console should receive (NUL-terminated; empty if the key prints nothing). */
 void hid_decode(uint8_t usage, uint8_t mods, bool caps_lock, char out[8]);
+
+/* The suspend hot key: Ctrl + Alt + S. */
+bool hid_is_suspend_hotkey(uint8_t usage, uint8_t mods);

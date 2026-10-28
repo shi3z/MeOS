@@ -22,6 +22,7 @@
 #include <m5os/hal_usbh.h>
 #include <m5os/kprintf.h>
 #include <m5os/task.h>
+#include <m5os/suspend.h>
 #include <m5os/hal_time.h>
 #include <string.h>
 
@@ -83,6 +84,10 @@ static int ctrl(uint8_t type, uint8_t req, uint16_t value, uint16_t index, void 
 
 static void emit(uint8_t usage, uint8_t mods)
 {
+    if (hid_is_suspend_hotkey(usage, mods)) {            /* Ctrl+Alt+S: sleep (or, if asleep, this key just wakes) */
+        if (!suspend_filter_input()) suspend_request();
+        return;
+    }
     char buf[8];
     hid_decode(usage, mods, s_caps, buf);
     if (buf[0]) { ime_feed(buf); s_stats.last_char = (unsigned char)buf[0]; }
@@ -144,7 +149,7 @@ static void keyboard_session(int iface)
     int fails = 0;
 
     for (;;) {
-        task_sleep(POLL_MS);
+        task_sleep(suspend_poll_ms(POLL_MS));
         usbh_event_t ev = hal_usbh_poll();
         if (ev == USBH_EVENT_DISCONNECT || ev == USBH_EVENT_DISABLED) return;
 

@@ -160,6 +160,9 @@ void kconsole_inject(const char *s)
 static volatile uint32_t s_focus_task;
 void kconsole_set_focus(uint32_t task_id) { s_focus_task = task_id; }
 
+static void (*s_input_hook)(void);
+void kconsole_set_input_hook(void (*hook)(void)) { s_input_hook = hook; }
+
 static volatile bool s_refresh;
 void kconsole_request_refresh(void) { s_refresh = true; }
 bool kconsole_take_refresh(void) { bool r = s_refresh; s_refresh = false; return r; }
@@ -171,7 +174,10 @@ int kconsole_getc(void)
     uint32_t irq = arch_irq_disable();
     if (s_in_tail != s_in_head) { c = (uint8_t)s_in[s_in_tail]; s_in_tail = (s_in_tail + 1) % CONSOLE_IN_SIZE; }
     arch_irq_restore(irq);
-    return c >= 0 ? c : hal_console_getc();
+    if (c >= 0) return c;
+    c = hal_console_getc();
+    if (c >= 0 && s_input_hook) s_input_hook();
+    return c;
 }
 
 void kputs(const char *s)

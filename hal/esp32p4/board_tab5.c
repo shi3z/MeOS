@@ -126,7 +126,24 @@ tab5_panel_t tab5_panel(void) { return s_panel; }
  * enough here: any non-zero level means on.  PWM dimming can replace this without touching callers. */
 #define BACKLIGHT_PIN  22
 
+static uint8_t s_backlight;
+
 void board_backlight(uint8_t level)
 {
+    s_backlight = level;
     hal_gpio_config_output(BACKLIGHT_PIN, level ? 1 : 0);
+}
+
+uint8_t board_backlight_get(void) { return s_backlight; }
+
+/* Expander 1, P2: the 5 V pin of the extension port (the same switch the vendor BSP calls bsp_set_ext_5v_en).
+ * The USB-A host port's 5 V is expander 2, P3 - a different switch, deliberately left alone. */
+#define EXP1_EXT5V_BIT  2
+
+bool board_ext5v_set(bool on, bool *was_on)
+{
+    uint8_t v;
+    if (!hal_i2c_sys_read_regs(EXP1_ADDR, REG_OUT_SET, &v, 1)) return false;
+    if (was_on) *was_on = (v >> EXP1_EXT5V_BIT) & 1u;
+    return hal_i2c_sys_update_reg(EXP1_ADDR, REG_OUT_SET, 1u << EXP1_EXT5V_BIT, on ? 1u << EXP1_EXT5V_BIT : 0);
 }

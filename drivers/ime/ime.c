@@ -13,6 +13,7 @@
  * is drawn as a bar over the bottom two text rows, and those pixels are put back when it is done.
  */
 #include <m5os/ime.h>
+#include <m5os/suspend.h>
 #include <m5os/kprintf.h>
 #include <m5os/task.h>
 #include <m5os/display.h>
@@ -653,6 +654,7 @@ const char *ime_status(void)
 
 void ime_feed(const char *key)
 {
+    if (suspend_filter_input()) return;                             /* asleep: this key only wakes the system */
     if (!g.inited) ime_init();
     if (!B || g.bypass) { out_str(key); return; }                   /* no memory, or an app wants the raw keys */
     char ch;
