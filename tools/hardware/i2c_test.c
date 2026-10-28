@@ -14,6 +14,7 @@
 #define SYS_SDA 12
 #endif
 static bool running;
+static unsigned clock_lows;
 static task_t task;
 static int depth, locks, unlocks, expected_scl = SYS_SCL, expected_sda = SYS_SDA;
 static int bits[256], nbits, pos;
@@ -27,8 +28,8 @@ static void edge(int pin)
 }
 void hal_gpio_config_open_drain(int pin) { edge(pin); }
 void hal_gpio_od_release(int pin) { edge(pin); }
-void hal_gpio_od_drive_low(int pin) { edge(pin); }
-void hal_delay_us(uint32_t us) { (void)us; }
+void hal_gpio_od_drive_low(int pin) { edge(pin); if(pin==expected_scl) clock_lows++; }
+void hal_delay_us(uint32_t us) { assert(us==4); }
 int hal_gpio_read(int pin)
 {
     edge(pin);
@@ -38,7 +39,7 @@ int hal_gpio_read(int pin)
 }
 static void queue(int bit) { assert(nbits < 256); bits[nbits++] = bit; }
 static void byte(unsigned b) { for (int i = 7; i >= 0; i--) queue((b >> i) & 1); }
-static void begin(void) { pos = nbits = 0; locks = unlocks = 0; }
+static void begin(void) { pos = nbits = 0; locks = unlocks = 0; clock_lows=0; }
 static void done(void)
 {
     assert(pos == nbits && depth == 0);
@@ -50,12 +51,13 @@ int main(void)
     begin(); queue(0); queue(0); queue(0);
     assert(hal_i2c_write_reg(0x43, 5, 0x66)); done(); /* Before scheduler: no mutex. */
     running = true;
-    begin(); hal_i2c_init(); done();
+    begin(); queue(1); hal_i2c_init(); done();
     begin(); queue(0); queue(0); queue(0); byte(0x54); byte(0x49);
     assert(hal_i2c_sys_read_regs(0x41, 0xfe, b, 2) && b[0] == 0x54 && b[1] == 0x49); done();
+    begin(); queue(0); hal_i2c_init(); assert(clock_lows==9); done(); /* Stuck SDA recovery clocks/STOP under one lock. */
     begin(); hal_i2c_set_pins(1, 0); done();
     expected_scl = 1; expected_sda = 0;
-    begin(); hal_i2c_init(); done();
+    begin(); queue(1); hal_i2c_init(); done();
     begin(); queue(0); queue(0); queue(0); byte(0x12);
     assert(hal_i2c_read_reg(0x6d, 0xfe, b) && b[0] == 0x12); done();
     begin(); queue(0); queue(0); queue(0);

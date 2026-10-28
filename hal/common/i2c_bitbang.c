@@ -52,6 +52,17 @@ void hal_i2c_init(void)
     hal_gpio_config_open_drain(s_scl);
     hal_gpio_config_open_drain(s_sda);
     sda_hi_pin(s_sda); scl_hi_pin(s_scl); tick();
+    /* A CPU reset can interrupt a slave in the middle of a report. Release
+     * a stuck SDA with nine clocks and STOP before the first address phase. */
+    if (!hal_gpio_read(s_sda)) {
+        for (unsigned i=0;i<9;i++) {
+            scl_lo_pin(s_scl); tick();
+            scl_hi_pin(s_scl); tick();
+        }
+        sda_lo_pin(s_sda); tick();
+        scl_hi_pin(s_scl); tick();
+        sda_hi_pin(s_sda); tick();
+    }
     bus_unlock(locked);
 }
 

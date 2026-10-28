@@ -21,3 +21,7 @@ for BOARD in CORES3; do
         tools/hardware/i2c_test.c hal/common/i2c_bitbang.c -o "$OUT/i2c_$BOARD"
     "$OUT/i2c_$BOARD"
 done
+cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+    -DM5OS_BOARD_TAB5=1 -Ikernel/include tools/hardware/board_test.c \
+    hal/esp32p4/board_tab5.c -o "$OUT/board"
+"$OUT/board"
