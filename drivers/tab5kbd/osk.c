@@ -28,6 +28,9 @@
 #include <m5os/task.h>
 #include <m5os/hal_time.h>
 #include <m5os/kmalloc.h>
+#include <m5os/battery.h>
+#include <m5os/power.h>
+#include <string.h>
 
 #define UNIT            40              /* key widths are multiples of this; 1280 = 32 units */
 #define KEY_H           52
@@ -38,6 +41,8 @@
 #define REPEAT_DELAY_MS 400u
 #define REPEAT_PERIOD_MS 60u
 #define SHIFT_LOCK_MS   500u
+#define BATTERY_REFRESH_MS 5000u        /* how often the bar's battery text is re-read (the bar only) */
+#define BAR_MARGIN      16              /* left margin of the battery text in the bar */
 #define EDGE_PX         64              /* a tap this close to the right edge calls the keyboard up */
 #define TASK_STACK      12288           /* the input method converts on this stack */
 
@@ -88,6 +93,9 @@ static const key_t ROW4[] = {
     { "v", "v", U_DOWN, 2 }, { ">", ">", U_RIGHT, 2 }, { "Hide", "Hide", U_HIDE, 3 }, { 0 } };
 static const key_t *const ROWS_[KEY_ROWS] = { ROW0, ROW1, ROW2, ROW3, ROW4 };
 
+static battery_tracker_t s_bat_track;
+static char     s_bat_text[32] = "Bat --";
+static uint64_t s_bat_at;
 static bool s_avail, s_visible = true, s_debug;
 static bool s_ov;                                 /* the overlay keyboard is up (a full-screen program owns the screen) */
 static uint16_t *s_saved;                         /* the screen under the overlay */
@@ -125,8 +133,27 @@ static void draw_keyboard(void)
 
 static void draw_bar(void)
 {
+    int y = s_top + (DISPLAY_HEIGHT - s_top - 16) / 2;
     display_fill_rect(0, s_top, DISPLAY_WIDTH, DISPLAY_HEIGHT - s_top, COL_BAR);
-    display_draw_text(DISPLAY_WIDTH - 11 * 16 - 8, s_top + (DISPLAY_HEIGHT - s_top - 16) / 2, "[ keyboard ]", COL_TEXT, COL_BAR, 2);
+    display_draw_text(BAR_MARGIN, y, s_bat_text, COL_TEXT, COL_BAR, 2);                       /* battery: left */
+    display_draw_text(DISPLAY_WIDTH - 11 * 16 - 8, y, "[ keyboard ]", COL_TEXT, COL_BAR, 2);   /* the way back to the keys: right */
+}
+
+/* Re-read the battery and rebuild the bar's text.  Returns true if the text changed. */
+static bool battery_refresh(void)
+{
+    power_sample_t p;
+    power_read(&p);
+    uint64_t now = hal_time_now_us();
+    if (p.result == POWER_OK) battery_tracker_update(&s_bat_track, p.battery_ua, now);
+    battery_status_t st;
+    battery_status_make(&s_bat_track, &p, M5OS_BATTERY_MAH, &st);
+    char text[sizeof s_bat_text];
+    battery_format(&st, text, sizeof text);
+    s_bat_at = now;
+    if (!strcmp(text, s_bat_text)) return false;
+    memcpy(s_bat_text, text, sizeof text);
+    return true;
 }
 
 static void layout(void)
@@ -228,6 +255,8 @@ static void osk_poll(void)
         layout();                                                     /* ...then the keyboard area is drawn again */
     }
     bool up = paused ? s_ov : s_visible;                              /* are the keys on screen? */
+    if (!paused && !s_visible && hal_time_now_us() - s_bat_at >= BATTERY_REFRESH_MS * 1000u)
+        if (battery_refresh()) draw_bar();                            /* only while the bar is what is on screen */
 
     int x = 0, y = 0;
     bool down = tab5_touch_read(&x, &y);
