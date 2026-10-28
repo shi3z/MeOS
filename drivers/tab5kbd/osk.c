@@ -133,12 +133,16 @@ static void draw_keyboard(void)
         for (const key_t *k = ROWS_[r]; k->lo; k++) draw_key(ROWS_[r], r, k, false);
 }
 
+#define BAR_KBD_X   (DISPLAY_WIDTH - 12 * 16 - 8)            /* "[ keyboard ]" */
+#define BAR_ZZ_X    (BAR_KBD_X - 6 * 16 - 32)                /* "[ Zz ]": suspend now, left of it */
+
 static void draw_bar(void)
 {
     int y = s_top + (DISPLAY_HEIGHT - s_top - 16) / 2;
     display_fill_rect(0, s_top, DISPLAY_WIDTH, DISPLAY_HEIGHT - s_top, COL_BAR);
     display_draw_text(BAR_MARGIN, y, s_bat_text, COL_TEXT, COL_BAR, 2);                       /* battery: left */
-    display_draw_text(DISPLAY_WIDTH - 11 * 16 - 8, y, "[ keyboard ]", COL_TEXT, COL_BAR, 2);   /* the way back to the keys: right */
+    display_draw_text(BAR_ZZ_X, y, "[ Zz ]", COL_TEXT, COL_BAR, 2);
+    display_draw_text(BAR_KBD_X, y, "[ keyboard ]", COL_TEXT, COL_BAR, 2);   /* the way back to the keys: right */
 }
 
 /* Re-read the battery and rebuild the bar's text.  Returns true if the text changed. */
@@ -269,7 +273,10 @@ static void osk_poll(void)
         if (s_debug) { uint32_t f, e; int rx, ry, mx, my; tab5_touch_stats(&f, &e, &rx, &ry, &mx, &my); kprintf("osk: touch raw %d,%d -> %d,%d (map %d)\n", rx, ry, x, y, tab5_touch_map()); }
         if (!up) {
             if (x >= DISPLAY_WIDTH - EDGE_PX) { if (paused) overlay_show(); else osk_show(true); }
-            else if (!paused && y >= s_top) osk_show(true);           /* the bar */
+            else if (!paused && y >= s_top) {                         /* the bar */
+                if (x >= BAR_ZZ_X - 16 && x < BAR_KBD_X - 8) suspend_request();
+                else osk_show(true);
+            }
         } else {
             int r;
             const key_t *k = hit(x, y, &r);

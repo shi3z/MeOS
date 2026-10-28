@@ -56,18 +56,3 @@ uint32_t suspend_core_seconds_left(const suspend_core_t *c, uint64_t now_us)
     uint64_t limit = (uint64_t)c->idle_seconds * US_PER_S;
     return idle >= limit ? 0 : (uint32_t)((limit - idle + US_PER_S - 1) / US_PER_S);
 }
-
-void motion_detector_reset(motion_detector_t *m) { m->have_last = false; }
-
-bool motion_detector_update(motion_detector_t *m, const int16_t s[3], int32_t threshold)
-{
-    bool moved = false;
-    if (m->have_last) {
-        int32_t d = 0;
-        for (int i = 0; i < 3; i++) { int32_t e = (int32_t)s[i] - m->last[i]; d += e < 0 ? -e : e; }
-        moved = d > threshold;
-    }
-    for (int i = 0; i < 3; i++) m->last[i] = s[i];
-    m->have_last = true;
-    return moved;
-}

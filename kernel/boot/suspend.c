@@ -23,24 +23,20 @@
 #include <m5os/board.h>
 #include <m5os/hal_cpu.h>
 #include <m5os/hal_time.h>
-#include <m5os/imu.h>
 #include <m5os/kprintf.h>
 #include <m5os/task.h>
 #include <m5os/arch.h>
 #include <string.h>
 
 #define AWAKE_POLL_MS       200u        /* how often the idle timer is looked at */
-#define SUSPENDED_POLL_MS   50u         /* 20 Hz: wake-up inputs and the accelerometer */
+#define SUSPENDED_POLL_MS   50u         /* 20 Hz: wake-up inputs */
 #define SUSPEND_CPU_MHZ     90u         /* a quarter of the 360 MHz clock; the PLL keeps running */
-#define MOTION_THRESHOLD    1200        /* sum of the three axis changes between two samples; 4096 counts = 1 g, so about 0.3 g */
-#define IMU_START_DELAY_MS  15000u      /* the accelerometer is set up in the background, after boot has settled */
 #define IDLE_MIN_SECONDS    10u
 #define IDLE_MAX_SECONDS    86400u
 #define FULL_BRIGHTNESS     255u
 #define TASK_STACK          6144
 
 static suspend_core_t s_core;
-static motion_detector_t s_motion;
 static uint8_t  s_saved_backlight;
 static bool     s_ext5v_was_on;
 static unsigned s_saved_mhz;
@@ -94,7 +90,6 @@ static void do_enter(void)
     board_ext5v_set(false, &s_ext5v_was_on);
     s_saved_mhz = hal_cpu_mhz();
     bool slowed = hal_cpu_set_mhz(SUSPEND_CPU_MHZ);
-    motion_detector_reset(&s_motion);
     kprintf("suspend: screen off, ext 5 V %s, CPU %u MHz%s\n", s_ext5v_was_on ? "off" : "was already off", hal_cpu_mhz(), slowed ? "" : " (clock change refused)");
     uint32_t irq = arch_irq_disable();
     suspend_core_entered(&s_core);
@@ -120,23 +115,12 @@ static void do_wake(void)
 static void powerd_task(void *arg)
 {
     (void)arg;
-    task_sleep(IMU_START_DELAY_MS);
-    if (imu_init()) kprintf("suspend: accelerometer ready (a movement wakes the device)\n");
-    else            kprintf("suspend: accelerometer not available; only key and touch wake the device\n");
     for (;;) {
         uint32_t irq = arch_irq_disable();
         suspend_action_t a = suspend_core_step(&s_core, now_us());
         arch_irq_restore(irq);
         if (a == SUSPEND_ENTER) do_enter();
         else if (a == SUSPEND_WAKE) do_wake();
-        else if (s_core.suspended) {
-            int16_t xyz[3];
-            if (imu_ready() && imu_read_accel(xyz) && motion_detector_update(&s_motion, xyz, MOTION_THRESHOLD)) {
-                irq = arch_irq_disable();
-                suspend_core_wake(&s_core, now_us());
-                arch_irq_restore(irq);
-            }
-        }
         task_sleep(s_core.suspended ? SUSPENDED_POLL_MS : AWAKE_POLL_MS);
     }
 }
@@ -154,10 +138,10 @@ int suspend_command(int argc, char **argv)
 {
     if (argc == 1) { suspend_request(); return 0; }
     if (argc == 2 && !strcmp(argv[1], "status")) {
-        kprintf("suspend: %s; auto-suspend after %u s idle (%u s left); CPU %u MHz; accelerometer %s; last resume %u ms\n",
+        kprintf("suspend: %s; auto-suspend after %u s idle (%u s left); CPU %u MHz; last resume %u ms\n",
                 s_core.suspended ? "suspended" : "awake", (unsigned)s_core.idle_seconds,
                 (unsigned)suspend_core_seconds_left(&s_core, now_us()), hal_cpu_mhz(),
-                imu_ready() ? "ready" : "not available", (unsigned)s_last_resume_ms);
+                (unsigned)s_last_resume_ms);
         return 0;
     }
     if (argc == 3 && !strcmp(argv[1], "idle")) {

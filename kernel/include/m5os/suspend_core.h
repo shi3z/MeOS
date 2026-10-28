@@ -27,7 +27,7 @@ void suspend_core_init(suspend_core_t *c, uint64_t now_us, uint32_t idle_seconds
  * timer and returns false. */
 bool suspend_core_input(suspend_core_t *c, uint64_t now_us);
 
-/* Activity that must wake the system but is not a key press to swallow (serial input, motion). */
+/* Activity that must wake the system but is not a key press to swallow (serial input). */
 void suspend_core_wake(suspend_core_t *c, uint64_t now_us);
 
 void suspend_core_request_enter(suspend_core_t *c);
@@ -39,10 +39,3 @@ void suspend_core_woke(suspend_core_t *c, uint64_t now_us);
 
 /* Seconds of inactivity left before an automatic suspend; 0 if disabled or already due. */
 uint32_t suspend_core_seconds_left(const suspend_core_t *c, uint64_t now_us);
-
-/* Motion from raw accelerometer samples: "moved a lot" = the sample differs from the previous one by more than a
- * threshold (sum of the three axes).  A device lying still reads the same gravity every time, whatever its
- * orientation, so only real movement trips it. */
-typedef struct { int16_t last[3]; bool have_last; } motion_detector_t;
-bool motion_detector_update(motion_detector_t *m, const int16_t sample[3], int32_t threshold);
-void motion_detector_reset(motion_detector_t *m);

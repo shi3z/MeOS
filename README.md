@@ -332,11 +332,11 @@ external-DC source detection and physical regression on the other boards remain 
 
 The device keeps RAM and the network alive but turns everything else down, so Wi-Fi/SSH/web stay reachable.
 
-- **Enter**: no input for 3 minutes (`sleep idle SECONDS|off`, 10..86400), the `sleep` shell command, **Ctrl+Alt+S**, or the on-screen **Zz** key.
+- **Enter**: no input for 3 minutes (`sleep idle SECONDS|off`, 10..86400), the `sleep` shell command, **Ctrl+Alt+S**, or the **Zz** key (on the on-screen keyboard, or "[ Zz ]" on the bar while the keyboard is hidden).
 - **While suspended**: backlight off, panel DISPOFF, drawing held (the screen is repainted on wake), extension-port 5 V off (USB 5 V untouched), CPU 360 -> 90 MHz (CPLL divider only; the XTAL path would stop the CPLL), WASM presentation paused, input polled at 20 Hz.
-- **Wake**: any Tab5 Keyboard / USB key (the key is consumed), touch (not delivered to the on-screen keyboard), or motion (BMI270 accelerometer, polled). A serial character also wakes but is not consumed. Resume takes about 1 ms of work.
-- `sleep status` shows the state. Verified on hardware: auto-suspend, key/touch/shake wake, unchanged picture, ping stays alive at 90 MHz.
-- Limits: IMU wake is polled (no interrupt); DISPOFF is used, not SLPIN; DSI scan-out continues; power saving was not measured (USB powered).
+- **Wake**: any Tab5 Keyboard / USB key (the key is consumed), touch (not delivered to the on-screen keyboard),. A serial character also wakes but is not consumed. Resume takes about 1 ms of work.
+- `sleep status` shows the state. Verified on hardware: auto-suspend, key/touch wake, unchanged picture, ping stays alive at 90 MHz.
+- Limits: DISPOFF is used, not SLPIN; DSI scan-out continues; power saving was not measured (USB powered).
 
 ## Known Limitations / TODO
 
