@@ -1,7 +1,7 @@
 /*
- * GT911 capacitive touch controller (Goodix), as fitted to the ILI9881C revision of the Tab5.
+ * Tab5 capacitive touch: GT911 (Goodix, ILI9881C units) and ST712x (ST7121/ST7123 units).
  *
- * The controller sits on the system I2C bus (GPIO 31/32) at address 0x14; the board init
+ * The GT911 sits on the system I2C bus (GPIO 31/32) at address 0x14; the board init
  * (hal/esp32p4/board_tab5.c) has already pulsed its reset line through the I/O expander.
  * Registers are 16-bit (big-endian number, then data):
  *   0x8140  product id, 4 ASCII bytes ("911")
@@ -20,6 +20,21 @@
 #include <m5os/hal_gpio.h>
 #include <m5os/kprintf.h>
 #include <m5os/display.h>
+#include <m5os/tab5.h>
+
+/* ST7121/ST7123 protocol reference (register layout, not the GT911 handshake):
+ * https://github.com/m5stack/M5GFX/blob/master/src/lgfx/v1/platforms/esp32p4/Touch_ST7123.inl
+ * Board/display reset is already complete. ST712x needs neither the GT911 INT wake pulse
+ * nor a status acknowledgement write. Its coordinates and resolution are big-endian. */
+#define ST_INFO         0x0005
+#define ST_STATUS       0x0010
+#define ST_POINTS       0x0014
+#define ST_MAX_TOUCHES  10
+#define ST_POINT_BYTES  7
+
+typedef enum { TOUCH_NONE, TOUCH_GT911, TOUCH_ST712X } touch_kind_t;
+static touch_kind_t s_kind;
+static uint8_t s_touch_slots;
 
 #define GT911_ADDR      0x14
 #define PIN_INT         23              /* GT911 INT: an output of the controller, also its wake-up input */
@@ -67,6 +82,31 @@ static void wake(void)
 
 bool tab5_touch_init(void)
 {
+    s_present = s_pressed = false;
+    s_kind = TOUCH_NONE;
+    s_map = 1;
+    s_frames = s_errors = 0;
+    s_raw_x = s_raw_y = s_max_x = s_max_y = 0;
+    s_touch_slots = 0;
+
+    uint8_t fw = 0, info[5] = { 0 };
+    if (hal_i2c_read_reg16(TAB5_ST7123_TOUCH_ADDR, TAB5_ST7123_FW_REG, &fw, 1) &&
+        hal_i2c_read_reg16(TAB5_ST7123_TOUCH_ADDR, ST_INFO, info, sizeof info)) {
+        int mx = (info[0] << 8) | info[1], my = (info[2] << 8) | info[3];
+        /* Validate the geometry before accepting an unrelated/garbled bus response. */
+        if (((mx == DISPLAY_HEIGHT && my == DISPLAY_WIDTH) ||
+             (mx == DISPLAY_WIDTH && my == DISPLAY_HEIGHT)) &&
+            info[4] > 0 && info[4] <= ST_MAX_TOUCHES) {
+            s_max_x = mx; s_max_y = my; s_touch_slots = info[4];
+            if (mx > my) s_map = 0;
+            s_kind = TOUCH_ST712X;
+            s_present = true;
+            kprintf("touch: ST712x at 0x%02x firmware %u, resolution %d x %d, %u slots, map %d\n",
+                    TAB5_ST7123_TOUCH_ADDR, fw, mx, my, s_touch_slots, s_map);
+            return true;
+        }
+    }
+
     uint8_t id[4] = { 0 }, res[4] = { 0 };
     hal_i2c_write_reg16(GT911_ADDR, REG_STATUS, 0);
     wake();
@@ -81,12 +121,42 @@ bool tab5_touch_init(void)
     kprintf("touch: GT911 \"%c%c%c%c\" resolution %d x %d, map %d\n", id[0], id[1], id[2], id[3] ? id[3] : ' ', s_max_x, s_max_y, s_map);
     hal_i2c_write_reg16(GT911_ADDR, REG_STATUS, 0);
     s_present = true;
+    s_kind = TOUCH_GT911;
     return true;
+}
+
+static bool read_st712x(int *x, int *y)
+{
+    uint8_t status = 0, points[ST_MAX_TOUCHES * ST_POINT_BYTES];
+    s_pressed = false; /* A missing/failed report must not leave a repeating key held. */
+    if (!hal_i2c_read_reg16(TAB5_ST7123_TOUCH_ADDR, ST_STATUS, &status, 1)) {
+        s_errors++; return false;
+    }
+    if (!(status & 0x08)) return false; /* with_coord: other reports contain no touch */
+    if (!hal_i2c_read_reg16(TAB5_ST7123_TOUCH_ADDR, ST_POINTS, points,
+                            (size_t)s_touch_slots * ST_POINT_BYTES)) {
+        s_errors++; return false;
+    }
+    s_frames++;
+    /* Slots are sparse: slot zero need not be the active finger. Keep the first valid one. */
+    for (unsigned i = 0; i < s_touch_slots; i++) {
+        const uint8_t *p = points + i * ST_POINT_BYTES;
+        if (!(p[0] & 0x80)) continue;
+        int rx = ((p[0] & 0x3f) << 8) | p[1], ry = (p[2] << 8) | p[3];
+        if (rx >= s_max_x || ry >= s_max_y) { s_errors++; continue; }
+        s_raw_x = rx; s_raw_y = ry;
+        map_point(rx, ry, &s_x, &s_y);
+        s_pressed = true;
+        *x = s_x; *y = s_y;
+        break;
+    }
+    return s_pressed;
 }
 
 bool tab5_touch_read(int *x, int *y)
 {
     if (!s_present) return false;
+    if (s_kind == TOUCH_ST712X) return read_st712x(x, y);
     uint8_t st = 0;
     if (!hal_i2c_read_reg16(GT911_ADDR, REG_STATUS, &st, 1)) { s_errors++; return false; }
     if (st & 0x80) {

@@ -308,4 +308,11 @@ Every keyboard key goes through `drivers/ime` before it reaches the console, so 
 * Do not use floating-point / PIE coprocessors across tasks on ESP32-S3 (lazy FPU context saving is not implemented).
 * Strict priority scheduling without mutex priority inheritance.
 * Japanese input: `edit` still moves its cursor per byte (it inserts UTF-8 but cannot step over a multi-byte character); choices are not saved across reboots; only the Tab5 builds the IME.
-* Touch input on Tab5 (GT911 / ST7123) and RISC-V M5EX SDK build toolchain are planned for future updates.
+* Tab5 console touch auto-detects GT911 (`0x14`, ILI9881C units) or ST712x (`0x55`, ST7121/ST7123 units).
+  The ST712x protocol uses big-endian coordinates and per-slot valid bits; the GT911 ready/acknowledge
+  protocol is retained. Both use the system I2C bus even with a Tab5 Keyboard on Ext.Port1.
+  Use `osk on` / `osk off`, `osk debug`, and `osk map 0`–`3` to inspect and calibrate the console keyboard.
+  The default portrait-to-landscape mapping is `(1279 - raw_y, raw_x)`; landscape-configured controllers use map 0.
+  This does not add touch navigation to full-screen apps or implement the unsupported ST7123 LCD initialization.
+  Driver regression tests (mock I2C, GT911 and ST712x): `sh tools/touch/host_test.sh`.
+* RISC-V M5EX SDK build toolchain is planned for a future update.

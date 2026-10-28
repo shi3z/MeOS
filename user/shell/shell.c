@@ -65,6 +65,8 @@ static bool sh_streq(const char *a, const char *b);      /* used by cmd_osk, def
 static int  s_out = -1, s_in = -1;
 static char s_cwd[VFS_PATH_MAX] = "/";
 
+static bool sh_streq(const char *a, const char *b);
+
 /* ---------------------------------------------------------------- output */
 
 static void sh_write(const char *s, size_t n) { if (s_out >= 0) vfs_write(s_out, s, n); }
