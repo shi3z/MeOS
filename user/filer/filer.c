@@ -1,6 +1,7 @@
 #include "filer.h"
 #include "../tui/dqwin.h"
 #include "../edit/edit.h"
+#include "../viewer/imgview.h"
 #include <m5os/vfs.h>
 #include <m5os/fs.h>
 #include <m5os/errno.h>
@@ -297,10 +298,27 @@ static void do_rename(void)
 
 /* ---------------------------------------------------------------- viewer */
 
+static bool has_ext(const char *name, const char *ext)          /* case-insensitive suffix test, ext like ".bmp" */
+{
+    int n = 0, m = 0;
+    while (name[n]) n++;
+    while (ext[m]) m++;
+    if (n < m) return false;
+    for (int i = 0; i < m; i++) {
+        char a = name[n - m + i], b = ext[i];
+        if (a >= 'A' && a <= 'Z') a = (char)(a + 32);
+        if (a != b) return false;
+    }
+    return true;
+}
+
+static bool is_image(const char *name) { return has_ext(name, ".bmp") || has_ext(name, ".ppm") || has_ext(name, ".pgm"); }
+
 static void view_file(const entry_t *e)
 {
     char p[PATH_MAX_];
     path_join(p, s_path, e->name);
+    if (p[0] && is_image(e->name)) { imgview_show(p); return; }
     int fd = p[0] ? vfs_open(p, VFS_O_READ) : ERR_INVAL;
     if (fd < 0) { ksnprintf(s_status, sizeof s_status, "cannot open (error %d)", fd); return; }
     int len = vfs_read(fd, s_view, VIEW_BYTES);

@@ -10,6 +10,7 @@
 #include "../filer/filer.h"
 #include "../tui/dqwin.h"
 #include "../edit/edit.h"
+#include "../viewer/imgview.h"
 #include "../../drivers/lcd/fbcon.h"
 #define FILER_PAUSE_SETTLE_MS 100u
 #include "shell.h"
@@ -472,6 +473,20 @@ static int cmd_files(int argc, char **argv)
     return 0;
 }
 
+static int cmd_view(int argc, char **argv)
+{
+    char path[VFS_PATH_MAX];
+    if (argc < 2) { SH_PRINTF("usage: view IMAGE (BMP or PPM)\n"); return 1; }
+    if (!resolve(argv[1], path)) return fail("view", "bad path", ERR_INVAL);
+    fbcon_pause(true);
+    task_sleep(FILER_PAUSE_SETTLE_MS);
+    dq_clear();
+    bool ok = imgview_show(path);
+    fbcon_pause(false);
+    if (!ok) SH_PRINTF("view: %s: %s\n", path, imgview_last_error());
+    return ok ? 0 : 1;
+}
+
 static int cmd_edit(int argc, char **argv)
 {
     char path[VFS_PATH_MAX];
@@ -543,6 +558,7 @@ static const command_t s_commands[] = {
     { "gui",    cmd_gui,    "list windows (front first)" },
 #if M5OS_HAS_KEYBOARD
     { "files",  cmd_files,  "files [DIR]     full-screen file manager (filer)" },
+    { "view",   cmd_view,   "view IMAGE      show a BMP/PPM image" },
     { "edit",   cmd_edit,   "edit FILE       full-screen text editor (^S save, ^Q quit)" },
     { "keys",   cmd_keys,   "keyboard statistics (bring-up diagnostics)" },
 #endif

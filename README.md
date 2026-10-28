@@ -22,21 +22,20 @@ scheduler / task / timer / IPC / allocator / FS などを自作していく。
 | (旧) 12 | GUI / Launcher / VFS / Shell / App / IPC / GUI | 未着手 |
 
 ## ボード
-| | M5Stack CoreS3 | M5Cardputer (初代 / ADV) |
+| | M5Stack CoreS3 | M5Stack Tab5 |
 |---|---|---|
-| SoC | ESP32-S3 + 8MB PSRAM, 16MB flash | ESP32-S3FN8: 8MB flash, **PSRAM なし** |
-| 画面 | ILI9342C 320x240 (SPI, 電源 IC 経由) | ST7789 135x240 を横向き 240x135 |
-| 入力 | タッチ (FT6336U) | **キーボード** (初代: 74HC138 マトリクス / ADV: TCA8418 I2C) |
+| SoC | ESP32-S3 (Xtensa) + 8MB PSRAM, 16MB flash | ESP32-P4 (RISC-V) + 32MB PSRAM, 16MB flash |
+| 画面 | ILI9342C 320x240 (SPI, 電源 IC 経由) | MIPI-DSI 5インチ 720x1280 を横向き 1280x720 (ST7121 / ILI9881C) |
+| 入力 | タッチ (FT6336U) | **キーボード** (Tab5 Keyboard の I2C / USB-A の HID) |
 | 画面の使い方 | GUI (ウィンドウ + ランチャー) | **全画面コンソール** (`fbcon`) + シェル |
-| SD | LCD とバス共有 | 専用ピン |
-| ビルド | `tools/build.sh cores3` | `tools/build.sh cardputer` |
+| ビルド | `tools/build.sh cores3` (ESP-IDF 4.4.3) | `tools/build.sh tab5` (ESP-IDF 5.4.4) |
 
 ```sh
-tools/build.sh cardputer build
-tools/build.sh cardputer flash -p /dev/cu.usbmodemXXXX     # ボードごとに build ディレクトリと sdkconfig が別
+tools/build.sh tab5 build
+tools/build.sh tab5 flash -p /dev/cu.usbmodemXXXX          # ボードごとに build ディレクトリと sdkconfig が別
 tools/build.sh cores3 build                                # 従来どおり (build/ と sdkconfig)
 ```
-ボード固有のコードは `*_cores3.c` / `*_cardputer.c` とボード専用ドライバに分け、CMake (`M5OS_BOARD`) が選ぶ。
+ボード固有のコードは `*_cores3.c` とボード専用ドライバに分け、CMake (`M5OS_BOARD`) が選ぶ。
 カーネルが知るボード情報は `kernel/include/m5os/board_config.h` (名前、画面サイズ、タッチ/キーボードの有無)。
 
 ## ビルドと実行
@@ -417,23 +416,6 @@ from pid 6 (type 0x8001): "echo:hello"
   遅れ得る。固定時間の待ちに頼ったテストが落ちたので、条件を待つ形に直した。ハードウェア SPI (+DMA) 化が最大の改善点。
 * `display_draw_text` は 1 文字ごとに窓設定していたため遅かった → 文字列全体を 1 回の転送にした。
 
-## M5Cardputer への移植
-ピン・初期化列・キー配置は M5Stack 公式 (M5GFX / M5Unified / M5Cardputer, MIT) のソースから転記した。推測値は無い。
-* **LCD (ST7789)**: MOSI=35 SCLK=36 DC=34 CS=37 RST=33 BL=38。135x240 を横向きで使う (MADCTL 0x6C、ウィンドウ原点 (40, 53)、色反転)。
-  オフセットは `Panel_LCD::setRotation` の計算を回転 1 について辿って導いた (`drivers/lcd/st7789.c` に式を記載)。
-  `drivers/lcd/panel.h` で ILI9342 / ST7789 を差し替える。
-* **キーボード** (`drivers/keyboard/keyboard.c`): **実行時に初代か ADV かを判別** (TCA8418 が I2C 0x34 で応答すれば ADV)。
-  どちらも同じ 4x14 の座標に変換して同じキーマップを使う。Shift / Fn(=矢印・F キー・Esc・Del) / Ctrl(+英字 = 制御文字) / 自動リピート。
-  打った文字は **コンソール入力へ注入** (`kconsole_inject`) → シェルはシリアルから来た文字と同じように読む。
-  Ctrl-C、Ctrl-U、Backspace、矢印 (シェルは読み捨て) など。`keys` コマンドで検出した方式・押下回数・最後のキーを表示 (調整用)。
-* **画面コンソール** (`drivers/lcd/fbcon.c`): コンソールに出たものすべて (起動メッセージ、シェル) を 30x16 文字で表示、スクロール、点滅カーソル。
-  起動前に出た分もリングバッファから表示する。
-* **PSRAM なし**: `hal_psram_region()` は設定で無効にされていれば 0 を返す。`/` の RAM ディスクは内部 RAM の 64 KiB
-  (PSRAM があるボードは 2 MiB)。SD に M5FS があればそちらが `/` になる (自動フォーマットはしない)。
-* **SD** (専用ピン SCLK=40 MOSI=14 MISO=39 CS=12): LCD とバスを共有しないのでロック競合が無い。
-* GUI (ウィンドウ/ランチャー) はタッチ前提なので Cardputer では起動しない (`gui` / `tap` は無効)。
-  キーボード駆動のランチャーは今後の課題。
-
 ## M5Stack Tab5 への移植 (ESP32-P4, RISC-V)
 ビルド: `tools/build.sh tab5 build` / 書き込み: `tools/build.sh tab5 flash -p <port>` (ESP-IDF 5.4.4。他ボードは 4.4.3)。
 実機 (Tab5, ST7121 パネル, Tab5 Keyboard) で確認したこと: 起動、プリエンプティブスケジューラ、シェル (シリアルと画面+キーボード)、PSRAM、表示、`hog` による横取り。
@@ -451,7 +433,7 @@ P4 で分かったこと (どれも実機で症状を見てから IDF のソー�
 
 未対応: ST7123 パネル、タッチ (GT911 / ST7123 のタッチ)、SD、RISC-V 向け M5EX SDK、バックライトの PWM 調光。
 
-## ウィンドウとファイラー (キーボード付きボード: Cardputer / Tab5)
+## ウィンドウとファイラー (キーボード付きボード: Tab5)
 `user/tui/dqwin.c` はドラクエ風のテキストウィンドウ部品 (黒地・太い白枠・角丸・▶カーソル)。文字セル単位 (8x8 グリフ × `M5OS_FBCON_SCALE`) で配置するので 40 桁の LCD でも Tab5 の 80 桁でも同じコードで動く。描画は `display_*` API、入力は `kconsole_getc()` (矢印キーの ESC シーケンスは `dq_getkey()` が解釈) なのでシリアル端末からも操作できる。
 
 `user/filer/filer.c` は VZ Editor のファイラーに倣った全画面ファイラー。シェルで `files [DIR]` を実行する。複数カラムのリスト・マーク・キー一発操作・最下行のキーガイド。
@@ -465,9 +447,11 @@ P4 で分かったこと (どれも実機で症状を見てから IDF のソー�
 | D | 削除 (確認あり。ディレクトリは空のときだけ) |
 | K | ディレクトリ作成 |
 | N | ファイル名変更 (M5FS に rename が無いのでコピー+削除) |
-| V | ビューア (先頭 8 KB) |
+| V | テキストのビューア (先頭 8 KB) / 画像 (BMP・PPM) は画像ビューア |
 | E / F | エディタで開く / 新規ファイルを作って開く |
 | Q / ESC | 終了 |
+
+画像ビューア (`user/viewer/imgview.c`, シェルから `view FILE` でも起動): BMP (非圧縮 8/16/24/32 ビット) と PPM/PGM (P6/P5, 8 ビット) を RGB565 に変換し、画面に収まる大きさに縮小 (小さい画像は整数倍に拡大) して中央に表示する。縮小・拡大は最近傍法。JPEG/PNG のデコーダはツリーに無いので未対応。`imgview_write_bmp()` は RGB565 の画面データを 24 ビット BMP で書き出す (カメラ用)。失敗したときは理由を `imgview_last_error()` で返し、画面にも出す。
 
 エディタ (`user/edit/edit.c`, シェルから `edit FILE` でも起動): 32 KB までの ASCII テキスト。Ctrl-S 保存、Ctrl-Q / ESC 終了 (未保存なら確認)、矢印・Home/End・PgUp/PgDn、Tab は空白 2 つ。バッファは平らなバイト列でカーソルはオフセット、行は '\n' を走査して求め、画面は毎キー全面再描画する (どれも「単純で間違えにくい」ための選択)。未対応: 取り消し、検索、2 桁以上の Tab 幅、ASCII 以外。
 
