@@ -75,6 +75,11 @@ int main(void)
     assert(hal_i2c_sys_read_regs(0x44, 0xf, b, 1) && b[0] == 0x40); done();
     begin(); queue(1);
     assert(!hal_i2c_sys_read_regs(0x41, 0xfe, b, 2)); done(); /* NACK still releases the lock. */
+    begin(); queue(0); queue(0); queue(0);
+    assert(hal_i2c_sys_write_reg(0x10, 0x19, 0x24)); done();
+    begin(); queue(0); queue(0); queue(0); byte(0x64); queue(0); queue(0); queue(0);
+    assert(hal_i2c_sys_update_reg(0x43, 5, 2, 2)); done(); /* Fixed bus, one lock, preserves LCD reset. */
+    begin(); queue(1); assert(!hal_i2c_sys_update_reg(0x43, 5, 2, 0)); done();
     expected_scl = 1; expected_sda = 0;
     begin(); queue(0); queue(0); queue(0); byte(0x34);
     assert(hal_i2c_read_reg(0x6d, 0xfe, b) && b[0] == 0x34); done(); /* System access did not switch bus. */

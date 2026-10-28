@@ -28,6 +28,7 @@
 static bool sh_streq(const char *a, const char *b);      /* used by cmd_osk, defined further down */
 #include "shell.h"
 #include "hardware.h"
+#include <m5os/audio.h>
 #include <m5os/vfs.h>
 #include <m5os/task.h>
 #include <m5os/kprintf.h>
@@ -932,6 +933,9 @@ static int cmd_history(int argc, char **argv)
 static const command_t s_commands[] = {
     { "help",    cmd_help,    "list commands" },
 #if M5OS_BOARD_TAB5
+#if M5OS_BOARD_TAB5
+    { "audio", audio_command, "audio test      low-volume speaker test" },
+#endif
     { "devices", cmd_devices, "board devices: detected, untested, or unsupported (read-only)" },
     { "power",   cmd_power,   "battery voltage/current, estimated level and charger state (read-only)" },
     { "storage", cmd_storage, "root backing, persistence and microSD support (read-only)" },
